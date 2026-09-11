@@ -136,7 +136,9 @@ Given that feature description, do this:
        Include both quantitative metrics (time, performance, volume) and qualitative measures (user satisfaction, task completion)
        Each criterion must be verifiable without implementation details
     7. Identify Key Entities (if data involved)
-    8. Return: SUCCESS (spec ready for planning)
+    8. Define Out of Scope
+       List capabilities, use cases, or user types explicitly excluded from this feature
+    9. Return: SUCCESS (spec ready for planning)
 
 7. Write the specification to SPEC_FILE using the template structure, replacing placeholders with concrete details derived from the feature description (arguments) while preserving section order and headings.
 
@@ -166,7 +168,7 @@ Given that feature description, do this:
       - [ ] Success criteria are technology-agnostic (no implementation details)
       - [ ] All acceptance scenarios are defined
       - [ ] Edge cases are identified
-      - [ ] Scope is clearly bounded
+      - [ ] Scope is clearly bounded (Out of Scope section completed)
       - [ ] Dependencies and assumptions identified
 
       ## Feature Readiness

@@ -28,6 +28,38 @@
 [PRINCIPLE_5_DESCRIPTION]
 <!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
 
+## Product Context
+<!-- Problem the app solves, objectives, and target user archetypes. Reference material for spec authors and evaluators — not a governance rule. -->
+
+### Problem Statement
+[PROBLEM_STATEMENT]
+<!-- Example: Teams lose track of cross-service incidents because status updates live in five disconnected tools. -->
+
+### Objectives
+[OBJECTIVES]
+<!-- Example: Give on-call engineers one place to see incident status across all services; reduce mean time to acknowledge by 30%. -->
+
+### User Personas
+[USER_PERSONAS]
+<!-- Example: On-call Engineer — responds to alerts under time pressure, needs fast triage context; Incident Commander — coordinates multiple responders, needs a single source of truth. -->
+
+## Technology Stack
+<!-- Fixed stack + repository layout. Reference material for spec/plan authors — plans MUST reuse this structure instead of re-deriving a generic one each run. -->
+
+### Stack
+[TECH_STACK]
+<!-- Example: Language: TypeScript 5.x; Framework: Next.js 14 (App Router); DB: PostgreSQL via Prisma; Auth: Clerk; Deployment: Vercel. -->
+
+### Repository Structure
+[REPOSITORY_STRUCTURE]
+<!-- Example:
+app/            # Next.js App Router routes
+components/     # Shared React components
+lib/            # Server-side utilities, DB client
+prisma/         # Schema + migrations
+tests/          # Unit + integration tests
+-->
+
 ## [SECTION_2_NAME]
 <!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
 

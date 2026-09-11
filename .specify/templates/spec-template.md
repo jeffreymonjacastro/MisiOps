@@ -98,6 +98,13 @@
 - **FR-006**: System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]
 - **FR-007**: System MUST retain user data for [NEEDS CLARIFICATION: retention period not specified]
 
+### Non-Functional Requirements
+
+- **NFR-001**: [Performance requirement, e.g., "The API must respond in under 200ms at the 95th percentile."]
+- **NFR-002**: [Security requirement, e.g., "All sensitive user data must be encrypted at rest."]
+- **NFR-003**: [Scalability requirement, e.g., "The system must support scaling horizontally up to 10 nodes."]
+- **NFR-004**: [Usability requirement, e.g., "The UI must conform to WCAG 2.1 AA accessibility standards."]
+
 ### Key Entities *(include if feature involves data)*
 
 - **[Entity 1]**: [What it represents, key attributes without implementation]
@@ -129,3 +136,14 @@
 - [Assumption about scope boundaries, e.g., "Mobile support is out of scope for v1"]
 - [Assumption about data/environment, e.g., "Existing authentication system will be reused"]
 - [Dependency on existing system/service, e.g., "Requires access to the existing user profile API"]
+
+## Out of Scope
+
+<!--
+  ACTION REQUIRED: The content in this section represents placeholders.
+  List capabilities, use cases, or user types explicitly excluded from this
+  feature so scope stays bounded and readers don't assume unstated coverage.
+-->
+
+- [Excluded capability, e.g., "Bulk import of existing user data is not included"]
+- [Excluded user type/platform, e.g., "Admin-facing tooling is out of scope for this release"]
