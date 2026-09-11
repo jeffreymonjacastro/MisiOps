@@ -50,8 +50,25 @@ Puedes hacerlo desde la interfaz gráfica o editando el archivo:
 #### 🟠 Codex
 
 - Abre tu archivo de configuración global:
-- **Ruta Windows**: `~/.codex/config/mcp_config.json`
-- **Ruta Mac/Linux**: `~/.codex/config/mcp_config.json`
+- **Ruta Windows**: `%USERPROFILE%\.codex\config.toml`
+- **Ruta Mac/Linux**: `~/.codex/config.toml`
+- Agrega la configuración equivalente en TOML:
+
+```toml
+[mcp_servers.context7]
+command = "npx"
+args = ["-y", "@upstash/context7-mcp@latest"]
+
+[mcp_servers.context7.env]
+CONTEXT7_API_KEY = "<CONTEXT7_TOKEN>"
+
+[mcp_servers.github-mcp-server]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-github"]
+
+[mcp_servers.github-mcp-server.env]
+GITHUB_PERSONAL_ACCESS_TOKEN = "<GITHUB_TOKEN>"
+```
 
 #### 🟣 Claude Desktop
 
