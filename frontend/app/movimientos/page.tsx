@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import { SampleDataButton } from "../components/sample-data-button";
 import { byType } from "../lib/categories";
 import { useLedger } from "../lib/ledger-store";
 import { formatMoney } from "../lib/money";
@@ -115,12 +116,15 @@ function EmptyState() {
         Todavía no registras nada. Apunta tu primer gasto o ingreso y aquí verás el historial
         completo.
       </p>
-      <Link
-        href="/movimientos/nuevo"
-        className="inline-block rounded-[var(--radius-panel)] border border-amber px-4 py-2 text-sm font-medium text-amber hover:bg-amber hover:text-ink"
-      >
-        Registrar el primero
-      </Link>
+      <div className="flex flex-wrap gap-2">
+        <Link
+          href="/movimientos/nuevo"
+          className="inline-block rounded-[var(--radius-panel)] border border-amber px-4 py-2 text-sm font-medium text-amber hover:bg-amber hover:text-ink"
+        >
+          Registrar el primero
+        </Link>
+        <SampleDataButton />
+      </div>
     </div>
   );
 }
