@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import { SampleDataButton } from "./components/sample-data-button";
 import { budgetProgress, type BudgetProgress } from "./lib/budgets";
 import { useLedger } from "./lib/ledger-store";
 import { formatMoney } from "./lib/money";
@@ -34,6 +35,10 @@ export default function DashboardPage() {
   const budgets = useMemo(() => budgetProgress(ledger, month), [ledger, month]);
 
   const nothingLogged = totals.income === 0 && totals.expenses === 0;
+  // Distinct from nothingLogged: seeding replaces the whole ledger, so it
+  // must only be offered when there is truly nothing anywhere to lose —
+  // not just nothing in the currently viewed month.
+  const noDataAtAll = ledger.transactions.length === 0;
 
   return (
     <div className="space-y-10">
@@ -60,7 +65,7 @@ export default function DashboardPage() {
       </header>
 
       {nothingLogged ? (
-        <EmptyMonth />
+        <EmptyMonth showSampleData={noDataAtAll} />
       ) : (
         <>
           <MonthRunway income={totals.income} expenses={totals.expenses} net={totals.net} />
@@ -72,19 +77,22 @@ export default function DashboardPage() {
   );
 }
 
-function EmptyMonth() {
+function EmptyMonth({ showSampleData }: { showSampleData: boolean }) {
   return (
     <div className="max-w-prose space-y-4 border-y border-line py-10">
       <p className="text-sm text-muted">
         Este mes no tiene movimientos todavía. Registra un ingreso o un gasto y aquí verás cuánto
         te queda.
       </p>
-      <Link
-        href="/movimientos/nuevo"
-        className="inline-block rounded-[var(--radius-panel)] border border-amber px-4 py-2 text-sm font-medium text-amber hover:bg-amber hover:text-ink"
-      >
-        Registrar un movimiento
-      </Link>
+      <div className="flex flex-wrap gap-2">
+        <Link
+          href="/movimientos/nuevo"
+          className="inline-block rounded-[var(--radius-panel)] border border-amber px-4 py-2 text-sm font-medium text-amber hover:bg-amber hover:text-ink"
+        >
+          Registrar un movimiento
+        </Link>
+        {showSampleData ? <SampleDataButton /> : null}
+      </div>
     </div>
   );
 }
