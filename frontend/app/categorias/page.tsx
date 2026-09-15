@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { setBudget } from "../lib/budgets";
 import {
   addCategory,
   byType,
@@ -192,24 +193,69 @@ function CategoryRow({ category }: { category: Category }) {
         {category.name}
         {locked ? <span className="ml-2 text-xs text-muted">fija</span> : null}
       </span>
-      {locked ? null : (
-        <span className="flex shrink-0 gap-3 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
-          <button
-            type="button"
-            onClick={() => setEditing(true)}
-            className="text-sm text-muted hover:text-text"
-          >
-            Renombrar
-          </button>
-          <button
-            type="button"
-            onClick={() => setConfirming(true)}
-            className="text-sm text-muted hover:text-expense"
-          >
-            Eliminar
-          </button>
-        </span>
-      )}
+      <span className="flex shrink-0 items-center gap-3">
+        {category.type === "expense" ? <BudgetField category={category} /> : null}
+        {locked ? null : (
+          <span className="flex gap-3 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="text-sm text-muted hover:text-text"
+            >
+              Renombrar
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirming(true)}
+              className="text-sm text-muted hover:text-expense"
+            >
+              Eliminar
+            </button>
+          </span>
+        )}
+      </span>
     </li>
+  );
+}
+
+/** Blank clears the limit, so there is no separate "remove" control. */
+function BudgetField({ category }: { category: Category }) {
+  const { ledger, commit } = useLedger();
+  const [value, setValue] = useState(category.budget === null ? "" : String(category.budget));
+  const [error, setError] = useState<string | null>(null);
+
+  function save() {
+    if (value.trim() === "" && category.budget === null) return;
+    try {
+      commit(setBudget(ledger, category.id, value.trim() === "" ? null : value));
+      setError(null);
+    } catch (problem) {
+      setError((problem as Error).message);
+      setValue(category.budget === null ? "" : String(category.budget));
+    }
+  }
+
+  return (
+    <span className="flex items-center gap-1.5">
+      <label htmlFor={`budget-${category.id}`} className="text-xs text-muted">
+        Tope S/
+      </label>
+      <input
+        id={`budget-${category.id}`}
+        inputMode="decimal"
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        onBlur={save}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") event.currentTarget.blur();
+        }}
+        placeholder="—"
+        aria-invalid={error ? true : undefined}
+        title={error ?? undefined}
+        className={`figures w-20 rounded-[var(--radius-panel)] border bg-surface px-2 py-1 text-right text-xs ${
+          error ? "border-expense" : "border-line"
+        }`}
+      />
+    </span>
   );
 }
