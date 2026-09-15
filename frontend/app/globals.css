@@ -11,6 +11,12 @@
   --color-income: #5fd3a6;
   --color-expense: #e8746a;
 
+  /* Chart fills. Text tokens above sit too light for fills on this surface;
+     these are stepped into the dark-mode band (OKLCH L 0.48-0.67) and checked
+     for contrast and colour-vision separation against each other. */
+  --color-fill-spent: #c4871f;
+  --color-fill-overrun: #b5352c;
+
   --font-sans: var(--font-instrument-sans), ui-sans-serif, system-ui, sans-serif;
   --font-figure: var(--font-instrument-serif), ui-serif, Georgia, serif;
 
