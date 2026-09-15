@@ -216,3 +216,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# The Python "lib/" rule above also matches the Next.js app/lib convention,
+# which is source code and must be tracked.
+!frontend/app/lib/
