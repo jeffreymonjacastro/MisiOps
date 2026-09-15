@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import { budgetProgress, type BudgetProgress } from "./lib/budgets";
 import { useLedger } from "./lib/ledger-store";
 import { formatMoney } from "./lib/money";
 import { monthKey } from "./lib/query";
@@ -30,6 +31,7 @@ export default function DashboardPage() {
     () => spendingByCategory(ledger.transactions, ledger.categories, month),
     [ledger.transactions, ledger.categories, month],
   );
+  const budgets = useMemo(() => budgetProgress(ledger, month), [ledger, month]);
 
   const nothingLogged = totals.income === 0 && totals.expenses === 0;
 
@@ -62,6 +64,7 @@ export default function DashboardPage() {
       ) : (
         <>
           <MonthRunway income={totals.income} expenses={totals.expenses} net={totals.net} />
+          <BudgetProgressList rows={budgets} />
           <SpendingBreakdown rows={spending} total={totals.expenses} />
         </>
       )}
@@ -147,6 +150,47 @@ function MonthRunway({
           <dd className="figures">{formatMoney(expenses)}</dd>
         </div>
       </dl>
+    </section>
+  );
+}
+
+function BudgetProgressList({ rows }: { rows: BudgetProgress[] }) {
+  if (rows.length === 0) return null;
+
+  return (
+    <section aria-labelledby="budgets-heading" className="space-y-3">
+      <h2 id="budgets-heading" className="text-sm text-muted">
+        Topes del mes
+      </h2>
+      <ul className="space-y-3">
+        {rows.map((row) => (
+          <li key={row.categoryId} className="space-y-1.5">
+            <div className="flex items-baseline justify-between gap-3 text-sm">
+              <span className="min-w-0 truncate">{row.name}</span>
+              <span className={`figures shrink-0 ${row.over ? "text-expense" : ""}`}>
+                {formatMoney(row.spent)}
+                <span className="text-muted"> de {formatMoney(row.limit)}</span>
+                {row.over ? (
+                  <span className="ml-2">
+                    {formatMoney(row.spent - row.limit)} de más
+                  </span>
+                ) : null}
+              </span>
+            </div>
+            <div aria-hidden className="h-1.5 w-full rounded-full bg-raised">
+              <div
+                className="h-full rounded-full"
+                style={{
+                  width: `${row.share * 100}%`,
+                  background: row.over
+                    ? "var(--color-fill-overrun)"
+                    : "var(--color-fill-spent)",
+                }}
+              />
+            </div>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
