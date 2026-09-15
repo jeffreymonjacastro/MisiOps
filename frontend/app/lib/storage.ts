@@ -1,4 +1,4 @@
-import { DEFAULT_CATEGORIES } from "./categories";
+import { DEFAULT_CATEGORIES } from "./categories.ts";
 import type { Ledger } from "./types";
 
 const KEY = "misiops.ledger.v1";
