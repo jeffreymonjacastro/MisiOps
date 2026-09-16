@@ -4,7 +4,8 @@ from sqlalchemy.orm import declarative_base
 from core.config import settings
 
 engine = create_async_engine(settings.DATABASE_URL, echo=False)
-SessionLocal = async_sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# expire_on_commit=False: async sessions cannot lazy-load expired attributes after commit
+SessionLocal = async_sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
 Base = declarative_base()
 
