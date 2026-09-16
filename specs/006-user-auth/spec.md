@@ -8,6 +8,16 @@
 
 **Input**: User description: "Backend: auth/register, auth/login returning a bearer token; user/ GET (own profile), user/ PATCH (update profile), user/ DELETE (delete account). All under base path api/v1/. Stack: FastAPI, Python, Postgres."
 
+## Clarifications
+
+### Session 2026-09-16
+
+- Q: What request format must login accept: JSON with email/password, or OAuth2 form with username/password? → A: JSON body `{"email", "password"}` only.
+- Q: What does a successful registration return: the created profile only, or profile plus an access token? → A: HTTP 201 with the created profile only; no token. The client logs in afterwards.
+- Q: What shape do error responses use across the API: the framework default `{"detail": ...}` or a custom envelope with error codes? → A: Framework default. `{"detail": "message"}` for business errors, `{"detail": [{"loc", "msg", "type"}]}` for validation errors. No custom envelope.
+- Q: Which feature seeds the default categories at registration: user-auth or categories? → A: categories. user-auth does not create or touch categories; the categories feature hooks seeding into the registration flow on its own branch.
+- Q: Does account deletion physically remove the user and all their data, or mark the account inactive and keep the data? → A: Physical (hard) delete with cascade to categories, transactions and bot interactions. No soft delete.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Register an account (Priority: P1)
@@ -20,9 +30,9 @@ A new visitor creates a MisiOps account with their name, email and password so t
 
 **Acceptance Scenarios**:
 
-1. **Given** no account exists for `ana@example.com`, **When** Ana registers with name, that email and a valid password, **Then** the account is created and she receives a success confirmation.
+1. **Given** no account exists for `ana@example.com`, **When** Ana registers with name, that email and a valid password, **Then** the account is created and she receives the created profile (no access token; she logs in next).
 2. **Given** an account already exists for `ana@example.com`, **When** someone registers again with that email, **Then** registration is rejected with a conflict message and no second account is created.
-3. **Given** a registration with a malformed email or a password shorter than 8 characters, **When** submitted, **Then** it is rejected with a validation message naming the invalid field.
+3. **Given** a registration with a malformed email or a password shorter than 8 or longer than 128 characters, **When** submitted, **Then** it is rejected with a validation message naming the invalid field.
 4. **Given** a registration that includes an optional Telegram chat id, **When** submitted, **Then** the id is stored with the account so the bot can later link messages to this user.
 
 ---
@@ -104,27 +114,29 @@ A logged-in user permanently deletes their account and all data attached to it.
 
 ### Functional Requirements
 
-- **FR-001**: System MUST allow a visitor to register with `name`, `email`, `password` and optional `telegram_chat_id`.
+- **FR-001**: System MUST allow a visitor to register with `name`, `email`, `password` and optional `telegram_chat_id`. On success it returns the created profile (same shape as FR-009) and no access token.
 - **FR-002**: System MUST reject registration when the email is already in use (case-insensitive) or the Telegram chat id is already linked to another account.
-- **FR-003**: System MUST validate that `email` is a well-formed email address and `password` has at least 8 characters.
+- **FR-003**: System MUST validate that `email` is a well-formed email address and `password` has between 8 and 128 characters.
 - **FR-004**: System MUST store passwords only as a salted one-way hash. Plaintext passwords MUST never be persisted or logged.
-- **FR-005**: System MUST allow a registered user to log in with `email` + `password` and receive a bearer access token plus its token type.
+- **FR-005**: System MUST allow a registered user to log in by sending a JSON body with `email` and `password` (no form-encoded or OAuth2 `username` variant) and receive a bearer access token plus its token type.
 - **FR-006**: Login failures MUST return a single generic "invalid credentials" message regardless of whether the email exists.
 - **FR-007**: Access tokens MUST expire. Default lifetime: 24 hours. Expired or invalid tokens MUST be rejected as unauthenticated.
-- **FR-008**: Every private endpoint (profile, and by extension categories and transactions) MUST identify the caller exclusively from the bearer token. Clients MUST NOT be able to act on another user's data by passing a different user id.
+- **FR-008**: Every private endpoint MUST identify the caller exclusively from the bearer token. Clients MUST NOT be able to act on another user's data by passing a different user id.
 - **FR-009**: System MUST return the authenticated user's profile: `id`, `name`, `email`, `telegram_chat_id`, `monthly_budget_limit`, `budget_start_day`, `created_at`. Password hashes MUST never be returned.
-- **FR-010**: System MUST allow partial updates of `name`, `telegram_chat_id`, `monthly_budget_limit` and `budget_start_day`. Omitted fields are unchanged. Other fields in the payload are ignored.
+- **FR-010**: System MUST allow partial updates of `name`, `telegram_chat_id`, `monthly_budget_limit` and `budget_start_day`. Omitted fields are unchanged. `telegram_chat_id` sent as `null` unlinks the account; an empty string is normalised to `null`. An empty body `{}` is accepted and returns the unchanged profile. Other fields in the payload are ignored.
 - **FR-011**: `monthly_budget_limit` MUST be zero or positive. `budget_start_day` MUST be an integer between 1 and 28 (so every month has that day).
-- **FR-012**: System MUST allow the authenticated user to delete their own account. Deletion MUST cascade to the user's categories, transactions and bot interactions.
+- **FR-012**: System MUST allow the authenticated user to delete their own account. Deletion is physical (no soft delete or `deleted_at` flag) and MUST cascade to the user's categories, transactions and bot interactions. The cascade is enforced at the database level (`ON DELETE CASCADE` on each owning table's foreign key), declared by the feature that creates that table.
 - **FR-013**: New accounts MUST start with `monthly_budget_limit = 0` (meaning "no limit set") and `budget_start_day = 1`.
 - **FR-014**: All endpoints MUST live under the `api/v1/` base path and use JSON request/response bodies.
+- **FR-015**: Error responses MUST use a single shape across the API: `{"detail": "<message>"}` for business errors (conflict, unauthenticated, not found) and `{"detail": [{"loc", "msg", "type"}]}` for validation errors. No custom error envelope or error codes.
 
 ### Non-Functional Requirements
 
-- **NFR-001**: Login and registration respond in under 500 ms at the 95th percentile under normal load (password hashing cost is the dominant factor and is tuned accordingly).
+- **NFR-001**: Login and registration respond in under 500 ms at the 95th percentile with 10 concurrent logins (password hashing cost is the dominant factor and is tuned accordingly).
 - **NFR-002**: Password hashing MUST use a purpose-built, slow algorithm (bcrypt or argon2 class). MD5/SHA-only hashing is not acceptable.
-- **NFR-003**: The token signing secret MUST come from environment configuration, never from source code.
+- **NFR-003**: The token signing secret MUST come from environment configuration, never from source code, and MUST be at least 32 characters long; the service refuses to start otherwise.
 - **NFR-004**: Every functional requirement MUST be covered by automated tests, per the constitution's Testing Standards.
+- **NFR-005**: Failed logins, registrations and account deletions MUST be logged with the email or user id involved, never with the password or token.
 
 ### Key Entities *(include if feature involves data)*
 
@@ -149,6 +161,7 @@ A logged-in user permanently deletes their account and all data attached to it.
 - Token-based stateless auth is used (no server-side sessions, no refresh tokens, no logout endpoint). The frontend "logs out" by discarding the token.
 - Changing email or password after registration is out of scope for this feature.
 - The Telegram bot and Gmail scraping are separate future features. This feature only stores `telegram_chat_id`.
+- This feature does not create categories or seed defaults. The categories feature adds default-category seeding to the registration flow when it lands, so user-auth is mergeable on its own.
 - Success responses use HTTP 200 for login and 201 for registration; the planning document's "status = 200" is read as "success".
 
 ## Out of Scope
