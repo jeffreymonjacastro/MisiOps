@@ -1,0 +1,278 @@
+openapi: 3.1.0
+info:
+  title: MisiOps API - Transactions
+  version: 1.0.0
+  description: >
+    Contract for feature 008-transactions. Base path /api/v1. All endpoints require a bearer token.
+    Errors use FastAPI's default {"detail": ...} shape. Also documents the two category guards this
+    feature adds to /category/{id}.
+servers:
+  - url: http://localhost:8000/api/v1
+
+paths:
+  /transactions:
+    get:
+      summary: List my transactions (paginated, newest first)
+      operationId: listTransactions
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: type, in: query, schema: { $ref: "#/components/schemas/TxType" } }
+        - { name: category_id, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+        - { name: offset, in: query, schema: { type: integer, minimum: 0, default: 0 } }
+      responses:
+        "200":
+          description: Page of transactions ordered by transaction_date then id, descending
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TransactionPage" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+    post:
+      summary: Record a transaction
+      operationId: createTransaction
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TransactionCreate" }
+      responses:
+        "201":
+          description: Created, source is always manual
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TransactionOut" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "404":
+          description: category_id not owned by the caller or unknown
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorDetail" }
+              example: { detail: "Category not found" }
+        "422":
+          description: Body validation failed, or the transaction type does not match the category type
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/ErrorDetail"
+                  - $ref: "#/components/schemas/ValidationErrorBody"
+              examples:
+                mismatch: { value: { detail: "Transaction type does not match category type" } }
+
+  /transactions/summary:
+    get:
+      summary: Totals for the current budget period or an explicit date range
+      operationId: transactionSummary
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: from, in: query, schema: { type: string, format: date }, description: Inclusive. Overrides the default period together with `to`. }
+        - { name: to, in: query, schema: { type: string, format: date }, description: Inclusive. }
+      responses:
+        "200":
+          description: Summary
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SummaryOut" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "422":
+          description: from after to, or only one of them given, or bad date
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/ErrorDetail"
+                  - $ref: "#/components/schemas/ValidationErrorBody"
+              examples:
+                range: { value: { detail: "from must not be after to" } }
+
+  /transactions/{transaction_id}:
+    parameters:
+      - { name: transaction_id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    patch:
+      summary: Partially update a transaction
+      operationId: updateTransaction
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TransactionUpdate" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TransactionOut" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "404":
+          description: Transaction not owned by the caller or unknown; or the new category_id is not owned
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorDetail" }
+              examples:
+                tx: { value: { detail: "Transaction not found" } }
+                cat: { value: { detail: "Category not found" } }
+        "422":
+          description: Validation failed or resulting type/category mismatch
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/ErrorDetail"
+                  - $ref: "#/components/schemas/ValidationErrorBody"
+    delete:
+      summary: Delete a transaction
+      operationId: deleteTransaction
+      security: [{ bearerAuth: [] }]
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "404":
+          description: Transaction not owned by the caller or unknown
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorDetail" }
+              example: { detail: "Transaction not found" }
+
+  /category/{category_id}:
+    description: Guards added by this feature to the endpoints defined in 007-categories.
+    patch:
+      summary: (guard) type change refused while the category has transactions
+      responses:
+        "409":
+          description: Emitted only when the payload changes `type` and the category has transactions
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorDetail" }
+              example: { detail: "Category has 3 transactions" }
+    delete:
+      summary: (guard) deletion refused while the category has transactions
+      responses:
+        "409":
+          description: Category has transactions
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorDetail" }
+              example: { detail: "Category has 3 transactions" }
+
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+
+  responses:
+    Unauthenticated:
+      description: Missing, malformed, expired or revoked token
+      headers:
+        WWW-Authenticate: { schema: { type: string, example: Bearer } }
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorDetail" }
+          example: { detail: "Not authenticated" }
+    ValidationError:
+      description: Request failed validation
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ValidationErrorBody" }
+
+  schemas:
+    ErrorDetail:
+      type: object
+      required: [detail]
+      properties:
+        detail: { type: string }
+
+    ValidationErrorBody:
+      type: object
+      properties:
+        detail:
+          type: array
+          items:
+            type: object
+            properties:
+              loc: { type: array, items: { type: [string, integer] } }
+              msg: { type: string }
+              type: { type: string }
+
+    TxType:
+      type: string
+      enum: [income, expense]
+
+    CategoryRef:
+      type: object
+      required: [id, name, type]
+      properties:
+        id: { type: integer }
+        name: { type: string, example: Comida }
+        type: { $ref: "#/components/schemas/TxType" }
+
+    TransactionCreate:
+      type: object
+      required: [amount, type, category_id]
+      properties:
+        amount: { type: number, exclusiveMinimum: 0, maximum: 1000000000, multipleOf: 0.01, example: 25.5 }
+        type: { $ref: "#/components/schemas/TxType" }
+        category_id: { type: integer, minimum: 1 }
+        description: { type: [string, "null"], maxLength: 255, example: Almuerzo }
+        transaction_date:
+          type: [string, "null"]
+          description: ISO 8601 date-time, or a date (YYYY-MM-DD) stored as 00:00 UTC. Defaults to now. Must not be in the future (UTC).
+          example: "2026-09-16"
+
+    TransactionUpdate:
+      type: object
+      description: All fields optional. Omitted = unchanged. The resulting row is re-validated (category ownership, type match).
+      properties:
+        amount: { type: number, exclusiveMinimum: 0, maximum: 1000000000, multipleOf: 0.01 }
+        type: { $ref: "#/components/schemas/TxType" }
+        category_id: { type: integer, minimum: 1 }
+        description: { type: [string, "null"], maxLength: 255 }
+        transaction_date: { type: [string, "null"] }
+
+    TransactionOut:
+      type: object
+      required: [id, amount, type, source, description, transaction_date, category]
+      properties:
+        id: { type: integer }
+        amount: { type: number, example: 25.5 }
+        type: { $ref: "#/components/schemas/TxType" }
+        source: { type: string, enum: [manual, telegram, gmail], example: manual }
+        description: { type: [string, "null"] }
+        transaction_date: { type: string, format: date-time }
+        category: { $ref: "#/components/schemas/CategoryRef" }
+
+    TransactionPage:
+      type: object
+      required: [items, total, limit, offset]
+      properties:
+        items: { type: array, items: { $ref: "#/components/schemas/TransactionOut" } }
+        total: { type: integer, description: Count after filters }
+        limit: { type: integer }
+        offset: { type: integer }
+
+    CategoryTotal:
+      type: object
+      required: [category_id, name, type, budget, total]
+      properties:
+        category_id: { type: integer }
+        name: { type: string }
+        type: { $ref: "#/components/schemas/TxType" }
+        budget: { type: [number, "null"] }
+        total: { type: number }
+
+    SummaryOut:
+      type: object
+      required: [period_start, period_end, total_income, total_expense, balance, monthly_budget_limit, remaining_budget, by_category]
+      properties:
+        period_start: { type: string, format: date }
+        period_end: { type: string, format: date }
+        total_income: { type: number }
+        total_expense: { type: number }
+        balance: { type: number, description: total_income - total_expense }
+        monthly_budget_limit: { type: number }
+        remaining_budget: { type: [number, "null"], description: monthly_budget_limit - total_expense, null when the limit is 0 }
+        by_category:
+          type: array
+          description: One row per category with at least one transaction in the period, ordered by type then total descending
+          items: { $ref: "#/components/schemas/CategoryTotal" }

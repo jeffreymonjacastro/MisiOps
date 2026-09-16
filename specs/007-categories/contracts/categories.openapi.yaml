@@ -71,7 +71,7 @@ paths:
         "401": { $ref: "#/components/responses/Unauthenticated" }
         "404": { $ref: "#/components/responses/NotFound" }
         "409":
-          description: Name already used by one of the caller's categories
+          description: Name already used by one of the caller's categories of the same type, or a type change on a category that has transactions (008-transactions, FR-015)
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorDetail" }
@@ -85,7 +85,7 @@ paths:
         "401": { $ref: "#/components/responses/Unauthenticated" }
         "404": { $ref: "#/components/responses/NotFound" }
         "409":
-          description: Reserved for the transactions feature (category has transactions). Not emitted yet.
+          description: Category has transactions (guard added by 008-transactions, FR-015)
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorDetail" }

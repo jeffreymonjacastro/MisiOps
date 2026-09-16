@@ -8,6 +8,15 @@
 
 **Input**: User description: "Backend: transactions GET (list a user's transactions with pagination and query filters type, category), transactions/summary GET (total incomes, total expenses, dashboard), transactions/ POST (create), transactions/{transaction_id} PATCH (update), transactions/{transaction_id} DELETE. All require bearer token. Base path api/v1/. Stack: FastAPI, Python, Postgres."
 
+## Clarifications
+
+### Session 2026-09-16
+
+- Q: Amounts with more than 2 decimals: reject or round? → A: Reject with a validation error (422), the same rule as `monthly_budget_limit` and category `budget`. No rounding.
+- Q: What input format does `transaction_date` accept? → A: ISO 8601 date-time, or a date only (`YYYY-MM-DD`) stored as 00:00 UTC of that day. "Not in the future" is checked against the current UTC time.
+- Q: Does the summary breakdown cover expenses only, and does it carry the category budget? → A: Both types. Each row is `{category_id, name, type, budget, total}` for every category with at least one transaction in the period. Categories without movements are omitted.
+- Carried over from categories Clarification Q2: this feature owns the transaction-dependent category guards (no type change and no deletion for a category that has transactions).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Record a transaction (Priority: P1)
@@ -55,7 +64,7 @@ A logged-in user sees total income, total expenses and balance for the current b
 
 **Acceptance Scenarios**:
 
-1. **Given** incomes of 1000 and 500 and expenses of 300 in the current period, **When** the user requests the summary, **Then** they receive `total_income=1500`, `total_expense=300`, `balance=1200`, the period start and end dates, and a per-category breakdown of expenses.
+1. **Given** incomes of 1000 and 500 and expenses of 300 in the current period, **When** the user requests the summary, **Then** they receive `total_income=1500`, `total_expense=300`, `balance=1200`, the period start and end dates, and a per-category breakdown covering both income and expense categories, each with its budget.
 2. **Given** the user has `budget_start_day=15` and today is the 20th, **When** they request the summary, **Then** the period runs from the 15th of this month to the 14th of next month.
 3. **Given** the user has `monthly_budget_limit=2000`, **When** they request the summary, **Then** the response includes the limit and the remaining amount (`limit - total_expense`).
 4. **Given** the user passes explicit `from` and `to` dates, **When** they request the summary, **Then** totals are computed for that range instead of the current period.
@@ -96,10 +105,11 @@ A logged-in user removes a transaction that should not count.
 
 ### Edge Cases
 
-- Amounts are stored with 2 decimal places; a value with more decimals is rounded half-up before storage. Amounts above 1,000,000,000 are rejected.
+- Amounts are stored with 2 decimal places; a value with more decimals is rejected with a validation error, like every other money field in the API. Amounts above 1,000,000,000 are rejected.
 - `transaction_date` in the future (beyond today) is rejected.
 - Summary period boundaries when `budget_start_day` is 1: the period is the calendar month.
-- Summary with `from` after `to` is rejected as a validation error.
+- Summary with `from` after `to` is rejected as a validation error; supplying only one of `from`/`to` is also rejected.
+- An empty `description` (or whitespace only) is stored as null. An empty PATCH body `{}` is accepted and returns the unchanged transaction.
 - Listing with an unknown `type` value (anything other than `income`/`expense`) is rejected as a validation error.
 - A `category_id` filter for a category the user does not own returns an empty list with `total=0` (not an error).
 
@@ -107,20 +117,21 @@ A logged-in user removes a transaction that should not count.
 
 ### Functional Requirements
 
-- **FR-001**: System MUST let an authenticated user create a transaction with `amount` (> 0, 2 decimals), `type` (`income` | `expense`), `category_id` (owned by the user), optional `description` (≤ 255 characters) and optional `transaction_date` (defaults to now; must not be in the future).
+- **FR-001**: System MUST let an authenticated user create a transaction with `amount` (> 0, at most 2 decimals, more are rejected), `type` (`income` | `expense`), `category_id` (owned by the user), optional `description` (≤ 255 characters) and optional `transaction_date` (ISO 8601 date-time, or a date only stored as 00:00 UTC; defaults to now; must not be later than the current UTC time).
 - **FR-002**: The transaction's `type` MUST match the referenced category's type.
 - **FR-003**: Manually created transactions MUST have `source = manual`. Other sources (`telegram`, `gmail`) are reserved for future features and MUST NOT be settable through this API.
 - **FR-004**: System MUST list the caller's transactions with offset pagination (`limit` 1-100, default 20; `offset` ≥ 0, default 0), ordered by `transaction_date` then `id`, descending.
 - **FR-005**: The list MUST accept optional filters `type` and `category_id`, applied together with AND semantics.
 - **FR-006**: The list response MUST include `items`, `total` (count after filters), `limit` and `offset`.
 - **FR-007**: Each listed transaction MUST include its category's name and type so the frontend does not need a second request.
-- **FR-008**: System MUST provide a summary with `total_income`, `total_expense`, `balance` (= income - expense), `period_start`, `period_end`, `monthly_budget_limit`, `remaining_budget` (= limit - total_expense, or null when limit is 0), and `by_category` (category id, name, type, total) for the period.
+- **FR-008**: System MUST provide a summary with `total_income`, `total_expense`, `balance` (= income - expense), `period_start`, `period_end`, `monthly_budget_limit`, `remaining_budget` (= limit - total_expense, or null when limit is 0), and `by_category`: one row `{category_id, name, type, budget, total}` per category (income and expense) with at least one transaction in the period, ordered by type then total descending. Categories without movements are omitted.
 - **FR-009**: The default summary period MUST be the current budget period derived from the user's `budget_start_day`: from that day of the current month (or previous month if today is before it) to the day before the next occurrence.
 - **FR-010**: The summary MUST accept optional `from` and `to` dates (inclusive) that override the default period.
 - **FR-011**: System MUST let the owner partially update `amount`, `type`, `category_id`, `description` and `transaction_date`, re-validating FR-001 and FR-002 on the resulting row.
 - **FR-012**: System MUST let the owner delete a transaction.
 - **FR-013**: Any access to a transaction not owned by the caller MUST return "not found", identical to a non-existent id.
 - **FR-014**: All endpoints MUST live under `api/v1/transactions` and require a bearer token. Identity comes only from the token; any `user_id` in query or body is ignored.
+- **FR-015**: Category integrity (owned here per categories Clarification Q2): `PATCH /category/{id}` MUST reject a `type` change with 409 when the category has one or more transactions, and `DELETE /category/{id}` MUST reject with 409 when the category has transactions, stating the count (`Category has N transactions`).
 
 ### Non-Functional Requirements
 
@@ -151,7 +162,7 @@ A logged-in user removes a transaction that should not count.
 - The dashboard's "last 5 transactions" uses the list endpoint with `limit=5`.
 - The summary's default period follows the user's `budget_start_day` from the user-auth feature. If that field is 1, the period is the calendar month.
 - Dates are handled in UTC; the frontend converts for display.
-- Depends on user-auth (bearer token, `budget_start_day`, `monthly_budget_limit`) and categories (`category_id`, category type).
+- Depends on user-auth (bearer token, `budget_start_day`, `monthly_budget_limit`) and categories (`category_id`, category type). This feature adds the foreign key from transactions to categories and, with it, the two category guards the categories feature deferred.
 
 ## Out of Scope
 
