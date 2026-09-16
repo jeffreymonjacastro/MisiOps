@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
 from core.security import DUMMY_HASH, create_access_token, hash_password, verify_password
+from models.category import default_categories
 from models.user import User
 from schemas.user import Token, UserCreate, UserLogin, UserOut
 
@@ -25,8 +26,10 @@ async def register(body: UserCreate, db: AsyncSession = Depends(get_db)) -> User
         hashed_password=hash_password(body.password),
         telegram_chat_id=body.telegram_chat_id,
     )
-    db.add(user)
     try:
+        db.add(user)
+        await db.flush()  # duplicate email/telegram id raises here
+        db.add_all(default_categories(user.id))
         await db.commit()
     except IntegrityError as exc:
         await db.rollback()

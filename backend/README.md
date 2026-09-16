@@ -37,6 +37,16 @@ uv run uvicorn main:app --reload
 - Swagger UI: `http://localhost:8000/docs`
 - Health check: `GET /` → `{"status": "ok"}`
 
+### Endpoints
+
+| Area | Endpoints | Spec |
+|---|---|---|
+| Auth | `POST /auth/register`, `POST /auth/login` | `specs/006-user-auth` |
+| Profile | `GET`, `PATCH`, `DELETE /user/` | `specs/006-user-auth` |
+| Categories | `GET`, `POST /category/`, `PATCH`, `DELETE /category/{id}` | `specs/007-categories` |
+
+Every new account is seeded with nine default categories in Spanish (Comida, Transporte, Vivienda, Salud, Entretenimiento, Compras, Otros; Sueldo, Otros). They are ordinary rows the user can rename or delete. Category names are unique per user and type, case-insensitive.
+
 ## Test
 
 ```bash
