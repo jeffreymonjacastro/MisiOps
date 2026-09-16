@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 import models.category  # noqa: F401
+import models.transaction  # noqa: F401
 import models.user  # noqa: F401  (register models before create_all)
 from api.v1.router import api_router
 from core.config import settings

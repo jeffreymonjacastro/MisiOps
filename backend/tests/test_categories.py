@@ -144,8 +144,7 @@ async def test_patch_rename_duplicate(client, auth_headers):
     assert r.json() == NAME_TAKEN
 
 
-async def test_patch_type_change_allowed(client, auth_headers):
-    # interim behaviour: the transactions feature adds the "has transactions" guard
+async def test_patch_type_change_allowed_without_transactions(client, auth_headers):
     h = await auth_headers()
     cid = await _created_id(client, h)
     r = await client.patch(f"{CAT}{cid}", headers=h, json={"type": "income"})
@@ -222,3 +221,41 @@ async def test_user_delete_cascades_categories(client, auth_headers, db_session)
     assert (await client.delete("/api/v1/user/", headers=h)).status_code == 204
     count = (await db_session.execute(select(func.count()).select_from(Category))).scalar_one()
     assert count == 0
+
+
+# --- FR-015 (transactions feature): guards ----------------------------------
+
+TX = "/api/v1/transactions"
+
+
+async def _add_tx(client, h, category_id, amount=10):
+    r = await client.post(
+        TX, headers=h, json={"amount": amount, "type": "expense", "category_id": category_id}
+    )
+    assert r.status_code == 201
+    return r.json()["id"]
+
+
+async def test_patch_type_change_blocked_with_transactions(client, auth_headers):
+    h = await auth_headers()
+    cid = await _created_id(client, h)
+    await _add_tx(client, h, cid)
+    r = await client.patch(f"{CAT}{cid}", headers=h, json={"type": "income"})
+    assert r.status_code == 409
+    assert r.json() == {"detail": "Category has 1 transactions"}
+    assert (
+        await client.patch(f"{CAT}{cid}", headers=h, json={"name": "Deporte"})
+    ).status_code == 200
+
+
+async def test_delete_blocked_with_transactions(client, auth_headers):
+    h = await auth_headers()
+    cid = await _created_id(client, h)
+    t1 = await _add_tx(client, h, cid)
+    t2 = await _add_tx(client, h, cid)
+    r = await client.delete(f"{CAT}{cid}", headers=h)
+    assert r.status_code == 409
+    assert r.json() == {"detail": "Category has 2 transactions"}
+    for t in (t1, t2):
+        assert (await client.delete(f"{TX}/{t}", headers=h)).status_code == 204
+    assert (await client.delete(f"{CAT}{cid}", headers=h)).status_code == 204

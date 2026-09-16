@@ -44,6 +44,9 @@ uv run uvicorn main:app --reload
 | Auth | `POST /auth/register`, `POST /auth/login` | `specs/006-user-auth` |
 | Profile | `GET`, `PATCH`, `DELETE /user/` | `specs/006-user-auth` |
 | Categories | `GET`, `POST /category/`, `PATCH`, `DELETE /category/{id}` | `specs/007-categories` |
+| Transactions | `GET`, `POST /transactions`, `GET /transactions/summary`, `PATCH`, `DELETE /transactions/{id}` | `specs/008-transactions` |
+
+Transactions are listed newest first with `limit`/`offset` pagination and optional `type` and `category_id` filters. The summary covers the current budget period (from the user's `budget_start_day` to the day before the next one) unless `from`/`to` dates are given, and returns income, expense, balance, remaining budget and a per-category breakdown. A transaction's type must match its category's type. A category that has transactions cannot change type or be deleted (409).
 
 Every new account is seeded with nine default categories in Spanish (Comida, Transporte, Vivienda, Salud, Entretenimiento, Compras, Otros; Sueldo, Otros). They are ordinary rows the user can rename or delete. Category names are unique per user and type, case-insensitive.
 
