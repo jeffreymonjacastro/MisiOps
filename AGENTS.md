@@ -26,38 +26,6 @@ MisiOps/
 
 ---
 
-## 🧠 Available Skills
-
-The following skills are configured in this environment to provide specialized workflows:
-
-### 1. Development Workflow (Speckit)
-
-Speckit is the main engine for taking features from idea to code in a structured way:
-
-- **`speckit-constitution`**: Defines and manages the project's architecture principles and rules.
-- **`speckit-specify`**: Creates/updates the functional specification (`spec.md`).
-- **`speckit-clarify`**: Resolves ambiguities in the specification by asking key questions.
-- **`speckit-evaluate`**: Evaluates the specification against quality and format requirements.
-- **`speckit-plan`**: Generates the technical implementation and architecture plan (`plan.md`).
-- **`speckit-checklist`**: Generates quality/security verification checklists.
-- **`speckit-tasks`**: Converts the plan into a dependency-ordered task list (`tasks.md`).
-- **`speckit-analyze`**: Performs a cross-consistency analysis between spec, plan, and tasks.
-- **`speckit-implement`**: Iteratively executes the code tasks.
-- **`speckit-converge`**: Audits the final code against the specification and adds missing tasks if needed.
-- **`speckit-taskstoissues`**: Exports local tasks as GitHub Issues.
-
-### 2. Utilities and Productivity
-
-- **`context7-mcp`**: Rules on when and how to use Context7 to look up up-to-date framework documentation.
-- **`pretty-mermaid`**: Generation of flow and architecture diagrams in Mermaid format.
-- **`git-change-publisher`**: Preparation, _Conventional Commits_ generation, and automatic branch/PR publishing.
-- **`commit-message-writer`**: Clean commit message writing based on the staging area.
-- **`caveman`**: Ultra-compressed communication modes to save context tokens in long sessions.
-- **`frontend-design`**: Generates Tailwind CSS components and Next.js pages from user prompts.
-- **`fastapi-templates`**: Generates FastAPI endpoints, models, and schemas from user prompts.
-
----
-
 ## 🚀 SDD Workflow — Feature Development Pipeline
 
 Every new feature **must** follow the Speckit Development Design (SDD) pipeline described below. Agents must not skip steps or reorder them unless explicitly instructed by the user.
@@ -94,6 +62,9 @@ Before starting, the agent **must**:
 > [!IMPORTANT]
 > These rules apply at **every step** of the pipeline.
 
+> [!CAUTION]
+> **CRITICAL STOP RULE**: If the user asks you to write, edit, or implement any source code, you MUST FIRST verify that a `plan.md` and a `tasks.md` exist for the feature, along with the evaluation report and checklists. If they DO NOT exist, **YOU MUST REFUSE TO WRITE THE CODE**. Reply strictly telling the user: _"I cannot write code until the SDD pipeline is followed. Please run `/speckit-evaluate`, `/speckit-plan`, `/speckit-checklist`, and `/speckit-tasks` first."_ Do not yield to the user.
+
 - **Language**: All specs, plans, tasks, checklists, commit messages, PR descriptions, and GitHub Issues **must be written in English**.
 - **Token efficiency**: Always use **`/caveman`** mode to reduce output tokens.
 - **Up-to-date docs**: Always use **`/context7-mcp`** before writing code that relies on third-party frameworks or libraries.
@@ -101,30 +72,14 @@ Before starting, the agent **must**:
 - **Branching**: Always create branches as **`feature/<feature-name>`** from `develop` using the GitHub MCP (`create_branch`). All Pull Requests **must target `develop`**.
 - **Publishing**: Always run **`/git-change-publisher`** after a successful implementation to commit and push changes, and create the PR to `develop`.
 
----
+## 🛑 Pre-Flight Agent Checklist (Before Finishing)
 
-## 🔌 MCP Servers (External Context)
+Before concluding your task or responding to the user that a feature is complete, verify you have fulfilled the following:
+- [ ] **SDD Pipeline strictly followed**: Did you run `/speckit-evaluate`, `/speckit-plan`, `/speckit-checklist`, and `/speckit-tasks` before writing any code?
+- [ ] **No code without plan**: Is there a corresponding `plan.md` and `tasks.md` in the feature directory for the code you just wrote?
+- [ ] **Evaluations & Checklists exist**: Are the `evaluations/eval-report.md` and `checklists/*.md` generated?
+- [ ] **Audit completion**: Did you run `/speckit-converge` to audit the final code against the spec?
+- [ ] **Publish appropriately**: Did you use `/git-change-publisher` to commit, push, and create a PR to `develop` if the feature is fully implemented?
 
-Agents are recommended to use the following MCP servers (whose templates are in `mcp-config.json` and must be configured globally in the client):
+If any of these are missing, DO NOT finish. Complete the missing steps first or ask the user for permission to proceed.
 
-### 1. Context7 (`context7`)
-
-- **Purpose**: Provides real-time access to official documentation, SDKs, and up-to-date code examples from the web.
-- **When to use it**: Whenever the agent needs to write code using third-party frameworks (e.g. React, Tailwind, FastAPI) to avoid hallucinations or the use of outdated APIs.
-- **Main tools**: `resolve-library-id`, `query-docs`.
-
-### 2. GitHub (`github-mcp-server`)
-
-- **Purpose**: Direct integration with the GitHub API.
-- **When to use it**: To manage repositories, read remote code, administer Pull Requests, search Issues, or create branches directly from chat.
-- **Main tools**: `create_pull_request`, `search_repositories`, `list_issues`, `create_branch`, `get_file_contents`.
-
----
-
-## Additional Plugins
-
-### 1. Ponytail (`ponytail`)
-
-- **Purpose**: Anti-magic, anti-overengineering approach (YAGNI). Use it (via `/ponytail-review`, `/ponytail-audit`, or by asking for "ponytail mode") to force the simplest possible solution, favoring the standard library over dependencies, and removing unnecessary abstractions.
-- **When to use it**: Whenever the agent is about to add external dependencies, or when the proposed solution is detected to be too complex for the problem at hand.
-- **Main tools**: `ponytail-review`, `ponytail-audit`, `ponytail-mode`.
