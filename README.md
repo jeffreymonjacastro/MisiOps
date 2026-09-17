@@ -95,3 +95,29 @@ Dado que Ponytail es un plugin global, cada miembro del equipo debe instalarlo e
 ### 5. Skills Locales del Repositorio
 
 Además de estas herramientas globales, el repositorio incluye un conjunto de **Skills Locales** (como _Speckit_, _Caveman_ y utilidades de Git) que se cargan automáticamente al abrir el proyecto.
+
+#### 1. Development Workflow (Speckit)
+
+Speckit is the main engine for taking features from idea to code in a structured way:
+
+- **`speckit-constitution`**: Defines and manages the project's architecture principles and rules.
+- **`speckit-specify`**: Creates/updates the functional specification (`spec.md`).
+- **`speckit-clarify`**: Resolves ambiguities in the specification by asking key questions.
+- **`speckit-evaluate`**: Evaluates the specification against quality and format requirements.
+- **`speckit-plan`**: Generates the technical implementation and architecture plan (`plan.md`).
+- **`speckit-checklist`**: Generates quality/security verification checklists.
+- **`speckit-tasks`**: Converts the plan into a dependency-ordered task list (`tasks.md`).
+- **`speckit-analyze`**: Performs a cross-consistency analysis between spec, plan, and tasks.
+- **`speckit-implement`**: Iteratively executes the code tasks.
+- **`speckit-converge`**: Audits the final code against the specification and adds missing tasks if needed.
+- **`speckit-taskstoissues`**: Exports local tasks as GitHub Issues.
+
+#### 2. Utilities and Productivity
+
+- **`context7-mcp`**: Rules on when and how to use Context7 to look up up-to-date framework documentation.
+- **`pretty-mermaid`**: Generation of flow and architecture diagrams in Mermaid format.
+- **`git-change-publisher`**: Preparation, _Conventional Commits_ generation, and automatic branch/PR publishing.
+- **`commit-message-writer`**: Clean commit message writing based on the staging area.
+- **`caveman`**: Ultra-compressed communication modes to save context tokens in long sessions.
+- **`frontend-design`**: Generates Tailwind CSS components and Next.js pages from user prompts.
+- **`fastapi-templates`**: Generates FastAPI endpoints, models, and schemas from user prompts.
