@@ -2,9 +2,6 @@ name: SDD Pipeline Enforcer
 
 on:
   pull_request:
-    branches:
-      - develop
-      - main
     types: [opened, synchronize, reopened]
 
 jobs:
