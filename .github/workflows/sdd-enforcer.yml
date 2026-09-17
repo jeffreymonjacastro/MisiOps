@@ -1,0 +1,53 @@
+name: SDD Pipeline Enforcer
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  enforce-sdd:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify SDD Artifacts
+        run: |
+          BRANCH_NAME="${{ github.head_ref }}"
+          
+          # Only enforce on feature branches
+          if [[ ! "$BRANCH_NAME" == feature/* ]]; then
+            echo "Not a feature branch, skipping SDD enforcement."
+            exit 0
+          fi
+          
+          echo "Checking SDD artifacts for feature branch: $BRANCH_NAME"
+          
+          # Check if the PR modifies frontend/ or backend/ code
+          CODE_CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...origin/${{ github.head_ref }} | grep -E "^(frontend/|backend/)" || true)
+          
+          if [[ -z "$CODE_CHANGED" ]]; then
+            echo "No implementation code changed in frontend/ or backend/. Passing."
+            exit 0
+          fi
+          
+          echo "Implementation code detected. Enforcing SDD artifacts..."
+          
+          # Check if plan.md, tasks.md, checklists, and evaluations exist in the PR diff
+          DOCS_CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...origin/${{ github.head_ref }} | grep -E "^specs/.*(plan\.md|tasks\.md|checklists/.*\.md|evaluations/.*\.md)" || true)
+          
+          HAS_PLAN=$(echo "$DOCS_CHANGED" | grep "plan.md" || true)
+          HAS_TASKS=$(echo "$DOCS_CHANGED" | grep "tasks.md" || true)
+          HAS_EVAL=$(echo "$DOCS_CHANGED" | grep "evaluations/" || true)
+          HAS_CHECKLIST=$(echo "$DOCS_CHANGED" | grep "checklists/" || true)
+          
+          if [[ -z "$HAS_PLAN" || -z "$HAS_TASKS" || -z "$HAS_EVAL" || -z "$HAS_CHECKLIST" ]]; then
+            echo "❌ ERROR: Found code implementation but missing required SDD artifacts in the PR."
+            echo "You must run /speckit-evaluate, /speckit-plan, /speckit-checklist, and /speckit-tasks before implementing code!"
+            exit 1
+          else
+            echo "✅ SDD artifacts detected. Validation passed."
+            exit 0
+          fi
