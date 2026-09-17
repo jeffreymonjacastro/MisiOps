@@ -6,10 +6,35 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "asyncpg>=0.31.0",
+    "email-validator>=2.3.0",
     "fastapi>=0.141.1",
     "psycopg2-binary>=2.9.13",
+    "pwdlib[argon2]>=0.3.1",
     "pydantic>=2.13.5",
     "pydantic-settings>=2.15.0",
-    "sqlalchemy>=2.0.52",
+    "pyjwt>=2.14.0",
+    "sqlalchemy[asyncio]>=2.0.52",
     "uvicorn>=0.52.4",
 ]
+
+[dependency-groups]
+dev = [
+    "aiosqlite>=0.22.1",
+    "anyio>=4.15.1",
+    "httpx>=0.28.1",
+    "pytest>=9.1.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["B008"]  # Depends() in defaults is the FastAPI idiom
+
+[tool.ruff.lint.per-file-ignores]
+"tests/conftest.py" = ["E402"]  # SECRET_KEY must be set before the app is imported

@@ -1,0 +1,213 @@
+openapi: 3.1.0
+info:
+  title: MisiOps API - User Authentication & Profile
+  version: 1.0.0
+  description: >
+    Contract for feature 006-user-auth. Base path /api/v1. All bodies are JSON.
+    Errors use FastAPI's default shape (FR-015).
+servers:
+  - url: http://localhost:8000/api/v1
+
+paths:
+  /auth/register:
+    post:
+      summary: Register a new account
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserCreate"
+      responses:
+        "201":
+          description: Account created. No token is returned (Clarification Q2).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserOut"
+        "409":
+          description: Email or telegram_chat_id already in use
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorDetail"
+              examples:
+                email:
+                  value: { detail: "Email already registered" }
+                telegram:
+                  value: { detail: "Telegram chat id already linked to another account" }
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /auth/login:
+    post:
+      summary: Log in and obtain a bearer token
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserLogin"
+      responses:
+        "200":
+          description: Token issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Token"
+        "401":
+          description: Invalid credentials (same message whether or not the email exists, FR-006)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorDetail"
+              example: { detail: "Invalid credentials" }
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /user/:
+    get:
+      summary: Get own profile
+      operationId: getMe
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Profile of the authenticated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserOut"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+    patch:
+      summary: Partially update own profile
+      operationId: updateMe
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserOut"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "409":
+          description: telegram_chat_id already linked to another account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorDetail"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+    delete:
+      summary: Delete own account and all owned data
+      operationId: deleteMe
+      security: [{ bearerAuth: [] }]
+      responses:
+        "204":
+          description: Account deleted. The token is no longer valid.
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    Unauthenticated:
+      description: Missing, malformed, expired or revoked-by-deletion token
+      headers:
+        WWW-Authenticate:
+          schema: { type: string, example: Bearer }
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorDetail"
+          example: { detail: "Not authenticated" }
+    ValidationError:
+      description: Request body failed validation
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    loc: { type: array, items: { type: [string, integer] } }
+                    msg: { type: string }
+                    type: { type: string }
+          example:
+            detail:
+              - loc: [body, password]
+                msg: String should have at least 8 characters
+                type: string_too_short
+
+  schemas:
+    ErrorDetail:
+      type: object
+      required: [detail]
+      properties:
+        detail: { type: string }
+
+    UserCreate:
+      type: object
+      required: [name, email, password]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 100, example: Ana Pérez }
+        email: { type: string, format: email, example: ana@example.com }
+        password: { type: string, format: password, minLength: 8, maxLength: 128 }
+        telegram_chat_id:
+          type: [string, "null"]
+          maxLength: 64
+          example: "123456789"
+          description: Optional. An empty string is normalised to null, same as on update.
+
+    UserLogin:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password, minLength: 1 }
+
+    UserUpdate:
+      type: object
+      description: All fields optional. Omitted fields are unchanged. telegram_chat_id null unlinks; empty string is treated as null. An empty object is accepted and returns the unchanged profile. Unknown fields (email, id, password) are ignored.
+      properties:
+        name: { type: string, minLength: 1, maxLength: 100 }
+        telegram_chat_id: { type: [string, "null"], minLength: 1, maxLength: 64 }
+        monthly_budget_limit: { type: number, minimum: 0, multipleOf: 0.01, example: 2000 }
+        budget_start_day: { type: integer, minimum: 1, maximum: 28 }
+
+    UserOut:
+      type: object
+      required: [id, name, email, telegram_chat_id, monthly_budget_limit, budget_start_day, created_at]
+      properties:
+        id: { type: integer, example: 1 }
+        name: { type: string }
+        email: { type: string, format: email }
+        telegram_chat_id: { type: [string, "null"] }
+        monthly_budget_limit: { type: number, example: 0 }
+        budget_start_day: { type: integer, example: 1 }
+        created_at: { type: string, format: date-time }
+
+    Token:
+      type: object
+      required: [access_token, token_type]
+      properties:
+        access_token: { type: string }
+        token_type: { type: string, enum: [bearer] }
