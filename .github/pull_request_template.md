@@ -1,33 +1,33 @@
-## 📝 Resumen
-Describe brevemente el propósito y el contenido de este PR. ¿Qué problema resuelve o qué feature nueva introduce?
+## 📝 Summary
+Briefly describe the purpose and content of this PR. What problem does it solve or what new feature does it introduce?
 
-## 🔗 Issues Relacionados
-- Cierra el issue: #
+## 🔗 Related Issues
+- Closes issue: #
 
-## ⚙️ Tipo de Cambio
-- [ ] ✨ Nueva Feature
-- [ ] 🐛 Corrección de Bug
-- [ ] ♻️ Refactorización (Sin cambios funcionales)
-- [ ] 📝 Actualización de Documentación
-- [ ] 🎨 Ajustes de Interfaz/Diseño
+## ⚙️ Type of Change
+- [ ] ✨ New Feature
+- [ ] 🐛 Bug Fix
+- [ ] ♻️ Refactor (No functional changes)
+- [ ] 📝 Documentation Update
+- [ ] 🎨 UI/Design Tweaks
 
-## 🛑 Cumplimiento del SDD Pipeline
-*(Requerido para toda `feature/*`. El GitHub Action fallará si la carpeta `specs/` de tu feature no contiene estos artefactos).*
+## 🛑 SDD Pipeline Compliance
+*(Required for all `feature/*`. The GitHub Action will fail if the `specs/` folder for your feature does not contain these artifacts).*
 
-- [ ] **Paso 3 (Especificación)**: `spec.md` creado/actualizado.
-- [ ] **Paso 5 (Evaluación)**: Reporte de calidad aprobado (`evaluations/eval-report.md`).
-- [ ] **Paso 6 (Arquitectura)**: Plan técnico definido (`plan.md`).
-- [ ] **Paso 7 (Checklists)**: Checklists de calidad/seguridad documentados (`checklists/*.md`).
-- [ ] **Paso 8 (Desglose)**: Tareas documentadas (`tasks.md`).
-- [ ] **Paso 12 (Auditoría)**: Convergencia de código completada (`/speckit-converge`).
+- [ ] **Step 3 (Specification)**: `spec.md` created/updated.
+- [ ] **Step 5 (Evaluation)**: Quality report approved (`evaluations/eval-report.md`).
+- [ ] **Step 6 (Architecture)**: Technical plan defined (`plan.md`).
+- [ ] **Step 7 (Checklists)**: Quality/security checklists documented (`checklists/*.md`).
+- [ ] **Step 8 (Breakdown)**: Tasks documented (`tasks.md`).
+- [ ] **Step 12 (Audit)**: Code convergence completed (`/speckit-converge`).
 
-## 🧪 Pruebas Realizadas
-- [ ] El proyecto compila y se ejecuta localmente sin errores.
-- [ ] Se revisaron los logs y no hay advertencias críticas nuevas.
-- [ ] Describe aquí alguna prueba manual específica que hayas realizado: ...
+## 🧪 Tests Performed
+- [ ] The project builds and runs locally without errors.
+- [ ] Logs were reviewed and there are no new critical warnings.
+- [ ] Describe any specific manual testing you have done here: ...
 
-## 📸 Screenshots / Demos (Si aplica)
-*(Si tocaste UI, añade aquí capturas de pantalla de cómo se ve "Antes" y "Después")*
+## 📸 Screenshots / Demos (If applicable)
+*(If you touched UI, add "Before" and "After" screenshots here)*
 
-## 💡 Notas para el Reviewer
-*(Cualquier contexto adicional, variables de entorno nuevas que deba configurar, migraciones de base de datos a correr, etc.)*
+## 💡 Notes for Reviewer
+*(Any additional context, new environment variables to configure, database migrations to run, etc.)*
