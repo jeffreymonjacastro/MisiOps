@@ -220,3 +220,7 @@ __marimo__/
 # The Python "lib/" rule above also matches the Next.js app/lib convention,
 # which is source code and must be tracked.
 !frontend/app/lib/
+
+# Docker secrets
+docker/.env.dev
+docker/pg_password.txt
