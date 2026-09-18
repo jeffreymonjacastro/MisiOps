@@ -22,10 +22,10 @@ services:
     env_file:
       - .env.dev
     environment:
-      - DB_HOST=postgres
-      - DB_DATABASE=mydb
-      - DB_USER=myuser
-      # Use DB_PASSWORD from .env.dev
+      - POSTGRES_SERVER=postgres
+      - POSTGRES_DB=mydb
+      - POSTGRES_USER=myuser
+      # Use POSTGRES_PASSWORD from .env.dev
     networks:
       - public
       - private

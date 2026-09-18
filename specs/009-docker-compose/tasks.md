@@ -8,3 +8,4 @@
 - [x] 6. **Verification**: Confirm `docker compose up --build -d` runs successfully from the `docker/` folder.
 - [x] 7. **Fix Project Name**: Add `name: misiops` to `docker-compose.yaml`.
 - [x] 8. **Fix Backend Command**: Use `uvicorn main:app` instead of `fastapi run` in backend `Dockerfile`.
+- [x] 9. **Fix DB Env Vars**: Update compose and `.env.dev` to use `POSTGRES_SERVER`, `POSTGRES_DB`, etc. instead of `DB_*` to match MisiOps config.
