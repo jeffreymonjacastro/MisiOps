@@ -2,56 +2,93 @@
 
 import { useState } from "react";
 
-import { setBudget } from "../lib/budgets";
+import { AuthGuard } from "../components/auth-guard";
+import { ErrorState, FormError, Loading } from "../components/async-state";
+import { isApiError } from "../lib/api";
+import { useToken } from "../lib/auth";
+import { formatMoney } from "../lib/money";
 import {
-  addCategory,
-  byType,
-  countUses,
+  createCategory,
   deleteCategory,
-  isFallback,
-  renameCategory,
-} from "../lib/categories";
-import { useLedger } from "../lib/ledger-store";
+  listCategories,
+  updateCategory,
+} from "../lib/resources";
+import { useAsync } from "../lib/use-async";
 import type { Category, TxType } from "../lib/types";
 
 const TYPE_LABEL: Record<TxType, string> = { expense: "Gastos", income: "Ingresos" };
 
 export default function CategoriesPage() {
-  const { ledger } = useLedger();
+  return (
+    <AuthGuard>
+      <CategoriesScreen />
+    </AuthGuard>
+  );
+}
+
+function CategoriesScreen() {
+  const token = useToken();
+  const { data, error, loading, reload } = useAsync(
+    async () => (token ? listCategories(token) : []),
+    [token],
+  );
 
   return (
     <div className="space-y-8">
       <header className="space-y-2">
         <h1 className="text-2xl font-semibold tracking-tight">Categorías</h1>
         <p className="max-w-prose text-sm text-muted">
-          Con estas clasificas cada movimiento. Ya tienes algunas listas para usar; agrega las que
-          te falten.
+          Con estas clasificas cada movimiento. Se guardan en tu cuenta, así que las ves desde
+          cualquier dispositivo.
         </p>
       </header>
 
-      <div className="grid gap-8 md:grid-cols-2">
-        {(["expense", "income"] as const).map((type) => (
-          <CategoryColumn key={type} type={type} categories={byType(ledger.categories, type)} />
-        ))}
-      </div>
+      {loading ? <Loading label="Cargando tus categorías…" /> : null}
+      {error ? <ErrorState error={error} onRetry={reload} /> : null}
+
+      {data ? (
+        <div className="grid gap-8 md:grid-cols-2">
+          {(["expense", "income"] as const).map((type) => (
+            <CategoryColumn
+              key={type}
+              type={type}
+              categories={data.filter((category) => category.type === type)}
+              onChanged={reload}
+            />
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
 
-function CategoryColumn({ type, categories }: { type: TxType; categories: Category[] }) {
-  const { ledger, commit } = useLedger();
+function CategoryColumn({
+  type,
+  categories,
+  onChanged,
+}: {
+  type: TxType;
+  categories: Category[];
+  onChanged: () => void;
+}) {
+  const token = useToken();
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  function create(event: React.FormEvent) {
+  async function create(event: React.FormEvent) {
     event.preventDefault();
+    if (!token) return;
+    setBusy(true);
     try {
-      commit(addCategory(ledger, draft, type));
+      await createCategory(token, { name: draft.trim(), type });
       setDraft("");
       setError(null);
+      onChanged();
     } catch (problem) {
-      setError((problem as Error).message);
+      setError(isApiError(problem) ? (problem.fieldErrors.name ?? problem.message) : "No se pudo crear.");
     }
+    setBusy(false);
   }
 
   return (
@@ -67,9 +104,13 @@ function CategoryColumn({ type, categories }: { type: TxType; categories: Catego
       </h2>
 
       <ul className="divide-y divide-line border-y border-line">
-        {categories.map((category) => (
-          <CategoryRow key={category.id} category={category} />
-        ))}
+        {categories.length === 0 ? (
+          <li className="py-3 text-sm text-muted">Todavía no tienes categorías de este tipo.</li>
+        ) : (
+          categories.map((category) => (
+            <CategoryRow key={category.id} category={category} onChanged={onChanged} />
+          ))
+        )}
       </ul>
 
       <form onSubmit={create} className="space-y-2">
@@ -87,38 +128,49 @@ function CategoryColumn({ type, categories }: { type: TxType; categories: Catego
           />
           <button
             type="submit"
-            className="rounded-[var(--radius-panel)] border border-amber px-3 py-2 text-sm font-medium text-amber hover:bg-amber hover:text-ink"
+            disabled={busy}
+            className="rounded-[var(--radius-panel)] border border-amber px-3 py-2 text-sm font-medium text-amber hover:bg-amber hover:text-ink disabled:opacity-60"
           >
             Agregar
           </button>
         </div>
-        {error ? (
-          <p role="alert" className="text-sm text-expense">
-            {error}
-          </p>
-        ) : null}
+        <FormError message={error} />
       </form>
     </section>
   );
 }
 
-function CategoryRow({ category }: { category: Category }) {
-  const { ledger, commit } = useLedger();
+function CategoryRow({ category, onChanged }: { category: Category; onChanged: () => void }) {
+  const token = useToken();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(category.name);
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
-  const uses = countUses(ledger, category.id);
-  const locked = isFallback(category.id);
 
-  function save(event: React.FormEvent) {
+  async function save(event: React.FormEvent) {
     event.preventDefault();
+    if (!token) return;
     try {
-      commit(renameCategory(ledger, category.id, name));
+      await updateCategory(token, category.id, { name: name.trim() });
       setEditing(false);
       setError(null);
+      onChanged();
     } catch (problem) {
-      setError((problem as Error).message);
+      setError(isApiError(problem) ? (problem.fieldErrors.name ?? problem.message) : "No se pudo guardar.");
+    }
+  }
+
+  async function remove() {
+    if (!token) return;
+    try {
+      await deleteCategory(token, category.id);
+      setConfirming(false);
+      setError(null);
+      onChanged();
+    } catch (problem) {
+      // A 409 names how many transactions block the delete; show it verbatim.
+      setError(isApiError(problem) ? problem.message : "No se pudo eliminar.");
+      setConfirming(false);
     }
   }
 
@@ -149,11 +201,7 @@ function CategoryRow({ category }: { category: Category }) {
               Cancelar
             </button>
           </div>
-          {error ? (
-            <p role="alert" className="text-sm text-expense">
-              {error}
-            </p>
-          ) : null}
+          <FormError message={error} />
         </form>
       </li>
     );
@@ -162,15 +210,11 @@ function CategoryRow({ category }: { category: Category }) {
   if (confirming) {
     return (
       <li className="space-y-2 py-2">
-        <p className="text-sm">
-          {uses === 0
-            ? `¿Eliminar «${category.name}»?`
-            : `«${category.name}» tiene ${uses} ${uses === 1 ? "movimiento" : "movimientos"}. Si la eliminas, esos movimientos pasan a «Sin categoría».`}
-        </p>
+        <p className="text-sm">¿Eliminar «{category.name}»?</p>
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={() => commit(deleteCategory(ledger, category.id))}
+            onClick={remove}
             className="rounded-[var(--radius-panel)] border border-expense px-3 py-1.5 text-sm font-medium text-expense hover:bg-expense hover:text-ink"
           >
             Eliminar
@@ -188,74 +232,32 @@ function CategoryRow({ category }: { category: Category }) {
   }
 
   return (
-    <li className="group flex items-center justify-between gap-3 py-2.5">
-      <span className="min-w-0 truncate text-sm">
-        {category.name}
-        {locked ? <span className="ml-2 text-xs text-muted">fija</span> : null}
-      </span>
-      <span className="flex shrink-0 items-center gap-3">
-        {category.type === "expense" ? <BudgetField category={category} /> : null}
-        {locked ? null : (
-          <span className="flex gap-3 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
-            <button
-              type="button"
-              onClick={() => setEditing(true)}
-              className="text-sm text-muted hover:text-text"
-            >
-              Renombrar
-            </button>
-            <button
-              type="button"
-              onClick={() => setConfirming(true)}
-              className="text-sm text-muted hover:text-expense"
-            >
-              Eliminar
-            </button>
-          </span>
-        )}
-      </span>
+    <li className="group space-y-1 py-2.5">
+      <div className="flex items-center justify-between gap-3">
+        <span className="min-w-0 truncate text-sm">
+          {category.name}
+          {category.budget !== null ? (
+            <span className="ml-2 text-xs text-muted">tope {formatMoney(category.budget)}</span>
+          ) : null}
+        </span>
+        <span className="flex shrink-0 gap-3 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="text-sm text-muted hover:text-text"
+          >
+            Renombrar
+          </button>
+          <button
+            type="button"
+            onClick={() => setConfirming(true)}
+            className="text-sm text-muted hover:text-expense"
+          >
+            Eliminar
+          </button>
+        </span>
+      </div>
+      <FormError message={error} />
     </li>
-  );
-}
-
-/** Blank clears the limit, so there is no separate "remove" control. */
-function BudgetField({ category }: { category: Category }) {
-  const { ledger, commit } = useLedger();
-  const [value, setValue] = useState(category.budget === null ? "" : String(category.budget));
-  const [error, setError] = useState<string | null>(null);
-
-  function save() {
-    if (value.trim() === "" && category.budget === null) return;
-    try {
-      commit(setBudget(ledger, category.id, value.trim() === "" ? null : value));
-      setError(null);
-    } catch (problem) {
-      setError((problem as Error).message);
-      setValue(category.budget === null ? "" : String(category.budget));
-    }
-  }
-
-  return (
-    <span className="flex items-center gap-1.5">
-      <label htmlFor={`budget-${category.id}`} className="text-xs text-muted">
-        Tope S/
-      </label>
-      <input
-        id={`budget-${category.id}`}
-        inputMode="decimal"
-        value={value}
-        onChange={(event) => setValue(event.target.value)}
-        onBlur={save}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") event.currentTarget.blur();
-        }}
-        placeholder="—"
-        aria-invalid={error ? true : undefined}
-        title={error ?? undefined}
-        className={`figures w-20 rounded-[var(--radius-panel)] border bg-surface px-2 py-1 text-right text-xs ${
-          error ? "border-expense" : "border-line"
-        }`}
-      />
-    </span>
   );
 }

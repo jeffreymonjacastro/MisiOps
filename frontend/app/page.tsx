@@ -1,124 +1,103 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
 
-import { SampleDataButton } from "./components/sample-data-button";
-import { budgetProgress, type BudgetProgress } from "./lib/budgets";
-import { useLedger } from "./lib/ledger-store";
+import { ErrorState, Loading } from "./components/async-state";
+import { AuthGuard } from "./components/auth-guard";
+import { useToken } from "./lib/auth";
 import { formatMoney } from "./lib/money";
-import { monthKey } from "./lib/query";
-import { monthTotals, spendingByCategory } from "./lib/summary";
-
-const PERIODS = [
-  { offset: 0, label: "Este mes" },
-  { offset: -1, label: "Mes pasado" },
-] as const;
-
-const monthName = (month: string) => {
-  const [year, index] = month.split("-").map(Number);
-  return new Intl.DateTimeFormat("es-PE", { month: "long", year: "numeric" }).format(
-    new Date(year, index - 1, 1),
-  );
-};
+import { getSummary } from "./lib/resources";
+import { useAsync } from "./lib/use-async";
+import type { CategoryTotal, Summary } from "./lib/types";
 
 export default function DashboardPage() {
-  const { ledger } = useLedger();
-  const [offset, setOffset] = useState<0 | -1>(0);
-  const month = monthKey(offset);
-
-  const totals = useMemo(() => monthTotals(ledger.transactions, month), [ledger.transactions, month]);
-  const spending = useMemo(
-    () => spendingByCategory(ledger.transactions, ledger.categories, month),
-    [ledger.transactions, ledger.categories, month],
+  return (
+    <AuthGuard>
+      <DashboardScreen />
+    </AuthGuard>
   );
-  const budgets = useMemo(() => budgetProgress(ledger, month), [ledger, month]);
+}
 
-  const nothingLogged = totals.income === 0 && totals.expenses === 0;
-  // Distinct from nothingLogged: seeding replaces the whole ledger, so it
-  // must only be offered when there is truly nothing anywhere to lose —
-  // not just nothing in the currently viewed month.
-  const noDataAtAll = ledger.transactions.length === 0;
+function DashboardScreen() {
+  const token = useToken();
+  const { data, error, loading, reload } = useAsync(
+    async () => (token ? getSummary(token) : null),
+    [token],
+  );
 
   return (
     <div className="space-y-10">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Resumen</h1>
-          <p className="text-sm text-muted first-letter:uppercase">{monthName(month)}</p>
-        </div>
-        <div className="flex gap-1" role="group" aria-label="Periodo">
-          {PERIODS.map((period) => (
-            <button
-              key={period.offset}
-              type="button"
-              onClick={() => setOffset(period.offset)}
-              aria-pressed={offset === period.offset}
-              className={`rounded-[var(--radius-panel)] px-3 py-1.5 text-sm ${
-                offset === period.offset ? "bg-raised text-text" : "text-muted hover:text-text"
-              }`}
-            >
-              {period.label}
-            </button>
-          ))}
-        </div>
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold tracking-tight">Resumen</h1>
+        {data ? (
+          <p className="text-sm text-muted">
+            Del {formatDate(data.period_start)} al {formatDate(data.period_end)}
+          </p>
+        ) : null}
       </header>
 
-      {nothingLogged ? (
-        <EmptyMonth showSampleData={noDataAtAll} />
-      ) : (
-        <>
-          <MonthRunway income={totals.income} expenses={totals.expenses} net={totals.net} />
-          <BudgetProgressList rows={budgets} />
-          <SpendingBreakdown rows={spending} total={totals.expenses} />
-        </>
-      )}
+      {loading ? <Loading label="Calculando tu resumen…" /> : null}
+      {error ? <ErrorState error={error} onRetry={reload} /> : null}
+
+      {data ? <SummaryView summary={data} /> : null}
     </div>
   );
 }
 
-function EmptyMonth({ showSampleData }: { showSampleData: boolean }) {
-  return (
-    <div className="max-w-prose space-y-4 border-y border-line py-10">
-      <p className="text-sm text-muted">
-        Este mes no tiene movimientos todavía. Registra un ingreso o un gasto y aquí verás cuánto
-        te queda.
-      </p>
-      <div className="flex flex-wrap gap-2">
+function formatDate(iso: string): string {
+  const [year, month, day] = iso.slice(0, 10).split("-").map(Number);
+  return new Intl.DateTimeFormat("es-PE", { day: "numeric", month: "long" }).format(
+    new Date(year, month - 1, day),
+  );
+}
+
+function SummaryView({ summary }: { summary: Summary }) {
+  const nothingLogged = summary.total_income === 0 && summary.total_expense === 0;
+
+  if (nothingLogged) {
+    return (
+      <div className="max-w-prose space-y-4 border-y border-line py-10">
+        <p className="text-sm text-muted">
+          Este periodo no tiene movimientos todavía. Registra un ingreso o un gasto y aquí verás
+          cuánto te queda.
+        </p>
         <Link
           href="/movimientos/nuevo"
           className="inline-block rounded-[var(--radius-panel)] border border-amber px-4 py-2 text-sm font-medium text-amber hover:bg-amber hover:text-ink"
         >
           Registrar un movimiento
         </Link>
-        {showSampleData ? <SampleDataButton /> : null}
       </div>
-    </div>
+    );
+  }
+
+  const expenses = summary.by_category.filter((row) => row.type === "expense");
+
+  return (
+    <>
+      <MonthRunway summary={summary} />
+      <SpendingBreakdown rows={expenses} total={summary.total_expense} />
+    </>
   );
 }
 
 /**
- * The hero: income is the track, expenses eat into it left to right, and what
- * is left is the figure. Answers "how am I doing this month" without reading
- * three separate numbers.
+ * Income is the track, expenses eat into it, and what remains is the figure.
+ * Every number here comes from the server's summary; nothing is recomputed.
  */
-function MonthRunway({
-  income,
-  expenses,
-  net,
-}: {
-  income: number;
-  expenses: number;
-  net: number;
-}) {
-  const overrun = net < 0;
-  // With no income logged, any spending is by definition a full overrun.
-  const spentShare = income > 0 ? Math.min(expenses / income, 1) : expenses > 0 ? 1 : 0;
+function MonthRunway({ summary }: { summary: Summary }) {
+  const overrun = summary.balance < 0;
+  const spentShare =
+    summary.total_income > 0
+      ? Math.min(summary.total_expense / summary.total_income, 1)
+      : summary.total_expense > 0
+        ? 1
+        : 0;
 
   return (
     <section aria-labelledby="runway-heading" className="space-y-4">
       <h2 id="runway-heading" className="sr-only">
-        Cómo va el mes
+        Cómo va el periodo
       </h2>
 
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -127,17 +106,17 @@ function MonthRunway({
             overrun ? "text-expense" : "text-text"
           }`}
         >
-          {formatMoney(Math.abs(net))}
+          {formatMoney(Math.abs(summary.balance))}
         </p>
         <p className="text-sm text-muted">
-          {overrun ? "gastaste de más este mes" : "te queda de lo que entró"}
+          {overrun ? "gastaste de más este periodo" : "te queda de lo que entró"}
         </p>
       </div>
 
       <div
         className="h-3 w-full overflow-hidden rounded-full bg-raised"
         role="img"
-        aria-label={`Gastaste ${formatMoney(expenses)} de ${formatMoney(income)} que entraron.`}
+        aria-label={`Gastaste ${formatMoney(summary.total_expense)} de ${formatMoney(summary.total_income)} que entraron.`}
       >
         <div
           className="h-full rounded-full"
@@ -151,77 +130,43 @@ function MonthRunway({
       <dl className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
         <div>
           <dt className="text-muted">Entró</dt>
-          <dd className="figures text-income">{formatMoney(income)}</dd>
+          <dd className="figures text-income">{formatMoney(summary.total_income)}</dd>
         </div>
         <div>
           <dt className="text-muted">Salió</dt>
-          <dd className="figures">{formatMoney(expenses)}</dd>
+          <dd className="figures">{formatMoney(summary.total_expense)}</dd>
+        </div>
+        <div>
+          <dt className="text-muted">Tope mensual</dt>
+          <dd className="figures">
+            {summary.remaining_budget === null ? (
+              <span className="text-muted">sin tope</span>
+            ) : (
+              <>
+                {formatMoney(summary.remaining_budget)}{" "}
+                <span className="text-muted">de {formatMoney(summary.monthly_budget_limit)}</span>
+              </>
+            )}
+          </dd>
         </div>
       </dl>
     </section>
   );
 }
 
-function BudgetProgressList({ rows }: { rows: BudgetProgress[] }) {
-  if (rows.length === 0) return null;
-
-  return (
-    <section aria-labelledby="budgets-heading" className="space-y-3">
-      <h2 id="budgets-heading" className="text-sm text-muted">
-        Topes del mes
-      </h2>
-      <ul className="space-y-3">
-        {rows.map((row) => (
-          <li key={row.categoryId} className="space-y-1.5">
-            <div className="flex items-baseline justify-between gap-3 text-sm">
-              <span className="min-w-0 truncate">{row.name}</span>
-              <span className={`figures shrink-0 ${row.over ? "text-expense" : ""}`}>
-                {formatMoney(row.spent)}
-                <span className="text-muted"> de {formatMoney(row.limit)}</span>
-                {row.over ? (
-                  <span className="ml-2">
-                    {formatMoney(row.spent - row.limit)} de más
-                  </span>
-                ) : null}
-              </span>
-            </div>
-            <div aria-hidden className="h-1.5 w-full rounded-full bg-raised">
-              <div
-                className="h-full rounded-full"
-                style={{
-                  width: `${row.share * 100}%`,
-                  background: row.over
-                    ? "var(--color-fill-overrun)"
-                    : "var(--color-fill-spent)",
-                }}
-              />
-            </div>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-function SpendingBreakdown({
-  rows,
-  total,
-}: {
-  rows: { categoryId: string; name: string; total: number; share: number }[];
-  total: number;
-}) {
+function SpendingBreakdown({ rows, total }: { rows: CategoryTotal[]; total: number }) {
   if (rows.length === 0) {
     return (
       <section className="space-y-3">
         <h2 className="text-sm text-muted">En qué se fue</h2>
         <p className="border-y border-line py-6 text-sm text-muted">
-          Este mes solo registraste ingresos.
+          Este periodo solo registraste ingresos.
         </p>
       </section>
     );
   }
 
-  const biggest = rows[0].total;
+  const biggest = Math.max(...rows.map((row) => row.total));
 
   return (
     <section aria-labelledby="breakdown-heading" className="space-y-3">
@@ -229,27 +174,41 @@ function SpendingBreakdown({
         En qué se fue · {formatMoney(total)}
       </h2>
       <ul className="space-y-3">
-        {rows.map((row) => (
-          <li key={row.categoryId} className="space-y-1.5">
-            <div className="flex items-baseline justify-between gap-3 text-sm">
-              <span className="min-w-0 truncate">{row.name}</span>
-              <span className="figures shrink-0">
-                {formatMoney(row.total)}
-                <span className="ml-2 text-muted">{Math.round(row.share * 100)}%</span>
-              </span>
-            </div>
-            {/* Decorative: every value is already written above in text. */}
-            <div aria-hidden className="h-1.5 w-full rounded-full bg-raised">
-              <div
-                className="h-full rounded-full"
-                style={{
-                  width: `${(row.total / biggest) * 100}%`,
-                  background: "var(--color-fill-spent)",
-                }}
-              />
-            </div>
-          </li>
-        ))}
+        {rows.map((row) => {
+          const over = row.budget !== null && row.total > row.budget;
+          return (
+            <li key={row.category_id} className="space-y-1.5">
+              <div className="flex items-baseline justify-between gap-3 text-sm">
+                <span className="min-w-0 truncate">{row.name}</span>
+                <span className={`figures shrink-0 ${over ? "text-expense" : ""}`}>
+                  {formatMoney(row.total)}
+                  {row.budget !== null ? (
+                    <span className="text-muted"> de {formatMoney(row.budget)}</span>
+                  ) : (
+                    <span className="ml-2 text-muted">
+                      {total > 0 ? Math.round((row.total / total) * 100) : 0}%
+                    </span>
+                  )}
+                  {over ? (
+                    <span className="ml-2">{formatMoney(row.total - row.budget!)} de más</span>
+                  ) : null}
+                </span>
+              </div>
+              {/* Decorative: every value is already written above in text. */}
+              <div aria-hidden className="h-1.5 w-full rounded-full bg-raised">
+                <div
+                  className="h-full rounded-full"
+                  style={{
+                    width: `${biggest > 0 ? (row.total / biggest) * 100 : 0}%`,
+                    background: over
+                      ? "var(--color-fill-overrun)"
+                      : "var(--color-fill-spent)",
+                  }}
+                />
+              </div>
+            </li>
+          );
+        })}
       </ul>
     </section>
   );

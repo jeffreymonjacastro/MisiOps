@@ -2,16 +2,19 @@
 
 import { useState } from "react";
 
-import { byType } from "../lib/categories";
-import { useLedger } from "../lib/ledger-store";
+import { isApiError } from "../lib/api";
+import { parseAmount } from "../lib/money";
+import type { TransactionPayload } from "../lib/resources";
 import {
   emptyDraft,
   hasErrors,
+  toInstant,
   validateDraft,
   type DraftErrors,
   type TransactionDraft,
 } from "../lib/transactions";
-import type { Ledger, TxType } from "../lib/types";
+import type { Category, TxType } from "../lib/types";
+import { FormError } from "./async-state";
 
 const TYPES: { value: TxType; label: string }[] = [
   { value: "expense", label: "Gasto" },
@@ -22,23 +25,25 @@ const fieldClass =
   "w-full rounded-[var(--radius-panel)] border border-line bg-surface px-3 py-2 text-sm placeholder:text-muted";
 
 export function TransactionForm({
+  categories,
   initial,
   submitLabel,
-  onSave,
+  onSubmit,
 }: {
+  categories: Category[];
   initial?: TransactionDraft;
   submitLabel: string;
-  /** Applies the draft to the ledger. Throws to reject. */
-  onSave: (ledger: Ledger, draft: TransactionDraft) => Ledger;
+  /** Sends the payload to the server. Rejects with an ApiError to show its message. */
+  onSubmit: (payload: TransactionPayload) => Promise<void>;
 }) {
-  const { ledger, commit } = useLedger();
   const isEdit = initial !== undefined;
   const [draft, setDraft] = useState<TransactionDraft>(initial ?? emptyDraft());
   const [errors, setErrors] = useState<DraftErrors>({});
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  const categories = byType(ledger.categories, draft.type);
+  const visible = categories.filter((category) => category.type === draft.type);
 
   function set<K extends keyof TransactionDraft>(key: K, value: TransactionDraft[K]) {
     setDraft((current) => {
@@ -50,14 +55,21 @@ export function TransactionForm({
     setSaved(null);
   }
 
-  function submit(event: React.FormEvent) {
+  async function submit(event: React.FormEvent) {
     event.preventDefault();
-    const found = validateDraft(ledger, draft);
+    const found = validateDraft(categories, draft);
     setErrors(found);
     if (hasErrors(found)) return;
 
+    setBusy(true);
     try {
-      commit(onSave(ledger, draft));
+      await onSubmit({
+        amount: parseAmount(draft.amount) as number,
+        type: draft.type,
+        category_id: Number(draft.categoryId),
+        description: draft.description,
+        transaction_date: toInstant(draft.date),
+      });
       setSaveError(null);
       if (isEdit) {
         setSaved("Cambios guardados.");
@@ -67,8 +79,19 @@ export function TransactionForm({
       }
     } catch (problem) {
       // The draft stays on screen so nothing typed is lost.
-      setSaveError((problem as Error).message);
+      if (isApiError(problem)) {
+        const { fieldErrors, message } = problem;
+        setErrors({
+          amount: fieldErrors.amount,
+          categoryId: fieldErrors.category_id,
+          date: fieldErrors.transaction_date,
+        });
+        setSaveError(message);
+      } else {
+        setSaveError("No se pudo guardar. Inténtalo de nuevo.");
+      }
     }
+    setBusy(false);
   }
 
   return (
@@ -79,7 +102,9 @@ export function TransactionForm({
           {TYPES.map((option) => {
             const active = draft.type === option.value;
             const activeTone =
-              option.value === "income" ? "border-income text-income" : "border-expense text-expense";
+              option.value === "income"
+                ? "border-income text-income"
+                : "border-expense text-expense";
             return (
               <label
                 key={option.value}
@@ -114,16 +139,11 @@ export function TransactionForm({
             value={draft.amount}
             onChange={(event) => set("amount", event.target.value)}
             aria-invalid={errors.amount ? true : undefined}
-            aria-describedby={errors.amount ? "amount-error" : undefined}
             placeholder="0.00"
             className={`${fieldClass} figures text-lg`}
           />
         </div>
-        {errors.amount ? (
-          <p id="amount-error" role="alert" className="text-sm text-expense">
-            {errors.amount}
-          </p>
-        ) : null}
+        <FormError message={errors.amount ?? null} />
       </div>
 
       <div className="space-y-1.5">
@@ -135,19 +155,19 @@ export function TransactionForm({
           value={draft.categoryId}
           onChange={(event) => set("categoryId", event.target.value)}
           aria-invalid={errors.categoryId ? true : undefined}
-          aria-describedby={errors.categoryId ? "category-error" : undefined}
           className={fieldClass}
         >
           <option value="">Elige una categoría</option>
-          {categories.map((category) => (
-            <option key={category.id} value={category.id}>
+          {visible.map((category) => (
+            <option key={category.id} value={String(category.id)}>
               {category.name}
             </option>
           ))}
         </select>
-        {errors.categoryId ? (
-          <p id="category-error" role="alert" className="text-sm text-expense">
-            {errors.categoryId}
+        <FormError message={errors.categoryId ?? null} />
+        {visible.length === 0 ? (
+          <p className="text-xs text-muted">
+            No tienes categorías de este tipo. Crea una en la sección Categorías.
           </p>
         ) : null}
       </div>
@@ -162,14 +182,9 @@ export function TransactionForm({
           value={draft.date}
           onChange={(event) => set("date", event.target.value)}
           aria-invalid={errors.date ? true : undefined}
-          aria-describedby={errors.date ? "date-error" : undefined}
           className={`${fieldClass} figures`}
         />
-        {errors.date ? (
-          <p id="date-error" role="alert" className="text-sm text-expense">
-            {errors.date}
-          </p>
-        ) : null}
+        <FormError message={errors.date ?? null} />
       </div>
 
       <div className="space-y-1.5">
@@ -188,9 +203,10 @@ export function TransactionForm({
       <div className="flex items-center gap-4">
         <button
           type="submit"
-          className="rounded-[var(--radius-panel)] bg-amber px-4 py-2 text-sm font-medium text-ink hover:opacity-90"
+          disabled={busy}
+          className="rounded-[var(--radius-panel)] bg-amber px-4 py-2 text-sm font-medium text-ink hover:opacity-90 disabled:opacity-60"
         >
-          {submitLabel}
+          {busy ? "Guardando…" : submitLabel}
         </button>
         {saved ? (
           <p role="status" className="text-sm text-income">
@@ -199,11 +215,7 @@ export function TransactionForm({
         ) : null}
       </div>
 
-      {saveError ? (
-        <p role="alert" className="text-sm text-expense">
-          {saveError} Vuelve a intentarlo; no perdiste lo que escribiste.
-        </p>
-      ) : null}
+      <FormError message={saveError} />
     </form>
   );
 }

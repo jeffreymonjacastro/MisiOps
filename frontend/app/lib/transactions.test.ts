@@ -1,27 +1,26 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { DEFAULT_CATEGORIES } from "./categories.ts";
 import { MAX_AMOUNT, parseAmount, validateAmount } from "./money.ts";
 import {
-  addTransaction,
-  deleteTransaction,
   draftFrom,
   hasErrors,
-  updateTransaction,
   validateDraft,
   type TransactionDraft,
 } from "./transactions.ts";
-import type { Ledger } from "./types.ts";
+import type { Category, Transaction } from "./types.ts";
 
-const ledger = (): Ledger => ({ categories: [...DEFAULT_CATEGORIES], transactions: [] });
+const categories: Category[] = [
+  { id: 1, name: "Comida", type: "expense", budget: null },
+  { id: 2, name: "Sueldo", type: "income", budget: null },
+];
 
 const base = (): TransactionDraft => ({
   amount: "25.50",
   type: "expense",
-  categoryId: "cat-mercado",
-  date: "2026-09-10",
-  description: "Verduras",
+  categoryId: "1",
+  date: "2026-09-18",
+  description: "Almuerzo",
 });
 const draft = (over: Partial<TransactionDraft> = {}): TransactionDraft => ({ ...base(), ...over });
 
@@ -35,6 +34,11 @@ test("rounds to cents instead of keeping float noise", () => {
   assert.equal(parseAmount("19.999"), 20);
 });
 
+test("rejects input that is not a number", () => {
+  assert.equal(parseAmount("abc"), null);
+  assert.equal(parseAmount(""), null);
+});
+
 test("rejects amounts that are empty, zero, negative or absurdly large", () => {
   assert.ok(validateAmount(""));
   assert.ok(validateAmount("0"));
@@ -44,56 +48,48 @@ test("rejects amounts that are empty, zero, negative or absurdly large", () => {
 });
 
 test("accepts a complete draft", () => {
-  assert.equal(hasErrors(validateDraft(ledger(), draft())), false);
+  assert.equal(hasErrors(validateDraft(categories, draft())), false);
 });
 
-test("requires a category that exists", () => {
-  const errors = validateDraft(ledger(), draft({ categoryId: "" }));
-  assert.ok(errors.categoryId);
+test("requires a category that exists among the user's own", () => {
+  assert.ok(validateDraft(categories, draft({ categoryId: "" })).categoryId);
+  assert.ok(validateDraft(categories, draft({ categoryId: "999" })).categoryId);
 });
 
 test("rejects a category whose type does not match the movement", () => {
-  const errors = validateDraft(ledger(), draft({ type: "income", categoryId: "cat-mercado" }));
-  assert.ok(errors.categoryId);
+  assert.ok(validateDraft(categories, draft({ type: "income", categoryId: "1" })).categoryId);
 });
 
 test("rejects a malformed date", () => {
-  assert.ok(validateDraft(ledger(), draft({ date: "10/09/2026" })).date);
+  assert.ok(validateDraft(categories, draft({ date: "18/09/2026" })).date);
 });
 
-test("accepts a future date, which is allowed on purpose", () => {
-  assert.equal(hasErrors(validateDraft(ledger(), draft({ date: "2099-01-01" }))), false);
+test("a server transaction round-trips into an editable draft", () => {
+  const transaction: Transaction = {
+    id: 7,
+    amount: 25.5,
+    type: "expense",
+    source: "manual",
+    description: "Almuerzo",
+    transaction_date: "2026-09-18T00:00:00Z",
+    category: { id: 1, name: "Comida", type: "expense" },
+  };
+  const back = draftFrom(transaction);
+  assert.equal(back.categoryId, "1");
+  assert.equal(back.date, "2026-09-18");
+  assert.equal(back.amount, "25.5");
+  assert.equal(hasErrors(validateDraft(categories, back)), false);
 });
 
-test("stores the amount as a number and trims the description", () => {
-  const next = addTransaction(ledger(), draft({ description: "  Verduras  " }));
-  assert.equal(next.transactions[0].amount, 25.5);
-  assert.equal(next.transactions[0].description, "Verduras");
-});
-
-test("refuses to store an invalid draft", () => {
-  assert.throws(() => addTransaction(ledger(), draft({ amount: "0" })));
-});
-
-test("editing replaces the values but keeps the same transaction", () => {
-  const created = addTransaction(ledger(), draft());
-  const id = created.transactions[0].id;
-  const edited = updateTransaction(created, id, draft({ amount: "99", description: "Corregido" }));
-  assert.equal(edited.transactions.length, 1);
-  assert.equal(edited.transactions[0].id, id);
-  assert.equal(edited.transactions[0].amount, 99);
-});
-
-test("deleting removes only the target transaction", () => {
-  const two = addTransaction(addTransaction(ledger(), draft()), draft({ amount: "5" }));
-  const next = deleteTransaction(two, two.transactions[0].id);
-  assert.equal(next.transactions.length, 1);
-  assert.equal(next.transactions[0].amount, 5);
-});
-
-test("a stored transaction round-trips back into an editable draft", () => {
-  const created = addTransaction(ledger(), draft());
-  const back = draftFrom(created.transactions[0]);
-  assert.equal(hasErrors(validateDraft(created, back)), false);
-  assert.equal(back.categoryId, "cat-mercado");
+test("a transaction with no description becomes an empty field, not the string null", () => {
+  const back = draftFrom({
+    id: 8,
+    amount: 10,
+    type: "expense",
+    source: "manual",
+    description: null,
+    transaction_date: "2026-09-18T12:30:00Z",
+    category: { id: 1, name: "Comida", type: "expense" },
+  });
+  assert.equal(back.description, "");
 });
