@@ -1,26 +1,49 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@theme {
+  --color-ink: #12141c;
+  --color-surface: #1a1d28;
+  --color-raised: #222634;
+  --color-line: #2a2f3e;
+  --color-text: #e8e6e1;
+  --color-muted: #8a90a3;
+  --color-amber: #e8a33d;
+  --color-income: #5fd3a6;
+  --color-expense: #e8746a;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* Chart fills. Text tokens above sit too light for fills on this surface;
+     these are stepped into the dark-mode band (OKLCH L 0.48-0.67) and checked
+     for contrast and colour-vision separation against each other. */
+  --color-fill-spent: #c4871f;
+  --color-fill-overrun: #b5352c;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-instrument-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-figure: var(--font-instrument-serif), ui-serif, Georgia, serif;
+
+  --radius-panel: 10px;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-ink);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+}
+
+/* Money columns only line up when every digit takes the same width. */
+.figures {
+  font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-amber);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
