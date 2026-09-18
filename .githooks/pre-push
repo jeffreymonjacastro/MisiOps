@@ -1,0 +1,65 @@
+#!/bin/bash
+
+# pre-push hook to enforce SDD pipeline
+
+# Get current branch
+branch=$(git rev-parse --abbrev-ref HEAD)
+
+# Only enforce on feature branches
+if [[ ! "$branch" == feature/* ]]; then
+  exit 0
+fi
+
+# Check if there are unpushed commits modifying code
+remote=$(git config --get branch.$branch.remote || echo origin)
+remote_ref="$remote/$branch"
+
+if git rev-parse --verify "$remote_ref" >/dev/null 2>&1; then
+  push_range="$remote_ref...HEAD"
+else
+  # If remote branch doesn't exist yet, check against develop
+  push_range="develop...HEAD"
+fi
+
+if ! git rev-parse --verify "develop" >/dev/null 2>&1; then
+  # Fallback if develop doesn't exist locally
+  exit 0
+fi
+
+# Get changed files in the current push
+push_changed_files=$(git diff --name-only "$push_range" 2>/dev/null || echo "")
+
+# If no code changed in this push, it's fine
+if ! echo "$push_changed_files" | grep -qE "^(frontend/|backend/)"; then
+  exit 0
+fi
+
+# For SDD compliance, look at the ENTIRE branch compared to develop
+branch_changed_files=$(git diff --name-only "develop...HEAD" 2>/dev/null || echo "")
+
+# If code changed, ensure all SDD artifacts exist in the branch range
+if ! echo "$branch_changed_files" | grep -qE "^specs/.*plan\.md"; then
+  echo "❌ ERROR: Vas a hacer push de código fuente sin haber modificado/generado un 'plan.md'."
+  echo "👉 Usa /speckit-plan para generar la arquitectura antes de implementar."
+  exit 1
+fi
+
+if ! echo "$branch_changed_files" | grep -qE "^specs/.*tasks\.md"; then
+  echo "❌ ERROR: Vas a hacer push de código fuente sin haber modificado/generado un 'tasks.md'."
+  echo "👉 Usa /speckit-tasks para generar las tareas antes de implementar."
+  exit 1
+fi
+
+if ! echo "$branch_changed_files" | grep -qE "^specs/.*checklists/.*\.md"; then
+  echo "❌ ERROR: Vas a hacer push de código fuente sin haber generado los checklists."
+  echo "👉 Usa /speckit-checklist (y /speckit-evaluate si aplica) antes de implementar."
+  exit 1
+fi
+
+if ! echo "$branch_changed_files" | grep -qE "^specs/.*evaluations/.*\.md"; then
+  echo "❌ ERROR: Vas a hacer push de código fuente sin el reporte de evaluación de los specs."
+  echo "👉 Usa /speckit-evaluate para auditar el spec."
+  exit 1
+fi
+
+exit 0

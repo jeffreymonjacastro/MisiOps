@@ -1,0 +1,46 @@
+name: docker-integration
+
+on:
+  pull_request:
+    branches: [develop]
+
+jobs:
+  integration-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate dummy secrets
+        run: |
+          mkdir -p docker
+          echo "POSTGRES_PASSWORD=devops123" > docker/.env.dev
+          echo "SECRET_KEY=super-secret-dev-key-1234567890123456" >> docker/.env.dev
+          echo "devops123" > docker/pg_password.txt
+
+      - name: Build and start containers
+        working-directory: docker
+        run: docker compose -p misiops up --build -d
+
+      - name: Wait for services to be ready
+        run: |
+          echo "Waiting for services to become healthy..."
+          sleep 15
+          # Could use wait-for-it or docker inspect here, but sleep is simple enough for this test
+          # Postgres healthcheck takes max 5x5s=25s, so let's give it 30s.
+          sleep 15
+
+      - name: Verify Backend API is reachable
+        run: |
+          # Try to reach the root healthcheck or main endpoint
+          curl -f --retry 5 --retry-connrefused --retry-delay 5 http://localhost:8000/
+
+      - name: Dump logs on failure
+        if: failure()
+        working-directory: docker
+        run: docker compose -p misiops logs
+
+      - name: Stop containers
+        if: always()
+        working-directory: docker
+        run: docker compose -p misiops down
