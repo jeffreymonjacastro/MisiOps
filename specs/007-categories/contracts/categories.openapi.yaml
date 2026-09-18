@@ -1,0 +1,162 @@
+openapi: 3.1.0
+info:
+  title: MisiOps API - Categories
+  version: 1.0.0
+  description: >
+    Contract for feature 007-categories. Base path /api/v1. All endpoints require a bearer token
+    (see 006-user-auth). Errors use FastAPI's default {"detail": ...} shape.
+servers:
+  - url: http://localhost:8000/api/v1
+
+paths:
+  /category/:
+    get:
+      summary: List my categories
+      operationId: listCategories
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Plain array ordered by type, then name (case-insensitive)
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/CategoryOut" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+    post:
+      summary: Create a custom category
+      operationId: createCategory
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CategoryCreate" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CategoryOut" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "409":
+          description: Name already used by one of the caller's categories of the same type (case-insensitive)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorDetail" }
+              example: { detail: "Category name already exists" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /category/{category_id}:
+    parameters:
+      - name: category_id
+        in: path
+        required: true
+        schema: { type: integer, minimum: 1 }
+    patch:
+      summary: Partially update a category
+      operationId: updateCategory
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CategoryUpdate" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CategoryOut" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: Name already used by one of the caller's categories of the same type, or a type change on a category that has transactions (008-transactions, FR-015)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorDetail" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+    delete:
+      summary: Delete a category
+      operationId: deleteCategory
+      security: [{ bearerAuth: [] }]
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: Category has transactions (guard added by 008-transactions, FR-015)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorDetail" }
+
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+
+  responses:
+    Unauthenticated:
+      description: Missing, malformed, expired or revoked token
+      headers:
+        WWW-Authenticate: { schema: { type: string, example: Bearer } }
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorDetail" }
+          example: { detail: "Not authenticated" }
+    NotFound:
+      description: No category with that id owned by the caller (same response for another user's id)
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorDetail" }
+          example: { detail: "Category not found" }
+    ValidationError:
+      description: Request failed validation
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    loc: { type: array, items: { type: [string, integer] } }
+                    msg: { type: string }
+                    type: { type: string }
+
+  schemas:
+    ErrorDetail:
+      type: object
+      required: [detail]
+      properties:
+        detail: { type: string }
+
+    CategoryType:
+      type: string
+      enum: [income, expense]
+
+    CategoryCreate:
+      type: object
+      required: [name, type]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 50, example: Gimnasio }
+        type: { $ref: "#/components/schemas/CategoryType" }
+        budget: { type: [number, "null"], minimum: 0, multipleOf: 0.01, example: 150 }
+
+    CategoryUpdate:
+      type: object
+      description: All fields optional. Omitted = unchanged. budget null clears the budget. Empty object accepted.
+      properties:
+        name: { type: string, minLength: 1, maxLength: 50 }
+        type: { $ref: "#/components/schemas/CategoryType" }
+        budget: { type: [number, "null"], minimum: 0, multipleOf: 0.01 }
+
+    CategoryOut:
+      type: object
+      required: [id, name, type, budget]
+      properties:
+        id: { type: integer, example: 3 }
+        name: { type: string, example: Comida }
+        type: { $ref: "#/components/schemas/CategoryType" }
+        budget: { type: [number, "null"], example: null }

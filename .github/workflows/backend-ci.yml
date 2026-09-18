@@ -1,0 +1,33 @@
+name: backend-ci
+
+on:
+  pull_request:
+    branches: [develop]
+    paths: ["backend/**", ".github/workflows/backend-ci.yml"]
+  push:
+    branches: [develop]
+    paths: ["backend/**", ".github/workflows/backend-ci.yml"]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      SECRET_KEY: ci-only-secret-key-with-at-least-32-bytes
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install
+        run: uv sync --locked
+      - name: Lint
+        run: uvx ruff check .
+      - name: Test
+        run: uv run pytest -q
+      - name: Security scan (dependencies)
+        run: |
+          uv export --format requirements-txt --no-hashes --no-emit-project -o requirements-audit.txt
+          uvx pip-audit -r requirements-audit.txt
