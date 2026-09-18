@@ -1,3 +1,4 @@
+name: misiops
 services:
   frontend:
     build:

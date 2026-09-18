@@ -30,7 +30,7 @@ Create a Dockerfile that:
 - Copies `pyproject.toml` and installs dependencies.
 - Copies the application code.
 - Exposes port 8000.
-- Runs `fastapi run main.py --port 8000` or `uvicorn core.main:app --host 0.0.0.0 --port 8000`.
+- Runs `uvicorn main:app --host 0.0.0.0 --port 8000`.
 
 ### 2.2 Frontend Dockerfile (`frontend/Dockerfile`)
 Create a Dockerfile that:
@@ -42,6 +42,7 @@ Create a Dockerfile that:
 
 ### 2.3 Docker Compose configuration (`docker/docker-compose.yaml`)
 Create the compose file defining:
+- **Project name**: `misiops`
 - `frontend` service (port 3000).
 - `backend` service (port 8000).
 - `postgres` service (no exposed ports, uses secrets, named volume).
