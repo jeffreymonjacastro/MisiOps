@@ -62,3 +62,14 @@ Dependency-ordered. `[P]` marks tasks that can run in parallel with the previous
 | FR-012 | T019, T020 |
 | NFR-005 | T003, T005, T009, T021 |
 | SC-001..SC-006 | T020, T022, T023, T024, T025 |
+
+## Phase 6: Convergence
+
+Appended by `/speckit-converge` on 2026-09-18 after the implement pass.
+
+- [ ] **T028** CRITICAL: restore unit coverage for the modules that survived the rewrite — `money.ts` (`parseAmount`, `validateAmount`) and `transactions.ts` (`validateDraft`, `draftFrom`) — whose tests were deleted alongside the local-ledger modules per Constitution II (contradicts)
+- [ ] **T029** Handle 401 centrally in `api.ts` so a rejected token clears the session and returns to login from any call, not only the auth guard's `getMe`, per FR-005 (partial)
+- [ ] **T030** Page history with `offset` instead of growing `limit`, so a history longer than the server's 100-row cap stays reachable, per FR-008 (partial)
+- [ ] **T031** Resolve the transaction on the edit route without scanning the first 100 rows, so an older movement is editable, per US2/AC5 (partial)
+- [ ] **T032** Build `transaction_date` from the local day rather than appending `T00:00:00Z`, so "today" is not a future instant for users in UTC+ timezones, per specs/008-transactions edge case (partial)
+- [ ] **T033** Add unit coverage for `query.ts` (`groupByDay`, `formatDay`) lost with `query.test.ts`, per Constitution II (contradicts)

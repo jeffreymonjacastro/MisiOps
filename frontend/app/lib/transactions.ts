@@ -1,8 +1,8 @@
-import { parseAmount, validateAmount } from "./money.ts";
-import type { Ledger, Transaction, TxType } from "./types";
+import { validateAmount } from "./money.ts";
+import type { Category, Transaction, TxType } from "./types.ts";
 
+/** Form state. Amount stays a string until submit so typing stays natural. */
 export type TransactionDraft = {
-  /** Raw user input, validated on save. */
   amount: string;
   type: TxType;
   categoryId: string;
@@ -22,16 +22,19 @@ export const emptyDraft = (type: TxType = "expense"): TransactionDraft => ({
   description: "",
 });
 
-export function validateDraft(ledger: Ledger, draft: TransactionDraft): DraftErrors {
+/**
+ * Convenience validation only: the server is the authority and its rejections
+ * are surfaced on the same fields (see checklists/security.md).
+ */
+export function validateDraft(categories: Category[], draft: TransactionDraft): DraftErrors {
   const errors: DraftErrors = {};
 
   const amountError = validateAmount(draft.amount);
   if (amountError) errors.amount = amountError;
 
-  const category = ledger.categories.find((c) => c.id === draft.categoryId);
-  if (!category) {
-    errors.categoryId = "Elige una categoría.";
-  } else if (category.type !== draft.type) {
+  const category = categories.find((item) => String(item.id) === draft.categoryId);
+  if (!category) errors.categoryId = "Elige una categoría.";
+  else if (category.type !== draft.type) {
     errors.categoryId = "Esa categoría no corresponde al tipo de movimiento.";
   }
 
@@ -44,49 +47,21 @@ export function validateDraft(ledger: Ledger, draft: TransactionDraft): DraftErr
 
 export const hasErrors = (errors: DraftErrors) => Object.keys(errors).length > 0;
 
-const toTransaction = (draft: TransactionDraft, id: string): Transaction => ({
-  id,
-  amount: parseAmount(draft.amount) as number,
-  type: draft.type,
-  categoryId: draft.categoryId,
-  date: draft.date,
-  description: draft.description.trim(),
-});
-
-export function addTransaction(ledger: Ledger, draft: TransactionDraft): Ledger {
-  if (hasErrors(validateDraft(ledger, draft))) {
-    throw new Error("El movimiento tiene datos inválidos.");
-  }
-  return {
-    ...ledger,
-    transactions: [...ledger.transactions, toTransaction(draft, `tx-${crypto.randomUUID()}`)],
-  };
+/**
+ * Turns the picked day into an instant at local midday.
+ * Sending `${day}T00:00:00Z` would be a *future* instant for anyone east of
+ * UTC picking today, which the server rejects (specs/008 edge case).
+ */
+export function toInstant(day: string): string {
+  const [year, month, date] = day.split("-").map(Number);
+  return new Date(year, month - 1, date, 12, 0, 0).toISOString();
 }
 
-export function updateTransaction(ledger: Ledger, id: string, draft: TransactionDraft): Ledger {
-  if (!ledger.transactions.some((t) => t.id === id)) {
-    throw new Error("Ese movimiento ya no existe.");
-  }
-  if (hasErrors(validateDraft(ledger, draft))) {
-    throw new Error("El movimiento tiene datos inválidos.");
-  }
-  return {
-    ...ledger,
-    transactions: ledger.transactions.map((t) => (t.id === id ? toTransaction(draft, id) : t)),
-  };
-}
-
-export function deleteTransaction(ledger: Ledger, id: string): Ledger {
-  return {
-    ...ledger,
-    transactions: ledger.transactions.filter((t) => t.id !== id),
-  };
-}
-
+/** Server dates are ISO date-times; the form edits a plain day. */
 export const draftFrom = (transaction: Transaction): TransactionDraft => ({
   amount: String(transaction.amount),
   type: transaction.type,
-  categoryId: transaction.categoryId,
-  date: transaction.date,
-  description: transaction.description,
+  categoryId: String(transaction.category.id),
+  date: transaction.transaction_date.slice(0, 10),
+  description: transaction.description ?? "",
 });
