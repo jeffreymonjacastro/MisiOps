@@ -70,6 +70,7 @@ Before starting, the agent **must**:
 - **Up-to-date docs**: Always use **`/context7-mcp`** before writing code that relies on third-party frameworks or libraries.
 - **Skills & plugins**: Before implementing, review the `plan.md` and identify which skills, MCP servers, and plugins are needed. Load and use them proactively.
 - **Branching**: Always create branches as **`feature/<feature-name>`** from `develop` using the GitHub MCP (`create_branch`). All Pull Requests **must target `develop`**.
+- **PR Creation**: Pull Requests created via API/MCP tools MUST explicitly read and populate the `.github/pull_request_template.md` as their body, rather than generating custom summaries.
 - **Publishing**: Always run **`/git-change-publisher`** after a successful implementation to commit and push changes, and create the PR to `develop`.
 
 ## 🛑 Pre-Flight Agent Checklist (Before Finishing)
