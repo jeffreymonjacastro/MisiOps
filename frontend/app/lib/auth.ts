@@ -7,6 +7,23 @@ import type { Token, User } from "./types.ts";
 
 const KEY = "misiops.token.v1";
 
+/** Key the pre-backend, browser-local ledger (deleted in this feature) used to write under. */
+const LEGACY_LEDGER_KEY = "misiops.ledger.v1";
+
+/**
+ * A browser that used the app before this feature may still have real
+ * ledger data sitting under the old key — nothing here ever reads or writes
+ * it anymore, but it stays readable via devtools until swept. Safe to call
+ * every time the app boots, signed in or not (FR-012, SC-006).
+ */
+export function purgeLegacyLedger(): void {
+  try {
+    window.localStorage.removeItem(LEGACY_LEDGER_KEY);
+  } catch {
+    // Storage blocked (private window): nothing to purge either way.
+  }
+}
+
 /**
  * The token lives outside React so useSyncExternalStore gets a stable snapshot.
  * `undefined` means "not read from storage yet".

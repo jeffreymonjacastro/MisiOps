@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
 
-import { logout, useToken } from "../lib/auth";
+import { logout, purgeLegacyLedger, useToken } from "../lib/auth";
 
 const NAV = [
   { href: "/", label: "Resumen" },
@@ -16,6 +17,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const token = useToken();
   const signedOut = !token || pathname === "/login";
+
+  // One-time sweep of any pre-backend browser-local data, regardless of session state.
+  useEffect(() => {
+    purgeLegacyLedger();
+  }, []);
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
