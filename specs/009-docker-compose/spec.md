@@ -22,6 +22,12 @@ Developers need a consistent and reproducible local environment to run the MisiO
 - Developer restarts the environment.
 - The previously created data is still available, demonstrating volume persistence.
 
+### 3.3 Scenario: CI Integration Testing
+- A pull request is created.
+- GitHub Actions automatically generates dummy secrets.
+- GitHub Actions runs `docker compose up -d` to verify the stack boots correctly.
+- The pipeline asserts that the backend API is reachable and healthy.
+
 ## 4. Functional Requirements
 
 1. **Frontend Containerization**: A `Dockerfile` in `frontend/` must be created to build and run the Next.js application.
@@ -34,6 +40,7 @@ Developers need a consistent and reproducible local environment to run the MisiO
    - PostgreSQL must initialize its password using a Docker secret file (`POSTGRES_PASSWORD_FILE`).
    - The backend must authenticate against the database using environment variables injected via an `env_file`.
 6. **Data Persistence**: The PostgreSQL database must use a named volume to persist data across container restarts.
+7. **CI Integration Tests**: A GitHub Actions workflow must be defined to validate that the containers build and run successfully on every pull request, without exposing real secrets.
 
 ## 5. Success Criteria
 

@@ -54,6 +54,15 @@ Create the compose file defining:
 - Update `.gitignore` in the root to exclude `.env.dev` and `pg_password.txt`.
 - Add `.dockerignore` files in `frontend/` and `backend/` to prevent unnecessary files (like `node_modules/`, `__pycache__/`, `.env`) from being copied into the images.
 
+### 2.5 GitHub Actions Workflow (`.github/workflows/docker-integration.yml`)
+Create a new workflow that triggers on PRs to `develop`:
+- Checks out the repository.
+- Generates dummy secrets via `echo` commands into `docker/.env.dev` and `docker/pg_password.txt`.
+- Runs `docker compose -p misiops up --build -d` inside the `docker/` directory.
+- Waits for healthchecks to pass or sleeps for a short period.
+- Executes `curl -f http://localhost:8000/` to ensure the API is reachable.
+- Runs `docker compose logs` on failure for debugging.
+
 ## 3. Risks & Mitigations
 - **Network Resolution**: Backend must connect to `postgres:5432`. Frontend must connect to `backend:8000`. Next.js Server Components can use `http://backend:8000`, while Client Components need to connect through a proxy or public URL. We will configure backend URLs accordingly.
 

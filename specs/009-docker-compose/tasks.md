@@ -9,3 +9,4 @@
 - [x] 7. **Fix Project Name**: Add `name: misiops` to `docker-compose.yaml`.
 - [x] 8. **Fix Backend Command**: Use `uvicorn main:app` instead of `fastapi run` in backend `Dockerfile`.
 - [x] 9. **Fix DB Env Vars**: Update compose and `.env.dev` to use `POSTGRES_SERVER`, `POSTGRES_DB`, etc. instead of `DB_*` to match MisiOps config.
+- [ ] 10. **Add CI Workflow**: Create `.github/workflows/docker-integration.yml` to automatically test `docker compose up` on PRs.
