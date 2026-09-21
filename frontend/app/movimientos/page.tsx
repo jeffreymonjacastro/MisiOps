@@ -1,50 +1,65 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
-import { SampleDataButton } from "../components/sample-data-button";
-import { byType } from "../lib/categories";
-import { useLedger } from "../lib/ledger-store";
+import { ErrorState, FormError, Loading } from "../components/async-state";
+import { AuthGuard } from "../components/auth-guard";
+import { isApiError } from "../lib/api";
+import { useToken } from "../lib/auth";
 import { formatMoney } from "../lib/money";
-import {
-  NO_FILTERS,
-  filterTransactions,
-  formatDay,
-  groupByDay,
-  isFiltered,
-  type Filters,
-} from "../lib/query";
-import { deleteTransaction } from "../lib/transactions";
+import { NO_FILTERS, formatDay, groupByDay, isFiltered, type Filters } from "../lib/query";
+import { deleteTransaction, listCategories, listTransactions } from "../lib/resources";
+import { useAsync } from "../lib/use-async";
 import type { Category, Transaction } from "../lib/types";
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 20;
 
 const controlClass =
   "rounded-[var(--radius-panel)] border border-line bg-surface px-3 py-1.5 text-sm";
 
 export default function TransactionsPage() {
-  const { ledger } = useLedger();
+  return (
+    <AuthGuard>
+      <TransactionsScreen />
+    </AuthGuard>
+  );
+}
+
+function TransactionsScreen() {
+  const token = useToken();
   const [filters, setFilters] = useState<Filters>(NO_FILTERS);
-  const [visible, setVisible] = useState(PAGE_SIZE);
+  const [pages, setPages] = useState(1);
 
-  const categoriesById = useMemo(
-    () => new Map(ledger.categories.map((c) => [c.id, c])),
-    [ledger.categories],
-  );
+  const categories = useAsync(async () => (token ? listCategories(token) : []), [token]);
 
-  const matches = useMemo(
-    () => filterTransactions(ledger.transactions, filters),
-    [ledger.transactions, filters],
-  );
-  const groups = useMemo(() => groupByDay(matches.slice(0, visible)), [matches, visible]);
+  /**
+   * Filtering and paging are server-side. Pages are fetched by `offset` and
+   * concatenated: growing `limit` instead would hit the server's 100-row cap
+   * and make older history unreachable.
+   */
+  const page = useAsync(async () => {
+    if (!token) return null;
+    const requests = Array.from({ length: pages }, (_, index) =>
+      listTransactions(token, {
+        type: filters.type,
+        categoryId: filters.categoryId,
+        limit: PAGE_SIZE,
+        offset: index * PAGE_SIZE,
+      }),
+    );
+    const results = await Promise.all(requests);
+    const last = results[results.length - 1];
+    return { ...last, items: results.flatMap((result) => result.items), offset: 0 };
+  }, [token, filters.type, filters.categoryId, pages]);
 
   function change(patch: Partial<Filters>) {
     setFilters((current) => ({ ...current, ...patch }));
-    setVisible(PAGE_SIZE);
+    setPages(1);
   }
 
-  const hasNone = ledger.transactions.length === 0;
+  const groups = page.data ? groupByDay(page.data.items) : [];
+  const hasMore = page.data ? page.data.items.length < page.data.total : false;
 
   return (
     <div className="space-y-6">
@@ -58,73 +73,67 @@ export default function TransactionsPage() {
         </Link>
       </header>
 
-      {hasNone ? (
-        <EmptyState />
-      ) : (
-        <>
-          <FilterBar
-            filters={filters}
-            categories={ledger.categories}
-            onChange={change}
-            onClear={() => change(NO_FILTERS)}
-          />
+      <FilterBar
+        filters={filters}
+        categories={categories.data ?? []}
+        onChange={change}
+        onClear={() => change(NO_FILTERS)}
+      />
 
-          {matches.length === 0 ? (
-            <p className="border-y border-line py-8 text-sm text-muted">
-              Ningún movimiento coincide con estos filtros. Prueba ampliarlos o límpialos.
+      {page.loading ? <Loading label="Cargando tus movimientos…" /> : null}
+      {page.error ? <ErrorState error={page.error} onRetry={page.reload} /> : null}
+
+      {page.data && page.data.total === 0 ? (
+        isFiltered(filters) ? (
+          <p className="border-y border-line py-8 text-sm text-muted">
+            Ningún movimiento coincide con estos filtros. Prueba ampliarlos o límpialos.
+          </p>
+        ) : (
+          <div className="max-w-prose space-y-4 border-y border-line py-10">
+            <p className="text-sm text-muted">
+              Todavía no registras nada. Apunta tu primer gasto o ingreso y aquí verás el
+              historial completo.
             </p>
-          ) : (
-            <div className="space-y-6">
-              {groups.map((group) => (
-                <section key={group.date} className="space-y-1">
-                  <h2 className="text-sm text-muted first-letter:uppercase">
-                    {formatDay(group.date)}
-                  </h2>
-                  <ul className="divide-y divide-line border-y border-line">
-                    {group.items.map((transaction) => (
-                      <TransactionRow
-                        key={transaction.id}
-                        transaction={transaction}
-                        category={categoriesById.get(transaction.categoryId)}
-                      />
-                    ))}
-                  </ul>
-                </section>
-              ))}
+            <Link
+              href="/movimientos/nuevo"
+              className="inline-block rounded-[var(--radius-panel)] border border-amber px-4 py-2 text-sm font-medium text-amber hover:bg-amber hover:text-ink"
+            >
+              Registrar el primero
+            </Link>
+          </div>
+        )
+      ) : null}
 
-              {matches.length > visible ? (
-                <button
-                  type="button"
-                  onClick={() => setVisible((count) => count + PAGE_SIZE)}
-                  className="rounded-[var(--radius-panel)] border border-line px-4 py-2 text-sm text-muted hover:text-text"
-                >
-                  Ver más ({matches.length - visible} restantes)
-                </button>
-              ) : null}
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  );
-}
+      {page.data && page.data.total > 0 ? (
+        <div className="space-y-6">
+          {groups.map((group) => (
+            <section key={group.date} className="space-y-1">
+              <h2 className="text-sm text-muted first-letter:uppercase">
+                {formatDay(group.date)}
+              </h2>
+              <ul className="divide-y divide-line border-y border-line">
+                {group.items.map((transaction) => (
+                  <TransactionRow
+                    key={transaction.id}
+                    transaction={transaction}
+                    onChanged={page.reload}
+                  />
+                ))}
+              </ul>
+            </section>
+          ))}
 
-function EmptyState() {
-  return (
-    <div className="max-w-prose space-y-4 border-y border-line py-10">
-      <p className="text-sm text-muted">
-        Todavía no registras nada. Apunta tu primer gasto o ingreso y aquí verás el historial
-        completo.
-      </p>
-      <div className="flex flex-wrap gap-2">
-        <Link
-          href="/movimientos/nuevo"
-          className="inline-block rounded-[var(--radius-panel)] border border-amber px-4 py-2 text-sm font-medium text-amber hover:bg-amber hover:text-ink"
-        >
-          Registrar el primero
-        </Link>
-        <SampleDataButton />
-      </div>
+          {hasMore ? (
+            <button
+              type="button"
+              onClick={() => setPages((value) => value + 1)}
+              className="rounded-[var(--radius-panel)] border border-line px-4 py-2 text-sm text-muted hover:text-text"
+            >
+              Ver más ({page.data.total - page.data.items.length} restantes)
+            </button>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -161,34 +170,26 @@ function FilterBar({
       </label>
       <select
         id="filter-category"
-        value={filters.categoryId}
-        onChange={(event) => onChange({ categoryId: event.target.value })}
+        value={String(filters.categoryId)}
+        onChange={(event) =>
+          onChange({
+            categoryId: event.target.value === "all" ? "all" : Number(event.target.value),
+          })
+        }
         className={controlClass}
       >
         <option value="all">Todas las categorías</option>
         {(["expense", "income"] as const).map((type) => (
           <optgroup key={type} label={type === "expense" ? "Gastos" : "Ingresos"}>
-            {byType(categories, type).map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
+            {categories
+              .filter((category) => category.type === type)
+              .map((category) => (
+                <option key={category.id} value={String(category.id)}>
+                  {category.name}
+                </option>
+              ))}
           </optgroup>
         ))}
-      </select>
-
-      <label className="sr-only" htmlFor="filter-period">
-        Periodo
-      </label>
-      <select
-        id="filter-period"
-        value={filters.period}
-        onChange={(event) => onChange({ period: event.target.value as Filters["period"] })}
-        className={controlClass}
-      >
-        <option value="all">Desde siempre</option>
-        <option value="this-month">Este mes</option>
-        <option value="last-month">Mes pasado</option>
       </select>
 
       {isFiltered(filters) ? (
@@ -202,14 +203,28 @@ function FilterBar({
 
 function TransactionRow({
   transaction,
-  category,
+  onChanged,
 }: {
   transaction: Transaction;
-  category: Category | undefined;
+  onChanged: () => void;
 }) {
-  const { ledger, commit } = useLedger();
+  const token = useToken();
   const [confirming, setConfirming] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const income = transaction.type === "income";
+
+  async function remove() {
+    if (!token) return;
+    try {
+      await deleteTransaction(token, transaction.id);
+      setConfirming(false);
+      setError(null);
+      onChanged();
+    } catch (problem) {
+      setError(isApiError(problem) ? problem.message : "No se pudo eliminar.");
+      setConfirming(false);
+    }
+  }
 
   if (confirming) {
     return (
@@ -220,7 +235,7 @@ function TransactionRow({
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={() => commit(deleteTransaction(ledger, transaction.id))}
+            onClick={remove}
             className="rounded-[var(--radius-panel)] border border-expense px-3 py-1.5 text-sm font-medium text-expense hover:bg-expense hover:text-ink"
           >
             Eliminar
@@ -238,39 +253,38 @@ function TransactionRow({
   }
 
   return (
-    <li className="group flex items-center gap-3 py-3">
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm">
-          {transaction.description || category?.name || "Sin categoría"}
-        </p>
-        <p className="text-xs text-muted">
-          {category?.name ?? "Sin categoría"}
-          <span className="sr-only">{income ? " · ingreso" : " · gasto"}</span>
+    <li className="group space-y-1 py-3">
+      <div className="flex items-center gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm">{transaction.description || transaction.category.name}</p>
+          <p className="text-xs text-muted">
+            {transaction.category.name}
+            <span className="sr-only">{income ? " · ingreso" : " · gasto"}</span>
+          </p>
+        </div>
+
+        <span className="flex shrink-0 gap-3 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
+          <Link
+            href={`/movimientos/${transaction.id}`}
+            className="text-sm text-muted hover:text-text"
+          >
+            Editar
+          </Link>
+          <button
+            type="button"
+            onClick={() => setConfirming(true)}
+            className="text-sm text-muted hover:text-expense"
+          >
+            Eliminar
+          </button>
+        </span>
+
+        <p className={`figures shrink-0 text-sm ${income ? "text-income" : "text-text"}`}>
+          {income ? "+" : "−"}
+          {formatMoney(transaction.amount)}
         </p>
       </div>
-
-      <span className="flex shrink-0 gap-3 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
-        <Link
-          href={`/movimientos/${transaction.id}`}
-          className="text-sm text-muted hover:text-text"
-        >
-          Editar
-        </Link>
-        <button
-          type="button"
-          onClick={() => setConfirming(true)}
-          className="text-sm text-muted hover:text-expense"
-        >
-          Eliminar
-        </button>
-      </span>
-
-      <p
-        className={`figures shrink-0 text-sm tabular-nums ${income ? "text-income" : "text-text"}`}
-      >
-        {income ? "+" : "−"}
-        {formatMoney(transaction.amount)}
-      </p>
+      <FormError message={error} />
     </li>
   );
 }

@@ -1,60 +1,27 @@
 import type { Transaction, TxType } from "./types";
 
-export type Period = "all" | "this-month" | "last-month";
+/** Filtering and paging now happen server-side; these are display helpers only. */
 
 export type Filters = {
   type: TxType | "all";
-  categoryId: string | "all";
-  period: Period;
+  categoryId: number | "all";
 };
 
-export const NO_FILTERS: Filters = { type: "all", categoryId: "all", period: "all" };
+export const NO_FILTERS: Filters = { type: "all", categoryId: "all" };
 
 export const isFiltered = (filters: Filters) =>
-  filters.type !== "all" || filters.categoryId !== "all" || filters.period !== "all";
-
-/**
- * "YYYY-MM" for the month `offset` months from `from`. Built from local date
- * parts so a transaction dated the 1st or the 31st lands in its own month
- * regardless of timezone.
- */
-export function monthKey(offset = 0, from: Date = new Date()): string {
-  const shifted = new Date(from.getFullYear(), from.getMonth() + offset, 1);
-  return `${shifted.getFullYear()}-${String(shifted.getMonth() + 1).padStart(2, "0")}`;
-}
-
-function periodKey(period: Period, now: Date): string | null {
-  if (period === "this-month") return monthKey(0, now);
-  if (period === "last-month") return monthKey(-1, now);
-  return null;
-}
-
-export function filterTransactions(
-  transactions: Transaction[],
-  filters: Filters,
-  now: Date = new Date(),
-): Transaction[] {
-  const month = periodKey(filters.period, now);
-  return transactions.filter((t) => {
-    if (filters.type !== "all" && t.type !== filters.type) return false;
-    if (filters.categoryId !== "all" && t.categoryId !== filters.categoryId) return false;
-    if (month && !t.date.startsWith(month)) return false;
-    return true;
-  });
-}
-
-/** Newest first. Ties keep a stable order so equal rows never swap on re-render. */
-export const sortByDateDesc = (transactions: Transaction[]): Transaction[] =>
-  [...transactions].sort((a, b) => (a.date === b.date ? a.id.localeCompare(b.id) : b.date.localeCompare(a.date)));
+  filters.type !== "all" || filters.categoryId !== "all";
 
 export type DayGroup = { date: string; items: Transaction[] };
 
+/** Groups an already-ordered page by calendar day, preserving the server's order. */
 export function groupByDay(transactions: Transaction[]): DayGroup[] {
   const groups: DayGroup[] = [];
-  for (const transaction of sortByDateDesc(transactions)) {
+  for (const transaction of transactions) {
+    const date = transaction.transaction_date.slice(0, 10);
     const last = groups.at(-1);
-    if (last && last.date === transaction.date) last.items.push(transaction);
-    else groups.push({ date: transaction.date, items: [transaction] });
+    if (last && last.date === date) last.items.push(transaction);
+    else groups.push({ date, items: [transaction] });
   }
   return groups;
 }
