@@ -90,7 +90,7 @@ $ docker compose -p misiops up --build -d
 \end{lstlisting}
 
 \subsection{Evidencia que su aplicación está corriendo en docker}
-El Listado~\ref{lst:dockerps} muestra los tres contenedores en ejecución el 21 de septiembre de 2026 y la respuesta de cada servicio desde el host. El mismo procedimiento corre en GitHub Actions en cada PR (workflow \texttt{docker-integration.yml}).
+El Listado~\ref{lst:dockerps} muestra los tres contenedores en ejecución el 21 de septiembre de 2026 y la respuesta de cada servicio desde el host. El workflow \texttt{docker-integration.yml} levanta el stack y verifica el backend en cada PR; la comprobación del frontend mostrada en este listado corresponde a la ejecución local.
 
 \begin{lstlisting}[caption={\texttt{docker compose ps} y comprobación de los servicios},label={lst:dockerps}]
 $ docker compose -p misiops ps
