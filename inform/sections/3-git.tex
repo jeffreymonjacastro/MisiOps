@@ -1,38 +1,129 @@
 \section{Aplicación de Git con Conventional Commits}
 
 \subsection{Breve explicación de qué son los Conventional Commits y por qué se usan}
-[Explica en tus propias palabras qué es la convención de commits (Conventional Commits) y las ventajas de utilizarla en el desarrollo]
+\emph{Conventional Commits}\footnote{\url{https://www.conventionalcommits.org/en/v1.0.0/}} es una convención ligera para escribir mensajes de commit con una estructura fija y legible tanto por personas como por herramientas:
+
+\begin{lstlisting}
+<tipo>[ámbito opcional]: <descripción>
+
+[cuerpo opcional]
+
+[pie(s) opcional(es)]
+\end{lstlisting}
+
+El \textbf{tipo} dice qué clase de cambio es (una funcionalidad, una corrección, documentación...), el \textbf{ámbito} entre paréntesis acota la parte del sistema afectada (en nuestro monorepo: \texttt{backend}, \texttt{frontend}, \texttt{specs}, \texttt{ci}), la \textbf{descripción} resume el cambio en imperativo y en una línea, el \textbf{cuerpo} explica el porqué y el \textbf{pie} enlaza issues o marca cambios incompatibles (\texttt{BREAKING CHANGE:} o un \texttt{!} después del tipo).
+
+En MisiOps se adoptó por cuatro razones:
+
+\begin{itemize}
+    \item \textbf{Trazabilidad}: con tres personas trabajando en paralelo, \texttt{git log --oneline} se lee como un registro de cambios y permite saber qué entró en cada rama sin abrir los diffs.
+    \item \textbf{Relación con el flujo SDD}: cada funcionalidad produce primero commits \texttt{docs(specs)} y después commits \texttt{feat}; el historial refleja el orden del pipeline.
+    \item \textbf{Automatización}: la convención mapea directamente a versionado semántico (\texttt{fix} $\rightarrow$ PATCH, \texttt{feat} $\rightarrow$ MINOR, \texttt{BREAKING CHANGE} $\rightarrow$ MAJOR) y permite generar \emph{changelogs} de forma automática más adelante.
+    \item \textbf{Revisión más rápida}: el tipo en el asunto indica al revisor qué esperar del PR y cuánto riesgo tiene (un \texttt{chore} no se revisa igual que un \texttt{feat} de 900 líneas).
+\end{itemize}
+
+La convención se refuerza con dos \emph{skills} del repositorio (\texttt{commit-message-writer} y \texttt{git-change-publisher}) que generan el mensaje a partir del \emph{staging area}, y con una plantilla de Pull Request obligatoria en \texttt{.github/pull\_request\_template.md}.
 
 \subsection{Guía de tipos principales}
-[Proporciona una breve descripción de los tipos principales de commits que utilizarán en su proyecto. Ejemplo:]
 \begin{itemize}
-    \item \texttt{feat}: [Descripción de feat]
-    \item \texttt{fix}: [Descripción de fix]
-    \item \texttt{docs}: [Descripción de docs]
-    \item \texttt{test}: [Descripción de test]
-    \item \texttt{chore}: [Descripción de chore]
-    \item \texttt{ci}: [Descripción de ci]
-    \item \texttt{refactor}: [Descripción de refactor]
+    \item \texttt{feat}: nueva funcionalidad visible para el usuario o para otro componente (un endpoint, una pantalla, el stack de Compose).
+    \item \texttt{fix}: corrección de un comportamiento incorrecto; el cuerpo describe el síntoma y la causa raíz.
+    \item \texttt{docs}: documentación, especificaciones en \texttt{specs/}, plantillas de PR, README. En SDD son los commits que preceden a todo \texttt{feat}.
+    \item \texttt{test}: se agregan o corrigen pruebas sin cambiar el código de producción.
+    \item \texttt{chore}: mantenimiento que no afecta el comportamiento (lockfiles, configuración de herramientas).
+    \item \texttt{ci}: cambios en los workflows de GitHub Actions o en hooks de Git.
+    \item \texttt{refactor}: reestructuración interna sin cambio funcional ni corrección.
 \end{itemize}
 
 \subsection{Capturas del historial de commits}
-[Inserta aquí las capturas de pantalla de su historial de commits (mínimo 9 registros). Luego, realiza un análisis detallado de una muestra de 6 commits.]
+El repositorio acumula 80 commits en la rama \texttt{develop}. La Figura~\ref{fig:commits} muestra el grafo; el Listado~\ref{lst:log} reproduce los 20 más recientes sin \emph{merges}.
 
 \begin{figure}[htbp]
     \centering
-    % \includegraphics[width=0.8\textwidth]{figures/commits_history.png}
-    \caption{Historial de Commits}
+    \IfFileExists{figures/commits_history.png}{\includegraphics[width=0.95\textwidth]{figures/commits_history.png}}{\fbox{\parbox{0.8\textwidth}{\centering\vspace{1cm}Captura pendiente: \texttt{figures/commits\_history.png}\vspace{1cm}}}}
+    \caption{Historial de commits (git graph) de MisiOps}
     \label{fig:commits}
 \end{figure}
 
-[Análisis detallado de los 6 commits seleccionados explicando el porqué de cada tipo y su impacto]
+\begin{lstlisting}[caption={\texttt{git log develop --oneline --no-merges -20}},label={lst:log}]
+fa93c99 fix(frontend): purge the legacy local-ledger key on boot
+6601d7e feat(frontend): connect the app to the backend API
+009ff1b docs(specs): add frontend-backend integration spec, plan and tasks
+474f912 fix: pre-push hook now checks specs across entire branch
+993543f docs: translate PR template to english and enforce usage
+64876cb ci: add docker compose integration test workflow
+c9ed3d6 docs: update spec with ci integration tests requirement
+bcc433e fix: update db env vars to match misiops backend config
+133389c fix: rename compose project and fix backend start command
+d71663a chore(ci): fix ci frontend test v2
+e7dd46c chore(ci): fix ci frontend test
+c5471f9 fix: remove uv.lock from .dockerignore
+1e9b172 feat: add docker compose setup for frontend, backend and postgres
+e3d585c feat(frontend): add a sample-data button for local review
+d0a4b03 feat(frontend): add category budget limits
+817bd1b feat(frontend): add dashboard summary
+c6de1dd feat(frontend): add transaction history list
+d601da7 feat(frontend): add manual transaction entry
+4103dc8 feat(frontend): add category management
+df48f7d feat(backend): add transaction endpoints, summary and category guards
+\end{lstlisting}
+
+\subsubsection*{Análisis detallado de seis commits}
+Se eligieron dos commits de cada área (backend, frontend e infraestructura), cada par perteneciente a un mismo Pull Request para mostrar cómo conviven un \texttt{feat} con su \texttt{fix} o \texttt{ci} de acompañamiento.
+
+\paragraph{1. \texttt{df48f7d} --- feat(backend): add transaction endpoints, summary and category guards} (Gabriel Espinoza, PR \#13).
+\textbf{Tipo}: \texttt{feat}, porque introduce capacidad nueva: la tabla \texttt{transactions}, los endpoints \texttt{POST/GET /api/v1/transactions} con paginación por \emph{offset} y filtros, \texttt{GET /transactions/summary} con desglose por categoría, y \texttt{PATCH/DELETE} por id. \textbf{Ámbito}: \texttt{backend}. \textbf{Impacto}: 885 líneas en 11 archivos, incluidas 55 pruebas nuevas; añade además las ``guardas'' en categorías que rechazan cambiar el tipo o borrar una categoría con transacciones (409). Es el commit que cierra la API mínima que el frontend necesita.
+
+\paragraph{2. \texttt{328d288} --- fix(backend): disable session expiry on commit for async sessions} (Gabriel Espinoza, PR \#12).
+\textbf{Tipo}: \texttt{fix}, porque corrige un error real: con sesiones asíncronas de SQLAlchemy, acceder a un atributo después del \texttt{commit} sobre una instancia expirada lanza \texttt{MissingGreenlet} y se traducía en un 500 al crear categorías contra Postgres. \textbf{Impacto}: 9 líneas, pero críticas; el cuerpo del mensaje documenta síntoma y causa, y se añade \texttt{test\_database.py} como prueba de regresión para que el ajuste \texttt{expire\_on\_commit=False} no se pierda.
+
+\paragraph{3. \texttt{6601d7e} --- feat(frontend): connect the app to the backend API} (Yared Riveros, PR \#76).
+\textbf{Tipo}: \texttt{feat} con ámbito \texttt{frontend}. Reemplaza el ``libro mayor'' local del navegador por llamadas a la API: agrega registro, login, logout y un guardia de rutas que adjunta el \emph{bearer token} a cada petición; mueve paginación, filtrado y agregación al servidor. \textbf{Impacto}: 30 archivos; elimina seis módulos que ya no tienen sentido (\texttt{ledger-store}, \texttt{storage}, \texttt{summary}...) y reescribe \texttt{types.ts} con las formas del servidor. El cuerpo describe la pasada de convergencia (paso 12 del SDD) que detectó y corrigió cinco brechas antes de abrir el PR.
+
+\paragraph{4. \texttt{fa93c99} --- fix(frontend): purge the legacy local-ledger key on boot} (Yared Riveros, PR \#76).
+\textbf{Tipo}: \texttt{fix}. Un navegador que usó la versión pre-backend conservaba datos reales bajo la clave \texttt{misiops.ledger.v1} de \texttt{localStorage}; nada los leía, pero tampoco nada los borraba, lo que violaba dos requisitos de la especificación (FR-012 y SC-006). \textbf{Impacto}: 38 líneas en 3 archivos; el \texttt{AppShell} barre la clave una vez al arrancar y se añaden dos pruebas. El mensaje explica además por qué la verificación original no lo detectó, información útil para quien lea el historial.
+
+\paragraph{5. \texttt{1e9b172} --- feat: add docker compose setup for frontend, backend and postgres} (Jeffrey Monja, PR \#73).
+\textbf{Tipo}: \texttt{feat} sin ámbito, porque toca todo el monorepo: crea los \texttt{Dockerfile} de backend y frontend, sus \texttt{.dockerignore}, el \texttt{docker-compose.yaml} con tres servicios, secreto de Postgres y redes pública/privada, y de paso el workflow \texttt{frontend-ci.yml}. \textbf{Impacto}: el proyecto pasa a levantarse con un solo comando. Viene acompañado de los artefactos SDD de \texttt{specs/009-docker-compose} (spec, plan, checklist, evaluación y tareas), que el \emph{enforcer} exige.
+
+\paragraph{6. \texttt{64876cb} --- ci: add docker compose integration test workflow} (Jeffrey Monja, PR \#73).
+\textbf{Tipo}: \texttt{ci}, porque solo añade un workflow de GitHub Actions. \texttt{docker-integration.yml} genera secretos de prueba, ejecuta \texttt{docker compose up --build -d}, espera al \emph{healthcheck} de Postgres, verifica con \texttt{curl} que el backend responda en \texttt{:8000} y vuelca los logs si algo falla. \textbf{Impacto}: convierte la dockerización en algo verificado en cada PR hacia \texttt{develop}, no en una promesa del README.
 
 \subsection{Captura de Pull Requests}
-[Inserta aquí la captura de los Pull Requests realizados siguiendo su metodología de branching (GitFlow o Trunk Based Development)]
+El equipo sigue \textbf{GitFlow}: \texttt{main} solo recibe \emph{merges} desde \texttt{develop} (PRs \#2 y \#75, los ``checkpoints''), \texttt{develop} es la rama de integración y todo el trabajo ocurre en ramas \texttt{feature/<nombre>} creadas desde \texttt{develop}. Cuando una funcionalidad depende de otra aún no integrada se usan \emph{PRs apilados}: por ejemplo \#11 (\texttt{feature/user-auth}) apunta a \texttt{develop}, \#12 (\texttt{feature/categories}) apunta a \#11 y \#13 (\texttt{feature/transactions}) apunta a \#12; GitHub redirige la base automáticamente al fusionarse el anterior. La Tabla~\ref{tab:prs} resume los 16 PRs del proyecto.
+
+\begin{table}[H]
+    \centering
+    \footnotesize
+    \begin{tabularx}{\textwidth}{@{}p{0.7cm} p{5.3cm} p{2.9cm} X@{}}
+        \toprule
+        \textbf{PR} & \textbf{Rama origen} & \textbf{Base} & \textbf{Título} \\
+        \midrule
+        \#76 & feature/frontend-backend-integration & develop & feat(frontend): connect the app to the backend API \\
+        \#75 & develop & main & feat(merge): first checkpoint with database, backend and frontend active \\
+        \#74 & docs/pr-template & develop & docs: translate pr template and enforce in agents \\
+        \#73 & feature/docker-compose & develop & feat: add docker compose setup for frontend, backend and postgres \\
+        \#13 & feature/transactions & feature/categories & feat(backend): transaction endpoints, summary and category guards \\
+        \#12 & feature/categories & feature/user-auth & feat(backend): category endpoints and default categories \\
+        \#11 & feature/user-auth & develop & feat(backend): user authentication and profile endpoints \\
+        \#10 & feature/sample-data-button & feature/005-\ldots & feat(frontend): add a sample-data button for local review \\
+        \#9  & feature/005-category-budget-limits & feature/004-\ldots & feat(frontend): add category budget limits \\
+        \#8  & feature/004-dashboard-summary & feature/002-\ldots & feat(frontend): add dashboard summary \\
+        \#7  & feature/002-transaction-history-list & feature/003-\ldots & feat(frontend): add transaction history list \\
+        \#6  & feature/001-manual-transaction-entry & feature/003-\ldots & feat(frontend): add manual transaction entry \\
+        \#5  & feature/003-category-management & develop & feat(frontend): add category management \\
+        \#4  & feature/frontend-manual-tracking-specs & develop & docs(specs): map manual income/expense tracking features \\
+        \#3  & feature/frontend-lockfile & develop & chore(frontend): add package-lock.json for reproducible installs \\
+        \#2  & develop & main & docs(readme): update project description and formatting \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Pull Requests del proyecto (todos fusionados)}
+    \label{tab:prs}
+\end{table}
 
 \begin{figure}[htbp]
     \centering
-    % \includegraphics[width=0.8\textwidth]{figures/pull_requests.png}
-    \caption{Pull Requests siguiendo la metodología de ramificación}
+    \IfFileExists{figures/pull_requests.png}{\includegraphics[width=0.95\textwidth]{figures/pull_requests.png}}{\fbox{\parbox{0.8\textwidth}{\centering\vspace{1cm}Captura pendiente: \texttt{figures/pull\_requests.png}\vspace{1cm}}}}
+    \caption{Pull Requests siguiendo GitFlow (feature $\rightarrow$ develop $\rightarrow$ main)}
     \label{fig:pull_requests}
 \end{figure}

@@ -1,17 +1,121 @@
 \section{Dockerizar su aplicación}
 
 \subsection{Uso de Dockerfile y Docker Compose}
-[Explica cómo han estructurado su Dockerfile y Docker Compose para dockerizar la aplicación]
+Cada servicio tiene su propio \texttt{Dockerfile} en su carpeta (\texttt{backend/}, \texttt{frontend/}) y un \texttt{.dockerignore} que excluye \texttt{.venv}, \texttt{node\_modules} y archivos de entorno. El archivo \texttt{docker/docker-compose.yaml} orquesta los tres servicios:
+
+\begin{itemize}
+    \item \textbf{postgres}: imagen oficial \texttt{postgres:16.3}, contraseña inyectada como \emph{secret} de Compose (\texttt{POSTGRES\_PASSWORD\_FILE}) en lugar de variable de entorno en claro, volumen nombrado para persistir datos y \emph{healthcheck} con \texttt{pg\_isready}.
+    \item \textbf{backend}: se construye desde \texttt{backend/Dockerfile}, lee \texttt{SECRET\_KEY} y \texttt{POSTGRES\_PASSWORD} de \texttt{.env.dev} (ignorado por Git), y declara \texttt{depends\_on: postgres: condition: service\_healthy}, de modo que uvicorn arranca solo cuando la base acepta conexiones.
+    \item \textbf{frontend}: se construye desde \texttt{frontend/Dockerfile} y depende del backend.
+\end{itemize}
+
+Hay dos redes: \texttt{public}, a la que se conectan frontend y backend para exponer los puertos 3000 y 8000 al host, y \texttt{private} con \texttt{internal: true}, la única a la que pertenece Postgres, que por tanto no es alcanzable desde fuera del stack.
+
+El \texttt{Dockerfile} del backend usa un patrón de dos pasos con \texttt{uv} para aprovechar la caché de capas: primero copia \texttt{pyproject.toml} y \texttt{uv.lock} e instala dependencias (\texttt{--no-install-project}); recién después copia el código. Un cambio en un archivo \texttt{.py} no vuelve a descargar dependencias.
+
+\begin{lstlisting}[language=bash,caption={backend/Dockerfile}]
+FROM python:3.13-slim
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+WORKDIR /app
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev --no-install-project
+COPY . .
+RUN uv sync --frozen --no-dev
+ENV PATH="/app/.venv/bin:$PATH"
+EXPOSE 8000
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+\end{lstlisting}
+
+\begin{lstlisting}[language=bash,caption={frontend/Dockerfile}]
+FROM node:20-alpine
+RUN corepack enable && corepack prepare pnpm@9.6.0 --activate
+WORKDIR /app
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+COPY . .
+EXPOSE 3000
+CMD ["pnpm", "run", "dev"]
+\end{lstlisting}
 
 \subsection{Ejemplo del servicio web y base de datos}
-[Muestra aquí fragmentos importantes de su configuración para el servicio web (ej. Flask, FastAPI, Next.js) y la base de datos (ej. Postgres)]
+Fragmento de \texttt{docker/docker-compose.yaml} con el servicio web (backend FastAPI) y la base de datos:
+
+\begin{lstlisting}[caption={docker/docker-compose.yaml (extracto)}]
+services:
+  backend:
+    build: { context: ../backend, dockerfile: Dockerfile }
+    ports: ["8000:8000"]
+    env_file: [.env.dev]          # SECRET_KEY, POSTGRES_PASSWORD
+    environment:
+      - POSTGRES_SERVER=postgres
+      - POSTGRES_DB=mydb
+      - POSTGRES_USER=myuser
+    networks: [public, private]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16.3
+    restart: always
+    environment:
+      - POSTGRES_USER=myuser
+      - POSTGRES_DB=mydb
+      - POSTGRES_PASSWORD_FILE=/run/secrets/pg_password
+    secrets: [pg_password]
+    volumes: [postgres-data:/var/lib/postgresql/data]
+    networks: [private]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U myuser -d mydb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+secrets:
+  pg_password: { file: ./pg_password.txt }
+volumes:
+  postgres-data:
+networks:
+  public:
+  private: { internal: true }
+\end{lstlisting}
+
+Para levantar el stack basta con crear los dos archivos de secretos (no versionados) y ejecutar Compose desde \texttt{docker/}:
+
+\begin{lstlisting}[language=bash]
+$ cd docker
+$ printf 'POSTGRES_PASSWORD=devops123\nSECRET_KEY=<32+ bytes>\n' > .env.dev
+$ echo devops123 > pg_password.txt
+$ docker compose -p misiops up --build -d
+\end{lstlisting}
 
 \subsection{Evidencia que su aplicación está corriendo en docker}
-[Inserta aquí capturas de pantalla de la terminal mostrando los contenedores corriendo (docker ps) o la aplicación funcionando desde Docker]
+El Listado~\ref{lst:dockerps} muestra los tres contenedores en ejecución el 21 de septiembre de 2026 y la respuesta de cada servicio desde el host. El mismo procedimiento corre en GitHub Actions en cada PR (workflow \texttt{docker-integration.yml}).
+
+\begin{lstlisting}[caption={\texttt{docker compose ps} y comprobación de los servicios},label={lst:dockerps}]
+$ docker compose -p misiops ps
+NAME                 IMAGE              STATUS                    PORTS
+misiops-backend-1    misiops-backend    Up 32 seconds             0.0.0.0:8000->8000/tcp
+misiops-frontend-1   misiops-frontend   Up 32 seconds             0.0.0.0:3000->3000/tcp
+misiops-postgres-1   postgres:16.3      Up 37 seconds (healthy)   5432/tcp
+
+$ curl http://localhost:8000/
+{"status":"ok"}
+
+$ curl -o /dev/null -w '%{http_code}\n' http://localhost:3000/
+200
+\end{lstlisting}
 
 \begin{figure}[htbp]
     \centering
-    % \includegraphics[width=0.8\textwidth]{figures/docker_running.png}
-    \caption{Aplicación corriendo en Docker}
+    \IfFileExists{figures/docker_running.png}{\includegraphics[width=0.95\textwidth]{figures/docker_running.png}}{\fbox{\parbox{0.8\textwidth}{\centering\vspace{1cm}Captura pendiente: \texttt{figures/docker\_running.png}\vspace{1cm}}}}
+    \caption{Contenedores de MisiOps en ejecución (\texttt{docker ps})}
     \label{fig:docker_running}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \IfFileExists{figures/docker_app.png}{\includegraphics[width=0.95\textwidth]{figures/docker_app.png}}{\fbox{\parbox{0.8\textwidth}{\centering\vspace{1cm}Captura pendiente: \texttt{figures/docker\_app.png}\vspace{1cm}}}}
+    \caption{Aplicación servida desde Docker en \texttt{http://localhost:3000}}
+    \label{fig:docker_app}
 \end{figure}
