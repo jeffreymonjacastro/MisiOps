@@ -15,6 +15,6 @@ Según la constitución del proyecto (\texttt{.specify/memory/constitution.md}),
 \begin{itemize}
     \item \textbf{Git y Conventional Commits}: tres personas trabajando en paralelo sobre frontend, backend e infraestructura, con Pull Requests apilados que dependen unos de otros, hacen indispensable un historial legible.
     \item \textbf{Pruebas unitarias}: las reglas de dinero (redondeo a centavos, límites, periodos) son el tipo de lógica donde un error pasa desapercibido sin pruebas; el backend corre 119 y el frontend 39.
-    \item \textbf{CI}: cuatro workflows de GitHub Actions validan lint, pruebas, auditoría de dependencias, el levantamiento completo con Docker Compose y la presencia de artefactos SDD en cada PR.
+    \item \textbf{CI}: cuatro workflows de GitHub Actions validan lint, pruebas, auditoría de dependencias y el levantamiento completo con Docker Compose; \texttt{sdd-enforcer} exige artefactos SDD en PRs de ramas \texttt{feature/} que modifican \texttt{frontend/} o \texttt{backend/}.
     \item \textbf{Docker}: la aplicación tiene tres servicios con dependencias de arranque (el backend espera a que Postgres esté sano) y redes separadas, exactamente el escenario donde Compose aporta valor frente a instalar todo a mano.
 \end{itemize}
