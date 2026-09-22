@@ -1,7 +1,20 @@
 \section{Justificación de la elección del tema}
 
 \subsection{Contexto del proyecto}
-[Explica el contexto en el cual se desarrolla el proyecto, la situación actual y por qué se presenta este escenario]
+El proyecto se desarrolla en el curso de DevOps como un caso práctico para aplicar, sobre un producto real, las prácticas del ciclo de vida moderno del software: control de versiones con convenciones, ramificación con GitFlow, pruebas automatizadas, integración continua y contenedores.
+
+Se eligió el dominio de finanzas personales porque es un problema cotidiano y bien acotado: el modelo de datos cabe en tres entidades (\texttt{users}, \texttt{categories}, \texttt{transactions}), las reglas de negocio son verificables con pruebas unitarias (montos con dos decimales, categorías únicas por usuario y tipo, periodo presupuestario que empieza el día que el usuario elija) y aun así requiere un frontend, un backend y una base de datos que se comunican entre sí, es decir, un sistema con varias piezas que hay que orquestar.
+
+Según la constitución del proyecto (\texttt{.specify/memory/constitution.md}), el objetivo a largo plazo es que el registro de movimientos ocurra por un chatbot en lenguaje natural (Telegram) y que un modelo prediga el ahorro a fin de mes. La entrega actual construye la base sobre la que eso se apoya: la API, la persistencia y una interfaz web de registro manual.
 
 \subsection{Motivación y relevancia}
-[Describe la motivación detrás de la elección de este proyecto y por qué es relevante tanto técnica como funcionalmente]
+\textbf{Funcionalmente}, el equipo se identifica con el usuario objetivo: personas jóvenes con ingresos medios, sin tiempo para registrar gastos al final del día, que necesitan una forma rápida de saber cuánto pueden gastar todavía. Un producto propio, aunque sencillo, es más motivador que un ejercicio sintético y obliga a tomar decisiones de diseño reales (por ejemplo, cómo se calcula ``lo que queda del presupuesto'' cuando el mes del usuario empieza el día 15).
+
+\textbf{Técnicamente}, el proyecto es relevante porque ejercita cada tema del curso con una necesidad concreta:
+
+\begin{itemize}
+    \item \textbf{Git y Conventional Commits}: tres personas trabajando en paralelo sobre frontend, backend e infraestructura, con Pull Requests apilados que dependen unos de otros, hacen indispensable un historial legible.
+    \item \textbf{Pruebas unitarias}: las reglas de dinero (redondeo a centavos, límites, periodos) son el tipo de lógica donde un error pasa desapercibido sin pruebas; el backend corre 119 y el frontend 39.
+    \item \textbf{CI}: cuatro workflows de GitHub Actions validan lint, pruebas, auditoría de dependencias y el levantamiento completo con Docker Compose; \texttt{sdd-enforcer} exige artefactos SDD en PRs de ramas \texttt{feature/} que modifican \texttt{frontend/} o \texttt{backend/}.
+    \item \textbf{Docker}: la aplicación tiene tres servicios con dependencias de arranque (el backend espera a que Postgres esté sano) y redes separadas, exactamente el escenario donde Compose aporta valor frente a instalar todo a mano.
+\end{itemize}

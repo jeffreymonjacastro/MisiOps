@@ -1,14 +1,24 @@
 \section{Título y descripción del proyecto y del equipo}
 
 \subsection{Nombre del producto/servicio}
-[Ingresa aquí el nombre del producto o servicio de tu proyecto]
+\textbf{MisiOps} es una plataforma web de gestión de finanzas personales. Permite a cada usuario registrar sus ingresos y gastos, organizarlos por categorías con presupuesto propio y seguir en un tablero cuánto lleva gastado y cuánto le queda del presupuesto del mes.
 
 \subsection{Breve explicación del problema y la solución propuesta}
-[Describe brevemente el problema que tu proyecto busca resolver y la solución que propone]
+Muchas personas no llevan un control de su dinero: llegan a fin de mes con poco o nada ahorrado, o incluso endeudadas, porque no tienen trazabilidad de en qué gastan. Las aplicaciones bancarias muestran movimientos aislados por cuenta, pero no una visión consolidada ni por categoría, y las hojas de cálculo exigen disciplina y tiempo que el usuario típico no tiene.
+
+MisiOps propone una solución de extremo a extremo compuesta por tres piezas desplegadas con Docker Compose:
+
+\begin{itemize}
+    \item \textbf{Backend (FastAPI + PostgreSQL)}: expone una API REST versionada (\texttt{/api/v1}) con autenticación JWT, perfil de usuario, categorías por usuario con presupuesto opcional, transacciones con filtros y paginación, y un endpoint de resumen que calcula totales por periodo presupuestario y por categoría.
+    \item \textbf{Frontend (Next.js + TypeScript + Tailwind)}: interfaz con registro e inicio de sesión, formulario de registro manual de movimientos, historial agrupado por día con filtros, gestión de categorías y tablero de resumen alimentado por la API.
+    \item \textbf{Base de datos (PostgreSQL 16)}: persiste usuarios, categorías y transacciones con integridad referencial (borrado en cascada de usuario a sus datos; una categoría no se elimina ni cambia de tipo mientras tenga transacciones).
+\end{itemize}
+
+El proceso de desarrollo sigue un flujo \emph{Spec-Driven Development} (SDD): cada funcionalidad nace como una especificación en \texttt{specs/}, pasa por plan, checklist y tareas, y recién entonces se implementa. Un workflow de GitHub Actions (\texttt{sdd-enforcer}) bloquea los Pull Requests de ramas \texttt{feature/} que modifican \texttt{frontend/} o \texttt{backend/} sin esos artefactos.
 
 \subsection{Integrantes y roles}
 \begin{itemize}
-    \item \textbf{[Nombre del Integrante 1]}: [Rol o función, ej. Scrum Master, Desarrollador Backend, etc.]
-    \item \textbf{[Nombre del Integrante 2]}: [Rol o función]
-    \item \textbf{[Nombre del Integrante 3]}: [Rol o función]
+    \item \textbf{Jeffrey Monja Castro}: Arquitecto y responsable de DevOps. Definió la estructura del monorepo, la constitución del proyecto y el flujo SDD; construyó los \texttt{Dockerfile}, el \texttt{docker-compose.yaml}, los workflows de CI y las plantillas de Pull Request.
+    \item \textbf{Gabriel Espinoza}: Desarrollador Backend. Implementó la API en FastAPI (autenticación, usuarios, categorías y transacciones), los modelos SQLAlchemy asíncronos, y la suite de pruebas con \texttt{pytest} (119 pruebas).
+    \item \textbf{Yared Riveros Rodriguez}: Desarrollador Frontend. Diseñó e implementó la aplicación Next.js (pantallas de movimientos, categorías, tablero y login), su integración con la API y las pruebas unitarias del cliente con \texttt{node:test} (39 pruebas).
 \end{itemize}
