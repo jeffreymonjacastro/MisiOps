@@ -14,7 +14,7 @@ MisiOps propone una solución de extremo a extremo compuesta por tres piezas des
     \item \textbf{Base de datos (PostgreSQL 16)}: persiste usuarios, categorías y transacciones con integridad referencial (borrado en cascada de usuario a sus datos; una categoría no se elimina ni cambia de tipo mientras tenga transacciones).
 \end{itemize}
 
-El proceso de desarrollo sigue un flujo \emph{Spec-Driven Development} (SDD): cada funcionalidad nace como una especificación en \texttt{specs/}, pasa por plan, checklist y tareas, y recién entonces se implementa. Un workflow de GitHub Actions (\texttt{sdd-enforcer}) bloquea cualquier Pull Request con código que no traiga esos artefactos.
+El proceso de desarrollo sigue un flujo \emph{Spec-Driven Development} (SDD): cada funcionalidad nace como una especificación en \texttt{specs/}, pasa por plan, checklist y tareas, y recién entonces se implementa. Un workflow de GitHub Actions (\texttt{sdd-enforcer}) bloquea los Pull Requests de ramas \texttt{feature/} que modifican \texttt{frontend/} o \texttt{backend/} sin esos artefactos.
 
 \subsection{Integrantes y roles}
 \begin{itemize}
