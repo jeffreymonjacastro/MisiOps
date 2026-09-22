@@ -84,7 +84,7 @@ Para levantar el stack basta con crear los dos archivos de secretos (no versiona
 
 \begin{lstlisting}[language=bash]
 $ cd docker
-$ printf 'POSTGRES_PASSWORD=devops123\nSECRET_KEY=<32+ bytes>\n' > .env.dev
+$ printf 'POSTGRES_PASSWORD=devops123\nSECRET_KEY=replace-me-with-at-least-32-random-characters\n' > .env.dev
 $ echo devops123 > pg_password.txt
 $ docker compose -p misiops up --build -d
 \end{lstlisting}
