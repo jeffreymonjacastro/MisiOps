@@ -1,10 +1,30 @@
-\section{Automatización en scripts bash}
+\section{Automatización en Scripts Bash}
+Con el objetivo de agilizar el desarrollo, reducir errores manuales y estandarizar los flujos de trabajo del proyecto, se ha implementado un conjunto de automatizaciones en Bash. Estos scripts se encuentran ubicados en la carpeta \texttt{automations/} en la raíz del repositorio y automatizan tareas esenciales.
 
-\subsection{Automatizar la clonación del proyecto}
-[Explica y muestra el fragmento del script utilizado para automatizar la clonación del repositorio]
+\subsection{Clonación e instalación del proyecto}
+Para facilitar la integración del entorno y descargar el proyecto rápidamente, se creó el script \texttt{clone\_and\_setup.sh}. Este archivo se encarga de clonar automáticamente el repositorio desde GitHub y, secuencialmente, procede a instalar todas las dependencias necesarias. Para el Frontend utiliza \texttt{pnpm} y para el Backend utiliza el gestor de paquetes \texttt{uv}.
 
-\subsection{Automatizar la ejecución de los test}
-[Explica y muestra el fragmento del script utilizado para ejecutar las pruebas automáticamente]
+\begin{lstlisting}[language=bash, caption={Comando para clonar y preparar el entorno}]
+./automations/clone_and_setup.sh
+\end{lstlisting}
 
-\subsection{Automatizar correr el proyecto en modo local}
-[Explica y muestra el fragmento del script utilizado para levantar el proyecto en modo local]
+\subsection{Ejecución automatizada de los tests}
+Para garantizar la integridad del código en ambas partes del sistema, se estructuró el script \texttt{run\_tests.sh}. Este unifica la ejecución de todas las pruebas automatizadas del monorepo. De forma secuencial, corre las pruebas unitarias del Frontend (usando el test runner de Node.js) y las pruebas del Backend (usando \texttt{pytest}). Si cualquiera de los dos entornos reporta fallos, el script notifica el error y devuelve un código de salida fallido, ideal para integrarse a flujos de integración continua (CI).
+
+\begin{lstlisting}[language=bash, caption={Comando para ejecutar todas las pruebas}]
+./automations/run_tests.sh
+\end{lstlisting}
+
+\subsection{Ejecución del proyecto en modo local}
+Levantar múltiples servidores de forma separada puede ser tedioso. Para solucionar esto, se diseñó \texttt{run\_local.sh}, el cual arranca simultáneamente el servidor de desarrollo de FastAPI (puerto 8000) y el servidor de Next.js (puerto 3000) corriendo procesos en segundo plano. El script cuenta con un manejador de señales (\textit{trap}) que detecta cuando el usuario interrumpe la consola (usando \texttt{Ctrl+C}) para apagar ambos procesos de manera segura y evitar tareas remanentes.
+
+\begin{lstlisting}[language=bash, caption={Comando para levantar los servidores en local}]
+./automations/run_local.sh
+\end{lstlisting}
+
+\subsection{Levantamiento automatizado de contenedores Docker}
+Adicional a la ejecución local, se implementó el script \texttt{run\_docker.sh} para automatizar la orquestación del proyecto mediante contenedores. El archivo invoca a Docker Compose apuntando al archivo de configuración pertinente (\texttt{docker/docker-compose.yaml}) y levanta todos los servicios en segundo plano (\textit{detached mode}).
+
+\begin{lstlisting}[language=bash, caption={Comando para inicializar los contenedores}]
+./automations/run_docker.sh
+\end{lstlisting}
