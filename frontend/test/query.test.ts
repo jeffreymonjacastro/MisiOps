@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { NO_FILTERS, groupByDay, isFiltered } from "./query.ts";
-import type { Transaction } from "./types.ts";
+import { NO_FILTERS, groupByDay, isFiltered } from "../app/lib/query.ts";
+import type { Transaction } from "../app/lib/types.ts";
 
 const tx = (id: number, date: string): Transaction => ({
   id,

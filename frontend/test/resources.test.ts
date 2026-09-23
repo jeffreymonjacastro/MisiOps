@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { listQuery, transactionBody } from "./resources.ts";
+import { listQuery, transactionBody } from "../app/lib/resources.ts";
 
 test("'all' filters are dropped instead of being sent to the server", () => {
   const query = listQuery({ type: "all", categoryId: "all", limit: 20, offset: 0 });
