@@ -28,3 +28,10 @@ Adicional a la ejecución local, se implementó el script \texttt{run\_docker.sh
 \begin{lstlisting}[language=bash, caption={Comando para inicializar los contenedores}]
 ./automations/run_docker.sh
 \end{lstlisting}
+
+\subsection{Detención automatizada de contenedores Docker}
+De igual manera, para asegurar que los recursos de red y contenedores se liberen de forma limpia y correcta, se creó el script \texttt{stop\_docker.sh}. Por defecto, este comando apaga y elimina los contenedores orquestados previamente por Docker Compose preservando los volúmenes de datos y las imágenes para agilizar arranques futuros. Si se desea una limpieza total (incluyendo volúmenes), el script acepta un parámetro opcional.
+
+\begin{lstlisting}[language=bash, caption={Comando para detener los contenedores preservando datos}]
+./automations/stop_docker.sh
+\end{lstlisting}

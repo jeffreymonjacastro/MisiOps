@@ -18,11 +18,10 @@ En MisiOps se adoptó por cuatro razones:
 \begin{itemize}
     \item \textbf{Trazabilidad}: con tres personas trabajando en paralelo, \texttt{git log --oneline} se lee como un registro de cambios y permite saber qué entró en cada rama sin abrir los diffs.
     \item \textbf{Relación con el flujo SDD}: cada funcionalidad produce primero commits \texttt{docs(specs)} y después commits \texttt{feat}; el historial refleja el orden del pipeline.
-    \item \textbf{Automatización}: la convención mapea directamente a versionado semántico (\texttt{fix} $\rightarrow$ PATCH, \texttt{feat} $\rightarrow$ MINOR, \texttt{BREAKING CHANGE} $\rightarrow$ MAJOR) y permite generar \emph{changelogs} de forma automática más adelante.
     \item \textbf{Revisión más rápida}: el tipo en el asunto indica al revisor qué esperar del PR y cuánto riesgo tiene (un \texttt{chore} no se revisa igual que un \texttt{feat} de 900 líneas).
 \end{itemize}
 
-La convención se refuerza con dos \emph{skills} del repositorio (\texttt{commit-message-writer} y \texttt{git-change-publisher}) que generan el mensaje a partir del \emph{staging area}, y con una plantilla de Pull Request obligatoria en \texttt{.github/pull\_request\_template.md}.
+La convención se refuerza con dos \emph{skills} del repositorio (\texttt{commit\allowbreak-message\allowbreak-writer} y \texttt{git\allowbreak-change\allowbreak-publisher}), que analizan los cambios preparados en el área de \emph{staging} y ayudan a redactar y publicar el commit, además de una plantilla de Pull Request obligatoria en \texttt{.github/\allowbreak pull\_request\_template.md}.
 
 \subsection{Guía de tipos principales}
 \begin{itemize}
@@ -36,11 +35,11 @@ La convención se refuerza con dos \emph{skills} del repositorio (\texttt{commit
 \end{itemize}
 
 \subsection{Capturas del historial de commits}
-El repositorio acumula 80 commits en la rama \texttt{develop}. La Figura~\ref{fig:commits} muestra el grafo; el Listado~\ref{lst:log} reproduce los 20 más recientes sin \emph{merges}.
+El repositorio acumula 80 commits en la rama \texttt{develop}. La Figura~\ref{fig:commits} muestra el grafo de un subconjunto de commits; el Listado~\ref{lst:log} reproduce los 20 más recientes sin \emph{merges}.
 
 \begin{figure}[htbp]
     \centering
-    \IfFileExists{figures/commits_history.png}{\includegraphics[width=0.95\textwidth]{figures/commits_history.png}}{\fbox{\parbox{0.8\textwidth}{\centering\vspace{1cm}Captura pendiente: \texttt{figures/commits\_history.png}\vspace{1cm}}}}
+    \includegraphics[width=0.95\textwidth]{figures/git/git-graph.png}
     \caption{Historial de commits (git graph) de MisiOps}
     \label{fig:commits}
 \end{figure}
@@ -69,61 +68,106 @@ df48f7d feat(backend): add transaction endpoints, summary and category guards
 \end{lstlisting}
 
 \subsubsection*{Análisis detallado de seis commits}
-Se eligieron dos commits de cada área (backend, frontend e infraestructura), cada par perteneciente a un mismo Pull Request para mostrar cómo conviven un \texttt{feat} con su \texttt{fix} o \texttt{ci} de acompañamiento.
+Se eligieron dos commits de cada área (backend, frontend e infraestructura) para mostrar diversas implementaciones de conventional commits.
 
-\paragraph{1. \texttt{df48f7d} --- feat(backend): add transaction endpoints, summary and category guards} (Gabriel Espinoza, PR \#13).
-\textbf{Tipo}: \texttt{feat}, porque introduce capacidad nueva: la tabla \texttt{transactions}, los endpoints \texttt{POST/GET /api/v1/transactions} con paginación por \emph{offset} y filtros, \texttt{GET /transactions/summary} con desglose por categoría, y \texttt{PATCH/DELETE} por id. \textbf{Ámbito}: \texttt{backend}. \textbf{Impacto}: 885 líneas en 11 archivos, incluidas 55 pruebas nuevas; añade además las ``guardas'' en categorías que rechazan cambiar el tipo o borrar una categoría con transacciones (409). Es el commit que cierra la API mínima que el frontend necesita.
+\begin{enumerate}
+    \item \textbf{df48f7d - feat(backend): add transaction endpoints, summary and category guards}
+          \begin{itemize}
+              \item Autor: Gabriel Espinoza.
+              \item Ámbito: \texttt{backend}.
+              \item Info: PR \#13, 885 líneas en 11 archivos, con 55 pruebas.
+              \item Tipo: \texttt{feat}
+              \item Impacto: Introduce capacidad nueva: la tabla \texttt{transactions}, los endpoints \texttt{POST/GET /\allowbreak api/v1/\allowbreak transactions} con paginación por \emph{offset} y filtros, \texttt{GET /\allowbreak transactions/\allowbreak summary} con desglose por categoría, y \texttt{PATCH/DELETE} por id. Además añade las ``guardas'' en categorías que rechazan cambiar el tipo o borrar una categoría con transacciones (409). Cierra la API mínima que el frontend necesita.
+          \end{itemize}
 
-\paragraph{2. \texttt{328d288} --- fix(backend): disable session expiry on commit for async sessions} (Gabriel Espinoza, PR \#12).
-\textbf{Tipo}: \texttt{fix}, porque corrige un error real: con sesiones asíncronas de SQLAlchemy, acceder a un atributo después del \texttt{commit} sobre una instancia expirada lanza \texttt{MissingGreenlet} y se traducía en un 500 al crear categorías contra Postgres. \textbf{Impacto}: 9 líneas, pero críticas; el cuerpo del mensaje documenta síntoma y causa, y se añade \texttt{test\_database.py} como prueba de regresión para que el ajuste \texttt{expire\_on\_commit=False} no se pierda.
+    \item \textbf{328d288 - fix(backend): disable session expiry on commit for async sessions}
+          \begin{itemize}
+              \item Autor: Gabriel Espinoza.
+              \item Ámbito: \texttt{backend}.
+              \item Info: PR \#12, 9 líneas, 1 prueba de regresión.
+              \item Tipo: \texttt{fix}
+              \item Impacto: Corrige un error real: con sesiones asíncronas de SQLAlchemy, acceder a un atributo después del \texttt{commit} sobre una instancia expirada lanza \texttt{MissingGreenlet} (error 500 al crear categorías). El mensaje documenta síntoma y causa, y se añade \texttt{test\_database.py} como prueba para evitar regresiones.
+          \end{itemize}
 
-\paragraph{3. \texttt{6601d7e} --- feat(frontend): connect the app to the backend API} (Yared Riveros, PR \#76).
-\textbf{Tipo}: \texttt{feat} con ámbito \texttt{frontend}. Reemplaza el ``libro mayor'' local del navegador por llamadas a la API: agrega registro, login, logout y un guardia de rutas que adjunta el \emph{bearer token} a cada petición; mueve paginación, filtrado y agregación al servidor. \textbf{Impacto}: 30 archivos; elimina seis módulos que ya no tienen sentido (\texttt{ledger-store}, \texttt{storage}, \texttt{summary}...) y reescribe \texttt{types.ts} con las formas del servidor. El cuerpo describe la pasada de convergencia (paso 12 del SDD) que detectó y corrigió cinco brechas antes de abrir el PR.
+    \item \textbf{6601d7e - feat(frontend): connect the app to the backend API}
+          \begin{itemize}
+              \item Autor: Yared Riveros.
+              \item Ámbito: \texttt{frontend}.
+              \item Info: PR \#76, 30 archivos afectados.
+              \item Tipo: \texttt{feat}
+              \item Impacto: Reemplaza el ``libro mayor'' local del navegador por llamadas a la API: agrega registro, login, logout y un guardia de rutas que adjunta el \emph{bearer token}; mueve paginación, filtrado y agregación al servidor. Elimina módulos obsoletos (\texttt{ledger-store}, \texttt{storage}, \texttt{summary}) y reescribe \texttt{types.ts}. Se corrigieron 5 brechas antes de abrir el PR en base a la convergencia SDD.
+          \end{itemize}
 
-\paragraph{4. \texttt{fa93c99} --- fix(frontend): purge the legacy local-ledger key on boot} (Yared Riveros, PR \#76).
-\textbf{Tipo}: \texttt{fix}. Un navegador que usó la versión pre-backend conservaba datos reales bajo la clave \texttt{misiops.ledger.v1} de \texttt{localStorage}; nada los leía, pero tampoco nada los borraba, lo que violaba dos requisitos de la especificación (FR-012 y SC-006). \textbf{Impacto}: 38 líneas en 3 archivos; el \texttt{AppShell} barre la clave una vez al arrancar y se añaden dos pruebas. El mensaje explica además por qué la verificación original no lo detectó, información útil para quien lea el historial.
+    \item \textbf{fa93c99 - fix(frontend): purge the legacy local-ledger key on boot}
+          \begin{itemize}
+              \item Autor: Yared Riveros.
+              \item Ámbito: \texttt{frontend}.
+              \item Info: PR \#76, 38 líneas en 3 archivos, con 2 pruebas.
+              \item Tipo: \texttt{fix}
+              \item Impacto: Resuelve un fallo de datos residuales donde el navegador conservaba el historial antiguo en \texttt{misiops.ledger.v1}, violando los requisitos FR-012 y SC-006. El \texttt{AppShell} barre la clave al arrancar, asegurando una transición limpia.
+          \end{itemize}
 
-\paragraph{5. \texttt{1e9b172} --- feat: add docker compose setup for frontend, backend and postgres} (Jeffrey Monja, PR \#73).
-\textbf{Tipo}: \texttt{feat} sin ámbito, porque toca todo el monorepo: crea los \texttt{Dockerfile} de backend y frontend, sus \texttt{.dockerignore}, el \texttt{docker-compose.yaml} con tres servicios, secreto de Postgres y redes pública/privada, y de paso el workflow \texttt{frontend-ci.yml}. \textbf{Impacto}: el proyecto pasa a levantarse con un solo comando. Viene acompañado de los artefactos SDD de \texttt{specs/009-docker-compose} (spec, plan, checklist, evaluación y tareas), que el \emph{enforcer} exige.
+    \item \textbf{1e9b172 - feat: add docker compose setup for frontend, backend and postgres}
+          \begin{itemize}
+              \item Autor: Jeffrey Monja.
+              \item Ámbito: Global (Monorepo).
+              \item Info: PR \#73, incluye artefactos SDD obligatorios.
+              \item Tipo: \texttt{feat}
+              \item Impacto: Crea los \texttt{Dockerfile} de backend y frontend, sus \texttt{.dockerignore}, el \texttt{docker\allowbreak-compose.yaml} con tres servicios, secreto de Postgres y redes pública/privada, además del workflow \texttt{frontend-ci.yml}. El proyecto pasa a levantarse con un solo comando.
+          \end{itemize}
 
-\paragraph{6. \texttt{64876cb} --- ci: add docker compose integration test workflow} (Jeffrey Monja, PR \#73).
-\textbf{Tipo}: \texttt{ci}, porque solo añade un workflow de GitHub Actions. \texttt{docker-integration.yml} genera secretos de prueba, ejecuta \texttt{docker compose up --build -d}, espera al \emph{healthcheck} de Postgres, verifica con \texttt{curl} que el backend responda en \texttt{:8000} y vuelca los logs si algo falla. \textbf{Impacto}: convierte la dockerización en algo verificado en cada PR hacia \texttt{develop}, no en una promesa del README.
+    \item \textbf{64876cb - ci: add docker compose integration test workflow}
+          \begin{itemize}
+              \item Autor: Jeffrey Monja.
+              \item Ámbito: \texttt{ci}.
+              \item Info: PR \#73.
+              \item Tipo: \texttt{ci}
+              \item Impacto: Añade un workflow de GitHub Actions (\texttt{docker-integration.yml}) que genera secretos de prueba, levanta todo con \texttt{docker compose}, espera al \emph{healthcheck} de la BD y verifica con \texttt{curl} que el backend responda en el puerto 8000. Asegura la dockerización en cada PR hacia \texttt{develop}.
+          \end{itemize}
+\end{enumerate}
 
 \subsection{Captura de Pull Requests}
-El equipo sigue \textbf{GitFlow}: \texttt{main} solo recibe \emph{merges} desde \texttt{develop} (PRs \#2 y \#75, los ``checkpoints''), \texttt{develop} es la rama de integración y todo el trabajo ocurre en ramas \texttt{feature/<nombre>} creadas desde \texttt{develop}. Cuando una funcionalidad depende de otra aún no integrada se usan \emph{PRs apilados}: por ejemplo \#11 (\texttt{feature/user-auth}) apunta a \texttt{develop}, \#12 (\texttt{feature/categories}) apunta a \#11 y \#13 (\texttt{feature/transactions}) apunta a \#12; GitHub redirige la base automáticamente al fusionarse el anterior. La Tabla~\ref{tab:prs} resume los 16 PRs del proyecto.
+El equipo sigue GitFlow: \texttt{main} solo recibe \emph{merges} desde \texttt{develop} siendo la rama de integración. El trabajo comienza en ramas \texttt{feature/<nombre>} creadas desde \texttt{develop}; cuando una funcionalidad depende de otra aún no integrada, la rama dependiente se crea a partir de la primera y se usan \emph{PRs apilados}. Por ejemplo, el PR~\#11 (\texttt{feature/user-auth}) apunta a \texttt{develop}, el PR~\#12 (\texttt{feature/categories}) apunta a la rama de \#11 y el PR~\#13 (\texttt{feature/transactions}) apunta a la rama de \#12. Tras fusionar cada PR, se actualiza manualmente la rama base del siguiente para que apunte a su nueva base. La Tabla~\ref{tab:prs} resume los 16 PRs del proyecto.
 
 \begin{table}[H]
     \centering
     \footnotesize
     \begin{tabularx}{\textwidth}{@{}p{0.7cm} p{5.3cm} p{2.9cm} X@{}}
         \toprule
-        \textbf{PR} & \textbf{Rama origen} & \textbf{Base} & \textbf{Título} \\
+        \textbf{PR} & \textbf{Rama origen}                   & \textbf{Base}      & \textbf{Título}                                                          \\
         \midrule
-        \#76 & feature/frontend-backend-integration & develop & feat(frontend): connect the app to the backend API \\
-        \#75 & develop & main & feat(merge): first checkpoint with database, backend and frontend active \\
-        \#74 & docs/pr-template & develop & docs: translate pr template and enforce in agents \\
-        \#73 & feature/docker-compose & develop & feat: add docker compose setup for frontend, backend and postgres \\
-        \#13 & feature/transactions & feature/categories & feat(backend): transaction endpoints, summary and category guards \\
-        \#12 & feature/categories & feature/user-auth & feat(backend): category endpoints and default categories \\
-        \#11 & feature/user-auth & develop & feat(backend): user authentication and profile endpoints \\
-        \#10 & feature/sample-data-button & feature/005-\ldots & feat(frontend): add a sample-data button for local review \\
-        \#9  & feature/005-category-budget-limits & feature/004-\ldots & feat(frontend): add category budget limits \\
-        \#8  & feature/004-dashboard-summary & feature/002-\ldots & feat(frontend): add dashboard summary \\
-        \#7  & feature/002-transaction-history-list & feature/003-\ldots & feat(frontend): add transaction history list \\
-        \#6  & feature/001-manual-transaction-entry & feature/003-\ldots & feat(frontend): add manual transaction entry \\
-        \#5  & feature/003-category-management & develop & feat(frontend): add category management \\
-        \#4  & feature/frontend-manual-tracking-specs & develop & docs(specs): map manual income/expense tracking features \\
-        \#3  & feature/frontend-lockfile & develop & chore(frontend): add package-lock.json for reproducible installs \\
-        \#2  & develop & main & docs(readme): update project description and formatting \\
+        \#76        & feature/frontend-backend-integration   & develop            & feat(frontend): connect the app to the backend API                       \\
+        \#75        & develop                                & main               & feat(merge): first checkpoint with database, backend and frontend active \\
+        \#74        & docs/pr-template                       & develop            & docs: translate pr template and enforce in agents                        \\
+        \#73        & feature/docker-compose                 & develop            & feat: add docker compose setup for frontend, backend and postgres        \\
+        \#13        & feature/transactions                   & feature/categories & feat(backend): transaction endpoints, summary and category guards        \\
+        \#12        & feature/categories                     & feature/user-auth  & feat(backend): category endpoints and default categories                 \\
+        \#11        & feature/user-auth                      & develop            & feat(backend): user authentication and profile endpoints                 \\
+        \#10        & feature/sample-data-button             & feature/005-\ldots & feat(frontend): add a sample-data button for local review                \\
+        \#9         & feature/005-category-budget-limits     & feature/004-\ldots & feat(frontend): add category budget limits                               \\
+        \#8         & feature/004-dashboard-summary          & feature/002-\ldots & feat(frontend): add dashboard summary                                    \\
+        \#7         & feature/002-transaction-history-list   & feature/003-\ldots & feat(frontend): add transaction history list                             \\
+        \#6         & feature/001-manual-transaction-entry   & feature/003-\ldots & feat(frontend): add manual transaction entry                             \\
+        \#5         & feature/003-category-management        & develop            & feat(frontend): add category management                                  \\
+        \#4         & feature/frontend-manual-tracking-specs & develop            & docs(specs): map manual income/expense tracking features                 \\
+        \#3         & feature/frontend-lockfile              & develop            & chore(frontend): add package-lock.json for reproducible installs         \\
+        \#2         & develop                                & main               & docs(readme): update project description and formatting                  \\
         \bottomrule
     \end{tabularx}
     \caption{Pull Requests del proyecto (todos fusionados)}
     \label{tab:prs}
 \end{table}
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
-    \IfFileExists{figures/pull_requests.png}{\includegraphics[width=0.95\textwidth]{figures/pull_requests.png}}{\fbox{\parbox{0.8\textwidth}{\centering\vspace{1cm}Captura pendiente: \texttt{figures/pull\_requests.png}\vspace{1cm}}}}
-    \caption{Pull Requests siguiendo GitFlow (feature $\rightarrow$ develop $\rightarrow$ main)}
+    \includegraphics[width=0.95\textwidth]{figures/git/pr-back.png}
+    \caption{Pull Requests del Backend siguiendo GitFlow (feature $\rightarrow$ develop)}
     \label{fig:pull_requests}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{figures/git/pr-main.png}
+    \caption{Pull Requests de rama develop siguiendo GitFlow (develop $\rightarrow$ main)}
+    \label{fig:pull_requests_main}
 \end{figure}

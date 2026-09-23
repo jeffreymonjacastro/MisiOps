@@ -14,7 +14,21 @@ MisiOps propone una solución de extremo a extremo compuesta por tres piezas des
     \item \textbf{Base de datos (PostgreSQL 16)}: persiste usuarios, categorías y transacciones con integridad referencial (borrado en cascada de usuario a sus datos; una categoría no se elimina ni cambia de tipo mientras tenga transacciones).
 \end{itemize}
 
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/architecture/main-arch.png}
+    \caption{Arquitectura general del proyecto MisiOps}
+    \label{fig:main_arch}
+\end{figure}
+
 El proceso de desarrollo sigue un flujo \emph{Spec-Driven Development} (SDD): cada funcionalidad nace como una especificación en \texttt{specs/}, pasa por plan, checklist y tareas, y recién entonces se implementa. Un workflow de GitHub Actions (\texttt{sdd-enforcer}) bloquea los Pull Requests de ramas \texttt{feature/} que modifican \texttt{frontend/} o \texttt{backend/} sin esos artefactos.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/architecture/sdd.png}
+    \caption{Flujo de Spec-Driven Development (SDD)}
+    \label{fig:sdd}
+\end{figure}
 
 \subsection{Integrantes y roles}
 \begin{itemize}

@@ -6,9 +6,9 @@
 \textbf{Frontend: \texttt{node:test} + \texttt{node:assert/strict} + \texttt{tsx}.} Se eligió el \emph{runner} de pruebas incluido en Node.js 20 en lugar de Jest o Vitest para no añadir dependencias: \texttt{tsx} carga TypeScript directamente y el comando queda en una línea, \texttt{node --import tsx --test app/lib/*.test.ts}. Las pruebas cubren la lógica pura de \texttt{app/lib} (dinero, validación de borradores, normalización de errores de la API, sesión, agrupación) y simulan \texttt{localStorage} con un \texttt{Map} cuando hace falta.
 
 \subsection{Implementación de test}
-En total el proyecto tiene \textbf{119 pruebas de backend} (\texttt{test\_auth}, \texttt{test\_users}, \texttt{test\_categories}, \texttt{test\_transactions}, \texttt{test\_periods}, \texttt{test\_database}) y \textbf{39 de frontend} (\texttt{api}, \texttt{auth}, \texttt{resources}, \texttt{query}, \texttt{transactions}). A continuación se detallan nueve representativas, cinco de backend y cuatro de frontend.
+En total el proyecto tiene \textbf{119 pruebas de backend} y \textbf{39 de frontend}. A continuación se detallan nueve representativas, cinco de backend y cuatro de frontend.
 
-\paragraph{B1. \texttt{test\_register\_duplicate\_email\_case\_insensitive} (backend/tests/test\_auth.py).}
+\paragraph{B1.} \texttt{test\_register\_duplicate\_email\allowbreak\_case\_insensitive (backend/\allowbreak tests/\allowbreak test\_auth.py).}
 Registra a \texttt{ana@example.com} y vuelve a intentarlo con \texttt{Ana@Example.com}. Verifica que la API responda 409 con el cuerpo exacto \texttt{\{"detail": "Email already registered"\}}: el correo se normaliza a minúsculas antes de comparar, así que no se pueden crear dos cuentas ``distintas'' con el mismo buzón.
 
 \begin{lstlisting}[language=Python]
@@ -19,7 +19,7 @@ async def test_register_duplicate_email_case_insensitive(register):
     assert r.json() == {"detail": "Email already registered"}
 \end{lstlisting}
 
-\paragraph{B2. \texttt{test\_expired\_token\_rejected} (test\_auth.py).}
+\paragraph{B2.} \texttt{test\_expired\_token\allowbreak\_rejected (test\_auth.py).}
 Usa \texttt{monkeypatch} para poner la expiración del JWT en $-1$ minutos, genera un token ya vencido y llama a \texttt{GET /api/v1/user/}. Espera 401. Prueba que la validación de \texttt{exp} está activa sin tener que esperar a que un token real caduque.
 
 \begin{lstlisting}[language=Python]
@@ -31,10 +31,18 @@ async def test_expired_token_rejected(client, register, monkeypatch):
     assert r.status_code == 401
 \end{lstlisting}
 
-\paragraph{B3. \texttt{test\_create\_type\_mismatch\_422} (test\_transactions.py).}
+\paragraph{B3.} \texttt{test\_create\_type\allowbreak\_mismatch\_422 (test\_transactions.py).}
 Intenta registrar un \emph{ingreso} en la categoría ``Comida'', que es de tipo gasto. La API debe responder 422 con un mensaje que nombra el conflicto. Es la regla de negocio central del modelo: el tipo de la transacción y el de su categoría deben coincidir.
 
-\paragraph{B4. \texttt{test\_summary\_remaining\_budget} (test\_transactions.py).}
+\begin{lstlisting}[language=Python,breaklines=true]
+async def test_create_type_mismatch_422(client, auth_headers):
+    h = await auth_headers()
+    r = await _create(client, h, type="income")  # Comida is an expense category
+    assert r.status_code == 422
+    assert r.json() == MISMATCH
+\end{lstlisting}
+
+\paragraph{B4.} \texttt{test\_summary\_remaining\allowbreak\_budget (test\_transactions.py).}
 Crea un gasto de 300, fija el presupuesto mensual en 2000 vía \texttt{PATCH /user/} y consulta \texttt{GET /transactions/summary}. Comprueba que \texttt{remaining\_budget} sea exactamente 1700, es decir, que el resumen combine datos de dos tablas y opere con \texttt{Decimal} sin ruido de punto flotante.
 
 \begin{lstlisting}[language=Python]
@@ -48,27 +56,53 @@ async def test_summary_remaining_budget(client, auth_headers):
     assert s["remaining_budget"] == 1700
 \end{lstlisting}
 
-\paragraph{B5. \texttt{test\_delete\_blocked\_with\_transactions} (test\_categories.py).}
-Crea una categoría, le cuelga dos transacciones y pide borrarla: espera 409 con \texttt{"Category has 2 transactions"}. Luego elimina las dos transacciones y repite el borrado, que ahora devuelve 204. Cubre el ciclo completo de la ``guarda'' que protege la integridad referencial sin depender solo de la base de datos.
+\paragraph{B5.} \texttt{test\_delete\_blocked\allowbreak\_with\_transactions (test\_categories.py).}
+Crea una categoría, le cuelga dos transacciones y pide borrarla: espera 409 con el mensaje \texttt{"Category has 2 transactions"}. Luego elimina las dos transacciones y repite el borrado, que ahora devuelve 204. Cubre el ciclo completo de la ``guarda'' que protege la integridad referencial sin depender solo de la base de datos.
 
-\paragraph{F1. \texttt{parses decimal input written with a comma or a dot} (frontend/app/lib/transactions.test.ts).}
-\texttt{parseAmount("12,50")} y \texttt{parseAmount("12.50")} deben dar ambos \texttt{12.5}. Los usuarios en Perú escriben decimales con coma; el formulario no puede rechazar esa entrada.
+\begin{lstlisting}[language=Python,breaklines=true]
+async def test_delete_blocked_with_transactions(client, auth_headers):
+    h = await auth_headers()
+    cid = await _created_id(client, h)
+    t1 = await _add_tx(client, h, cid)
+    t2 = await _add_tx(client, h, cid)
+    r = await client.delete(f"{CAT}{cid}", headers=h)
+    assert r.status_code == 409
+    assert r.json() == {"detail": "Category has 2 transactions"}
+    for t in (t1, t2):
+        assert (await client.delete(f"{TX}/{t}", headers=h)).status_code == 204
+    assert (await client.delete(f"{CAT}{cid}", headers=h)).status_code == 204
+\end{lstlisting}
 
-\begin{lstlisting}
-test("parses decimal input written with a comma or a dot", () => {
+\paragraph{F1.} ``parses decimal input written with a comma or a dot'' (\texttt{transactions.test.ts}). \texttt{parseAmount("12,50")} y \texttt{parseAmount("12.50")} deben dar ambos \texttt{12.5}. Los usuarios en
+Perú escriben decimales con coma; el formulario no puede rechazar esa entrada.
+
+\begin{lstlisting}[breaklines=true]
+test(
+  "parses decimal input written with a comma or a dot", 
+  () => {
   assert.equal(parseAmount("12,50"), 12.5);
   assert.equal(parseAmount("12.50"), 12.5);
 });
 \end{lstlisting}
 
-\paragraph{F2. \texttt{a validation array maps each field to its message} (api.test.ts).}
-Alimenta a \texttt{normalizeError} con un 422 de FastAPI cuyo \texttt{detail} es una lista de errores por campo (\texttt{loc: ["body", "amount"]}). Espera que \texttt{fieldErrors.amount} y \texttt{fieldErrors.category\_id} contengan cada mensaje y que el mensaje general sea el primero. Así el formulario puede pintar el error junto al campo correcto.
+\paragraph{F2.} ``a validation array maps each field to its message'' (\texttt{api.test.ts}).
+Alimenta a \texttt{normalizeError} con un 422 de FastAPI cuyo \texttt{detail} es una lista de errores por campo ({\ttfamily loc: ["body", "amount"]}). Espera que \texttt{fieldErrors.amount} y \texttt{fieldErrors.category\_id} contengan cada mensaje y que el mensaje general sea el primero. Así el formulario puede pintar el error junto al campo correcto.
 
-\begin{lstlisting}
-test("a validation array maps each field to its message", () => {
+\begin{lstlisting}[breaklines=true]
+test(
+  "a validation array maps each field to its message", 
+  () => {
   const error = normalizeError(422, { detail: [
-    { loc: ["body", "amount"], msg: "Input should be greater than 0", type: "greater_than" },
-    { loc: ["body", "category_id"], msg: "Input should be valid", type: "int_parsing" },
+    { 
+      loc: ["body", "amount"], 
+      msg: "Input should be greater than 0", 
+      type: "greater_than" 
+    },
+    { 
+      loc: ["body", "category_id"], 
+      msg: "Input should be valid", 
+      type: "int_parsing" 
+    },
   ]});
   assert.equal(error.fieldErrors.amount, "Input should be greater than 0");
   assert.equal(error.fieldErrors.category_id, "Input should be valid");
@@ -76,14 +110,36 @@ test("a validation array maps each field to its message", () => {
 });
 \end{lstlisting}
 
-\paragraph{F3. \texttt{logout clears storage, not just memory} (auth.test.ts).}
+\paragraph{F3.} ``logout clears storage, not just memory'' (\texttt{auth.test.ts}).
 Guarda un token, llama a \texttt{logout()} y verifica que \texttt{getToken()} sea \texttt{null} \emph{y} que la clave \texttt{misiops.token.v1} ya no exista en el \texttt{localStorage} simulado. Un cierre de sesión que solo limpie memoria dejaría el token recuperable al recargar.
 
-\paragraph{F4. \texttt{groups by calendar day, keeping the server's order} (query.test.ts).}
+\begin{lstlisting}[breaklines=true]
+test("logout clears storage, not just memory", () => {
+  setToken("abc.def.ghi");
+  logout();
+  assert.equal(getToken(), null);
+  assert.equal(store.has("misiops.token.v1"), false);
+});
+\end{lstlisting}
+
+\paragraph{F4.} ``groups by calendar day, keeping the server's order'' (\texttt{query.test.ts}).
 Pasa tres transacciones (dos del 18 de septiembre, una del 17) a \texttt{groupByDay} y espera dos grupos en el orden del servidor, con dos elementos en el primero. Es la función que arma el historial agrupado por fecha de la pantalla de movimientos.
 
+\begin{lstlisting}[breaklines=true]
+test("groups by calendar day, keeping the server's order", () => {
+  const groups = groupByDay([
+    tx(1, "2026-09-18T10:00:00Z"),
+    tx(2, "2026-09-18T08:00:00Z"),
+    tx(3, "2026-09-17T23:00:00Z"),
+  ]);
+  assert.deepEqual(groups.map((group) => group.date), 
+                   ["2026-09-18", "2026-09-17"]);
+  assert.equal(groups[0].items.length, 2);
+});
+\end{lstlisting}
+
 \subsection{Evidencia de ejecución de los tests}
-Las pruebas corren localmente y en cada PR mediante los workflows \texttt{backend-ci.yml} (\texttt{uv sync}, \texttt{ruff check}, \texttt{pytest}, \texttt{pip-audit}) y \texttt{frontend-ci.yml} (\texttt{pnpm install --frozen-lockfile}, \texttt{lint}, \texttt{test}, \texttt{build}). Los Listados~\ref{lst:pytest} y \ref{lst:nodetest} muestran la salida local del 21 de septiembre de 2026.
+Las pruebas corren localmente y en cada PR mediante los workflows \texttt{backend-ci.yml} (\texttt{uv sync}, \texttt{ruff check}, \texttt{pytest}, \texttt{pip-audit}) y \texttt{frontend-ci.yml} ({\ttfamily pnpm install --frozen-lockfile}, \texttt{lint}, \texttt{test}, \texttt{build}). Los Listados~\ref{lst:pytest} y \ref{lst:nodetest} muestran la salida local del 21 de septiembre de 2026.
 
 \begin{lstlisting}[caption={Backend: \texttt{uv run pytest -q}},label={lst:pytest}]
 $ cd backend && uv run pytest -q
