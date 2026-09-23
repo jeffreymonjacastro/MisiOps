@@ -3,7 +3,7 @@
 \subsection{Herramientas utilizadas}
 \textbf{Backend: \texttt{pytest} + \texttt{httpx} + \texttt{aiosqlite}.} \texttt{pytest} es el estándar de facto en Python y su sistema de \emph{fixtures} y \texttt{parametrize} permite cubrir muchas variantes de entrada con poco código. Las pruebas levantan la aplicación FastAPI completa en memoria con \texttt{httpx.AsyncClient} sobre \texttt{ASGITransport} (sin puerto ni servidor) y sustituyen la dependencia \texttt{get\_db} por una sesión SQLite en memoria con \texttt{PRAGMA foreign\_keys=ON}, de modo que cada prueba parte de una base limpia, dura milisegundos y no requiere Postgres. La calidad se completa con \texttt{ruff} (lint) y \texttt{pip-audit} (vulnerabilidades en dependencias).
 
-\textbf{Frontend: \texttt{node:test} + \texttt{node:assert/strict} + \texttt{tsx}.} Se eligió el \emph{runner} de pruebas incluido en Node.js 20 en lugar de Jest o Vitest para no añadir dependencias: \texttt{tsx} carga TypeScript directamente y el comando queda en una línea, \texttt{node --import tsx --test app/lib/*.test.ts}. Las pruebas cubren la lógica pura de \texttt{app/lib} (dinero, validación de borradores, normalización de errores de la API, sesión, agrupación) y simulan \texttt{localStorage} con un \texttt{Map} cuando hace falta.
+\textbf{Frontend: \texttt{node:test} + \texttt{node:assert/strict} + \texttt{tsx}.} Se eligió el \emph{runner} de pruebas incluido en Node.js 20 en lugar de Jest o Vitest para no añadir dependencias: \texttt{tsx} carga TypeScript directamente y el comando queda en una línea, {\ttfamily node --import tsx --test "test/**/*.test.ts"}. Las pruebas viven en la carpeta \texttt{frontend/test/}, separadas del código de la aplicación, y cubren la lógica pura de \texttt{app/lib} (dinero, validación de borradores, normalización de errores de la API, sesión, agrupación); simulan \texttt{localStorage} con un \texttt{Map} cuando hace falta.
 
 \subsection{Implementación de test}
 En total el proyecto tiene \textbf{119 pruebas de backend} y \textbf{39 de frontend}. A continuación se detallan nueve representativas, cinco de backend y cuatro de frontend.
@@ -73,7 +73,7 @@ async def test_delete_blocked_with_transactions(client, auth_headers):
     assert (await client.delete(f"{CAT}{cid}", headers=h)).status_code == 204
 \end{lstlisting}
 
-\paragraph{F1.} ``parses decimal input written with a comma or a dot'' (\texttt{transactions.test.ts}). \texttt{parseAmount("12,50")} y \texttt{parseAmount("12.50")} deben dar ambos \texttt{12.5}. Los usuarios en
+\paragraph{F1.} ``parses decimal input written with a comma or a dot'' (\texttt{frontend/\allowbreak test/\allowbreak transactions.test.ts}). \texttt{parseAmount("12,50")} y \texttt{parseAmount("12.50")} deben dar ambos \texttt{12.5}. Los usuarios en
 Perú escriben decimales con coma; el formulario no puede rechazar esa entrada.
 
 \begin{lstlisting}[breaklines=true]
@@ -85,7 +85,7 @@ test(
 });
 \end{lstlisting}
 
-\paragraph{F2.} ``a validation array maps each field to its message'' (\texttt{api.test.ts}).
+\paragraph{F2.} ``a validation array maps each field to its message'' (\texttt{frontend/\allowbreak test/\allowbreak api.test.ts}).
 Alimenta a \texttt{normalizeError} con un 422 de FastAPI cuyo \texttt{detail} es una lista de errores por campo ({\ttfamily loc: ["body", "amount"]}). Espera que \texttt{fieldErrors.amount} y \texttt{fieldErrors.category\_id} contengan cada mensaje y que el mensaje general sea el primero. Así el formulario puede pintar el error junto al campo correcto.
 
 \begin{lstlisting}[breaklines=true]
@@ -110,7 +110,7 @@ test(
 });
 \end{lstlisting}
 
-\paragraph{F3.} ``logout clears storage, not just memory'' (\texttt{auth.test.ts}).
+\paragraph{F3.} ``logout clears storage, not just memory'' (\texttt{frontend/\allowbreak test/\allowbreak auth.test.ts}).
 Guarda un token, llama a \texttt{logout()} y verifica que \texttt{getToken()} sea \texttt{null} \emph{y} que la clave \texttt{misiops.token.v1} ya no exista en el \texttt{localStorage} simulado. Un cierre de sesión que solo limpie memoria dejaría el token recuperable al recargar.
 
 \begin{lstlisting}[breaklines=true]
@@ -122,7 +122,7 @@ test("logout clears storage, not just memory", () => {
 });
 \end{lstlisting}
 
-\paragraph{F4.} ``groups by calendar day, keeping the server's order'' (\texttt{query.test.ts}).
+\paragraph{F4.} ``groups by calendar day, keeping the server's order'' (\texttt{frontend/\allowbreak test/\allowbreak query.test.ts}).
 Pasa tres transacciones (dos del 18 de septiembre, una del 17) a \texttt{groupByDay} y espera dos grupos en el orden del servidor, con dos elementos en el primero. Es la función que arma el historial agrupado por fecha de la pantalla de movimientos.
 
 \begin{lstlisting}[breaklines=true]
@@ -139,44 +139,53 @@ test("groups by calendar day, keeping the server's order", () => {
 \end{lstlisting}
 
 \subsection{Evidencia de ejecución de los tests}
-Las pruebas corren localmente y en cada PR mediante los workflows \texttt{backend-ci.yml} (\texttt{uv sync}, \texttt{ruff check}, \texttt{pytest}, \texttt{pip-audit}) y \texttt{frontend-ci.yml} ({\ttfamily pnpm install --frozen-lockfile}, \texttt{lint}, \texttt{test}, \texttt{build}). Los Listados~\ref{lst:pytest} y \ref{lst:nodetest} muestran la salida local del 21 de septiembre de 2026.
+Las pruebas corren localmente y en cada PR mediante los workflows \texttt{backend-ci.yml} (\texttt{uv sync}, \texttt{ruff check}, \texttt{pytest}, \texttt{pip-audit}) y \texttt{frontend-ci.yml} ({\ttfamily pnpm install --frozen-lockfile}, \texttt{lint}, \texttt{test}, \texttt{build}). Los Listados~\ref{lst:pytest} y \ref{lst:nodetest} muestran la salida local del 23 de septiembre de 2026 (Windows 11). El frontend se muestra con el \emph{reporter} TAP, el mismo formato que emite Node 20 en el workflow de CI; la Figura~\ref{fig:tests_frontend} muestra el formato por defecto en terminal.
 
 \begin{lstlisting}[caption={Backend: \texttt{uv run pytest -q}},label={lst:pytest}]
 $ cd backend && uv run pytest -q
 ........................................................................ [ 60%]
 ...............................................                          [100%]
-119 passed in 8.19s
+119 passed in 31.61s
 \end{lstlisting}
 
-\begin{lstlisting}[caption={Frontend: \texttt{pnpm run test}},label={lst:nodetest}]
-$ cd frontend && pnpm run test
-> node --import tsx --test app/lib/*.test.ts
+\begin{lstlisting}[caption={Frontend: \texttt{node:test} con \emph{reporter} TAP},label={lst:nodetest}]
+$ cd frontend && node --import tsx --test --test-reporter=tap "test/**/*.test.ts"
 ...
+ok 38 - a server transaction round-trips into an editable draft
 ok 39 - a transaction with no description becomes an empty field, not the string null
 1..39
 # tests 39
 # pass 39
 # fail 0
-# duration_ms 208.32
+# duration_ms 353.0587
 \end{lstlisting}
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
-    \IfFileExists{figures/tests_backend.png}{\includegraphics[width=0.95\textwidth]{figures/tests_backend.png}}{\fbox{\parbox{0.8\textwidth}{\centering\vspace{1cm}Captura pendiente: \texttt{figures/tests\_backend.png}\vspace{1cm}}}}
-    \caption{Ejecución de pruebas unitarias del backend (pytest)}
+    \includegraphics[width=0.95\textwidth]{figures/tests/backend-tests.png}
+    \caption{Ejecución de las 119 pruebas unitarias del backend con \texttt{pytest}}
     \label{fig:tests_backend}
 \end{figure}
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
-    \IfFileExists{figures/tests_frontend.png}{\includegraphics[width=0.95\textwidth]{figures/tests_frontend.png}}{\fbox{\parbox{0.8\textwidth}{\centering\vspace{1cm}Captura pendiente: \texttt{figures/tests\_frontend.png}\vspace{1cm}}}}
-    \caption{Ejecución de pruebas unitarias del frontend (node:test)}
+    \includegraphics[width=0.8\textwidth]{figures/tests/frontend-tests.png}
+    \caption{Ejecución de las pruebas del frontend con \texttt{node:test} (\texttt{pnpm run test}). La ventana muestra las últimas 35 de las 39 pruebas y el resumen final: 39 aprobadas, 0 fallidas}
     \label{fig:tests_frontend}
 \end{figure}
 
-\begin{figure}[htbp]
+Además de correr localmente, cada Pull Request dispara los workflows de GitHub Actions. La Figura~\ref{fig:ci_checks} muestra los tres jobs que se ejecutaron sobre el PR~\#76 y la Figura~\ref{fig:sdd_enforcer} el detalle del job \texttt{enforce-sdd}, cuyo paso \emph{Verify SDD Artifacts} comprueba que el PR incluya \texttt{plan.md}, \texttt{tasks.md}, checklists y reporte de evaluación antes de aceptar cambios en \texttt{frontend/} o \texttt{backend/}.
+
+\begin{figure}[H]
     \centering
-    \IfFileExists{figures/ci_checks.png}{\includegraphics[width=0.95\textwidth]{figures/ci_checks.png}}{\fbox{\parbox{0.8\textwidth}{\centering\vspace{1cm}Captura pendiente: \texttt{figures/ci\_checks.png}\vspace{1cm}}}}
-    \caption{Checks de GitHub Actions en verde sobre un Pull Request}
+    \includegraphics[width=0.95\textwidth]{figures/ci/ci-checks.png}
+    \caption{Checks de GitHub Actions en verde sobre el PR \#76: \texttt{enforce-sdd}, \texttt{quality} (lint, pruebas y build del frontend) e \texttt{integration-test} (stack completo con Docker Compose)}
     \label{fig:ci_checks}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{figures/ci/sdd-enforcer.png}
+    \caption{Detalle del job \texttt{enforce-sdd} del workflow \texttt{sdd-enforcer.yml}}
+    \label{fig:sdd_enforcer}
 \end{figure}

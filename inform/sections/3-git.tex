@@ -35,7 +35,7 @@ La convención se refuerza con dos \emph{skills} del repositorio (\texttt{commit
 \end{itemize}
 
 \subsection{Capturas del historial de commits}
-El repositorio acumula 80 commits en la rama \texttt{develop}. La Figura~\ref{fig:commits} muestra el grafo de un subconjunto de commits; el Listado~\ref{lst:log} reproduce los 20 más recientes sin \emph{merges}.
+Al 23 de septiembre de 2026 la rama \texttt{develop} acumula 69 commits. La Figura~\ref{fig:commits} muestra el grafo de un subconjunto de commits; el Listado~\ref{lst:log} reproduce los 20 commits sin \emph{merges} que van desde la API de transacciones hasta la integración frontend-backend.
 
 \begin{figure}[htbp]
     \centering
@@ -44,7 +44,7 @@ El repositorio acumula 80 commits en la rama \texttt{develop}. La Figura~\ref{fi
     \label{fig:commits}
 \end{figure}
 
-\begin{lstlisting}[caption={\texttt{git log develop --oneline --no-merges -20}},label={lst:log}]
+\begin{lstlisting}[caption={\texttt{git log fa93c99 --oneline --no-merges -20}},label={lst:log}]
 fa93c99 fix(frontend): purge the legacy local-ledger key on boot
 6601d7e feat(frontend): connect the app to the backend API
 009ff1b docs(specs): add frontend-backend integration spec, plan and tasks
@@ -84,7 +84,7 @@ Se eligieron dos commits de cada área (backend, frontend e infraestructura) par
           \begin{itemize}
               \item Autor: Gabriel Espinoza.
               \item Ámbito: \texttt{backend}.
-              \item Info: PR \#12, 9 líneas, 1 prueba de regresión.
+              \item Info: PR \#11, 9 líneas en 2 archivos, 1 prueba de regresión.
               \item Tipo: \texttt{fix}
               \item Impacto: Corrige un error real: con sesiones asíncronas de SQLAlchemy, acceder a un atributo después del \texttt{commit} sobre una instancia expirada lanza \texttt{MissingGreenlet} (error 500 al crear categorías). El mensaje documenta síntoma y causa, y se añade \texttt{test\_database.py} como prueba para evitar regresiones.
           \end{itemize}
@@ -93,7 +93,7 @@ Se eligieron dos commits de cada área (backend, frontend e infraestructura) par
           \begin{itemize}
               \item Autor: Yared Riveros.
               \item Ámbito: \texttt{frontend}.
-              \item Info: PR \#76, 30 archivos afectados.
+              \item Info: PR \#76, 36 archivos afectados (+1690 / $-$1368 líneas).
               \item Tipo: \texttt{feat}
               \item Impacto: Reemplaza el ``libro mayor'' local del navegador por llamadas a la API: agrega registro, login, logout y un guardia de rutas que adjunta el \emph{bearer token}; mueve paginación, filtrado y agregación al servidor. Elimina módulos obsoletos (\texttt{ledger-store}, \texttt{storage}, \texttt{summary}) y reescribe \texttt{types.ts}. Se corrigieron 5 brechas antes de abrir el PR en base a la convergencia SDD.
           \end{itemize}
@@ -127,7 +127,7 @@ Se eligieron dos commits de cada área (backend, frontend e infraestructura) par
 \end{enumerate}
 
 \subsection{Captura de Pull Requests}
-El equipo sigue GitFlow: \texttt{main} solo recibe \emph{merges} desde \texttt{develop} siendo la rama de integración. El trabajo comienza en ramas \texttt{feature/<nombre>} creadas desde \texttt{develop}; cuando una funcionalidad depende de otra aún no integrada, la rama dependiente se crea a partir de la primera y se usan \emph{PRs apilados}. Por ejemplo, el PR~\#11 (\texttt{feature/user-auth}) apunta a \texttt{develop}, el PR~\#12 (\texttt{feature/categories}) apunta a la rama de \#11 y el PR~\#13 (\texttt{feature/transactions}) apunta a la rama de \#12. Tras fusionar cada PR, se actualiza manualmente la rama base del siguiente para que apunte a su nueva base. La Tabla~\ref{tab:prs} resume los 16 PRs del proyecto.
+El equipo sigue GitFlow: \texttt{main} solo recibe \emph{merges} desde \texttt{develop} siendo la rama de integración. El trabajo comienza en ramas \texttt{feature/<nombre>} creadas desde \texttt{develop}; cuando una funcionalidad depende de otra aún no integrada, la rama dependiente se crea a partir de la primera y se usan \emph{PRs apilados}. Por ejemplo, el PR~\#11 (\texttt{feature/user-auth}) apunta a \texttt{develop}, el PR~\#12 (\texttt{feature/categories}) apunta a la rama de \#11 y el PR~\#13 (\texttt{feature/transactions}) apunta a la rama de \#12. El frontend siguió el mismo patrón con una pila lineal de seis PRs (\#5 $\rightarrow$ \#6 $\rightarrow$ \#7 $\rightarrow$ \#8 $\rightarrow$ \#9 $\rightarrow$ \#10), donde cada uno apunta a la rama del anterior. Tras fusionar cada PR, se actualiza manualmente la rama base del siguiente para que apunte a su nueva base. La Tabla~\ref{tab:prs} resume los 18 PRs del proyecto.
 
 \begin{table}[H]
     \centering
@@ -136,6 +136,8 @@ El equipo sigue GitFlow: \texttt{main} solo recibe \emph{merges} desde \texttt{d
         \toprule
         \textbf{PR} & \textbf{Rama origen}                   & \textbf{Base}      & \textbf{Título}                                                          \\
         \midrule
+        \#78        & chore/audit-and-docs                   & develop            & chore: audit and documentation updates (\emph{abierto})                  \\
+        \#77        & feat/docs                              & develop            & docs(inform): write project 1 report from LaTeX template                 \\
         \#76        & feature/frontend-backend-integration   & develop            & feat(frontend): connect the app to the backend API                       \\
         \#75        & develop                                & main               & feat(merge): first checkpoint with database, backend and frontend active \\
         \#74        & docs/pr-template                       & develop            & docs: translate pr template and enforce in agents                        \\
@@ -146,7 +148,7 @@ El equipo sigue GitFlow: \texttt{main} solo recibe \emph{merges} desde \texttt{d
         \#10        & feature/sample-data-button             & feature/005-\ldots & feat(frontend): add a sample-data button for local review                \\
         \#9         & feature/005-category-budget-limits     & feature/004-\ldots & feat(frontend): add category budget limits                               \\
         \#8         & feature/004-dashboard-summary          & feature/002-\ldots & feat(frontend): add dashboard summary                                    \\
-        \#7         & feature/002-transaction-history-list   & feature/003-\ldots & feat(frontend): add transaction history list                             \\
+        \#7         & feature/002-transaction-history-list   & feature/001-\ldots & feat(frontend): add transaction history list                             \\
         \#6         & feature/001-manual-transaction-entry   & feature/003-\ldots & feat(frontend): add manual transaction entry                             \\
         \#5         & feature/003-category-management        & develop            & feat(frontend): add category management                                  \\
         \#4         & feature/frontend-manual-tracking-specs & develop            & docs(specs): map manual income/expense tracking features                 \\
@@ -154,7 +156,7 @@ El equipo sigue GitFlow: \texttt{main} solo recibe \emph{merges} desde \texttt{d
         \#2         & develop                                & main               & docs(readme): update project description and formatting                  \\
         \bottomrule
     \end{tabularx}
-    \caption{Pull Requests del proyecto (todos fusionados)}
+    \caption{Pull Requests del proyecto (todos fusionados salvo \#78, que contiene este informe)}
     \label{tab:prs}
 \end{table}
 

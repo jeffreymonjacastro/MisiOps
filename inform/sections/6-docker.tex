@@ -106,16 +106,18 @@ $ curl -o /dev/null -w '%{http_code}\n' http://localhost:3000/
 200
 \end{lstlisting}
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
-    \IfFileExists{figures/docker_running.png}{\includegraphics[width=0.95\textwidth]{figures/docker_running.png}}{\fbox{\parbox{0.8\textwidth}{\centering\vspace{1cm}Captura pendiente: \texttt{figures/docker\_running.png}\vspace{1cm}}}}
-    \caption{Contenedores de MisiOps en ejecución (\texttt{docker ps})}
+    \includegraphics[width=0.95\textwidth]{figures/docker/docker-desktop.png}
+    \caption{Los tres contenedores del proyecto \texttt{misiops} en ejecución en Docker Desktop, con los puertos 8000 y 3000 publicados y Postgres sin puerto expuesto}
     \label{fig:docker_running}
 \end{figure}
 
-\begin{figure}[htbp]
+La Figura~\ref{fig:docker_app} muestra la aplicación servida por el contenedor \texttt{frontend} en el puerto 3000 (atendido por el proxy de Docker, sin ningún servidor de desarrollo local), con una sesión iniciada. Los montos del tablero los calcula el endpoint \texttt{/api/v1/transactions/summary} del contenedor \texttt{backend} a partir de los datos persistidos en el contenedor \texttt{postgres}, de modo que la captura ejercita los tres servicios a la vez.
+
+\begin{figure}[H]
     \centering
-    \IfFileExists{figures/docker_app.png}{\includegraphics[width=0.95\textwidth]{figures/docker_app.png}}{\fbox{\parbox{0.8\textwidth}{\centering\vspace{1cm}Captura pendiente: \texttt{figures/docker\_app.png}\vspace{1cm}}}}
-    \caption{Aplicación servida desde Docker en \texttt{http://localhost:3000}}
+    \includegraphics[width=0.95\textwidth]{figures/docker/docker-app.png}
+    \caption{Tablero de MisiOps servido desde Docker en \texttt{http://localhost:3000}, con datos reales de la base de datos}
     \label{fig:docker_app}
 \end{figure}
