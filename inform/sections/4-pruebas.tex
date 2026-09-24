@@ -3,7 +3,7 @@
 \subsection{Herramientas utilizadas}
 \textbf{Backend: \texttt{pytest} + \texttt{httpx} + \texttt{aiosqlite}.} \texttt{pytest} es el estándar de facto en Python y su sistema de \emph{fixtures} y \texttt{parametrize} permite cubrir muchas variantes de entrada con poco código. Las pruebas levantan la aplicación FastAPI completa en memoria con \texttt{httpx.AsyncClient} sobre \texttt{ASGITransport} (sin puerto ni servidor) y sustituyen la dependencia \texttt{get\_db} por una sesión SQLite en memoria con \texttt{PRAGMA foreign\_keys=ON}, de modo que cada prueba parte de una base limpia, dura milisegundos y no requiere Postgres. La calidad se completa con \texttt{ruff} (lint) y \texttt{pip-audit} (vulnerabilidades en dependencias).
 
-\textbf{Frontend: \texttt{node:test} + \texttt{node:assert/strict} + \texttt{tsx}.} Se eligió el \emph{runner} de pruebas incluido en Node.js 20 en lugar de Jest o Vitest para no añadir dependencias: \texttt{tsx} carga TypeScript directamente y el comando queda en una línea, {\ttfamily node --import tsx --test "test/**/*.test.ts"}. Las pruebas viven en la carpeta \texttt{frontend/test/}, separadas del código de la aplicación, y cubren la lógica pura de \texttt{app/lib} (dinero, validación de borradores, normalización de errores de la API, sesión, agrupación); simulan \texttt{localStorage} con un \texttt{Map} cuando hace falta.
+\textbf{Frontend: \texttt{node:test} + \texttt{node:assert/strict} + \texttt{tsx}.} Se eligió el \emph{runner} de pruebas incluido en Node.js 20 en lugar de Jest o Vitest para no añadir dependencias: \texttt{tsx} carga TypeScript directamente y el comando queda en una línea. Las pruebas viven en la carpeta \texttt{frontend/test/}, separadas del código de la aplicación, y cubren la lógica pura de \texttt{app/lib} (dinero, validación de borradores, normalización de errores de la API, sesión, agrupación); simulan \texttt{localStorage} con un \texttt{Map} cuando hace falta.
 
 \subsection{Implementación de test}
 En total el proyecto tiene \textbf{119 pruebas de backend} y \textbf{39 de frontend}. A continuación se detallan nueve representativas, cinco de backend y cuatro de frontend.
@@ -161,31 +161,31 @@ ok 39 - a transaction with no description becomes an empty field, not the string
 \end{lstlisting}
 
 \begin{figure}[H]
-    \centering
-    \includegraphics[width=0.95\textwidth]{figures/tests/backend-tests.png}
-    \caption{Ejecución de las 119 pruebas unitarias del backend con \texttt{pytest}}
-    \label{fig:tests_backend}
+  \centering
+  \includegraphics[width=0.95\textwidth]{figures/tests/backend-tests.png}
+  \caption{Ejecución de las 119 pruebas unitarias del backend con \texttt{pytest}}
+  \label{fig:tests_backend}
 \end{figure}
 
 \begin{figure}[H]
-    \centering
-    \includegraphics[width=0.8\textwidth]{figures/tests/frontend-tests.png}
-    \caption{Ejecución de las pruebas del frontend con \texttt{node:test} (\texttt{pnpm run test}). La ventana muestra las últimas 35 de las 39 pruebas y el resumen final: 39 aprobadas, 0 fallidas}
-    \label{fig:tests_frontend}
+  \centering
+  \includegraphics[width=0.8\textwidth]{figures/tests/frontend-tests.png}
+  \caption{Ejecución de las pruebas del frontend con \texttt{node:test} (\texttt{pnpm run test}). La ventana muestra las últimas 35 de las 39 pruebas y el resumen final: 39 aprobadas, 0 fallidas}
+  \label{fig:tests_frontend}
 \end{figure}
 
 Además de correr localmente, cada Pull Request dispara los workflows de GitHub Actions. La Figura~\ref{fig:ci_checks} muestra los tres jobs que se ejecutaron sobre el PR~\#76 y la Figura~\ref{fig:sdd_enforcer} el detalle del job \texttt{enforce-sdd}, cuyo paso \emph{Verify SDD Artifacts} comprueba que el PR incluya \texttt{plan.md}, \texttt{tasks.md}, checklists y reporte de evaluación antes de aceptar cambios en \texttt{frontend/} o \texttt{backend/}.
 
 \begin{figure}[H]
-    \centering
-    \includegraphics[width=0.95\textwidth]{figures/ci/ci-checks.png}
-    \caption{Checks de GitHub Actions en verde sobre el PR \#76: \texttt{enforce-sdd}, \texttt{quality} (lint, pruebas y build del frontend) e \texttt{integration-test} (stack completo con Docker Compose)}
-    \label{fig:ci_checks}
+  \centering
+  \includegraphics[width=0.95\textwidth]{figures/ci/ci-checks.png}
+  \caption{Checks de GitHub Actions en verde sobre el PR \#76: \texttt{enforce-sdd}, \texttt{quality} (lint, pruebas y build del frontend) e \texttt{integration-test} (stack completo con Docker Compose)}
+  \label{fig:ci_checks}
 \end{figure}
 
 \begin{figure}[H]
-    \centering
-    \includegraphics[width=0.95\textwidth]{figures/ci/sdd-enforcer.png}
-    \caption{Detalle del job \texttt{enforce-sdd} del workflow \texttt{sdd-enforcer.yml}}
-    \label{fig:sdd_enforcer}
+  \centering
+  \includegraphics[width=0.95\textwidth]{figures/ci/sdd-enforcer.png}
+  \caption{Detalle del job \texttt{enforce-sdd} del workflow \texttt{sdd-enforcer.yml}}
+  \label{fig:sdd_enforcer}
 \end{figure}
