@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { buildUrl, isApiError, normalizeError } from "./api.ts";
+import { buildUrl, isApiError, normalizeError } from "../app/lib/api.ts";
 
 test("a string detail becomes the user-facing message", () => {
   const error = normalizeError(409, { detail: "Category has 3 transactions" });

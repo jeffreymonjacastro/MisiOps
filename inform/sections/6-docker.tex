@@ -11,30 +11,85 @@ Cada servicio tiene su propio \texttt{Dockerfile} en su carpeta (\texttt{backend
 
 Hay dos redes: \texttt{public}, a la que se conectan frontend y backend para exponer los puertos 3000 y 8000 al host, y \texttt{private} con \texttt{internal: true}, la única a la que pertenece Postgres, que por tanto no es alcanzable desde fuera del stack.
 
-El \texttt{Dockerfile} del backend usa un patrón de dos pasos con \texttt{uv} para aprovechar la caché de capas: primero copia \texttt{pyproject.toml} y \texttt{uv.lock} e instala dependencias (\texttt{--no-install-project}); recién después copia el código. Un cambio en un archivo \texttt{.py} no vuelve a descargar dependencias.
+El \texttt{Dockerfile} del backend aplica las mejores prácticas de seguridad y eficiencia: usa un patrón de dos pasos con \texttt{uv} para aprovechar la caché de capas (instalando primero dependencias), copia explícitamente solo el código fuente necesario en lugar de un \texttt{COPY . .} indiscriminado, configura un usuario \emph{non-root} (\texttt{appuser}), y levanta la aplicación con el comando oficial para producción \texttt{fastapi run}.
 
 \begin{lstlisting}[language=bash,caption={backend/Dockerfile}]
 FROM python:3.13-slim
+
+# Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+# Create a non-root user
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
 WORKDIR /app
+
+# Copy dependency files and install dependencies
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
-COPY . .
+
+# Copy only the necessary application source code directories
+COPY api api/
+COPY core core/
+COPY models models/
+COPY schemas schemas/
+COPY main.py .
+
+# Install the project itself (without dev dependencies)
 RUN uv sync --frozen --no-dev
+
+# Set permissions for the non-root user
+RUN chown -R appuser:appuser /app
+USER appuser
+
+# Put the virtual environment in the PATH
 ENV PATH="/app/.venv/bin:$PATH"
+
 EXPOSE 8000
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+# Start FastAPI application using the production CLI
+CMD ["fastapi", "run", "main.py", "--host", "0.0.0.0", "--port", "8000"]
 \end{lstlisting}
 
+Para el \texttt{Dockerfile} del frontend se implementa un patrón de compilación multi-etapa (\emph{multi-stage build}). La etapa \texttt{builder} compila la aplicación, pero la etapa final \texttt{runner} solo hereda el servidor independiente \emph{standalone} ultraligero que genera Next.js, descartando todo el código fuente original y dependencias de desarrollo para mayor seguridad y menor tamaño de imagen. Adicionalmente, el servicio se ejecuta bajo un usuario sin privilegios (\texttt{nextjs}).
+
 \begin{lstlisting}[language=bash,caption={frontend/Dockerfile}]
-FROM node:20-alpine
+FROM node:20-alpine AS base
 RUN corepack enable && corepack prepare pnpm@9.6.0 --activate
+
+# 1. Dependencies stage
+FROM base AS deps
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
+
+# 2. Build stage
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN pnpm run build
+
+# 3. Production runner stage
+FROM base AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
+
+# Copy only the necessary files from builder
+COPY --from=builder /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+USER nextjs
+
 EXPOSE 3000
-CMD ["pnpm", "run", "dev"]
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+CMD ["node", "server.js"]
 \end{lstlisting}
 
 \subsection{Ejemplo del servicio web y base de datos}
@@ -106,16 +161,18 @@ $ curl -o /dev/null -w '%{http_code}\n' http://localhost:3000/
 200
 \end{lstlisting}
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
-    \IfFileExists{figures/docker_running.png}{\includegraphics[width=0.95\textwidth]{figures/docker_running.png}}{\fbox{\parbox{0.8\textwidth}{\centering\vspace{1cm}Captura pendiente: \texttt{figures/docker\_running.png}\vspace{1cm}}}}
-    \caption{Contenedores de MisiOps en ejecución (\texttt{docker ps})}
+    \includegraphics[width=0.95\textwidth]{figures/docker/docker-desktop.png}
+    \caption{Los tres contenedores del proyecto \texttt{misiops} en ejecución en Docker Desktop, con los puertos 8000 y 3000 publicados y Postgres sin puerto expuesto}
     \label{fig:docker_running}
 \end{figure}
 
-\begin{figure}[htbp]
+La Figura~\ref{fig:docker_app} muestra la aplicación servida por el contenedor \texttt{frontend} en el puerto 3000 (atendido por el proxy de Docker, sin ningún servidor de desarrollo local), con una sesión iniciada. Los montos del tablero los calcula el endpoint \texttt{/api/v1/transactions/summary} del contenedor \texttt{backend} a partir de los datos persistidos en el contenedor \texttt{postgres}, de modo que la captura ejercita los tres servicios a la vez.
+
+\begin{figure}[H]
     \centering
-    \IfFileExists{figures/docker_app.png}{\includegraphics[width=0.95\textwidth]{figures/docker_app.png}}{\fbox{\parbox{0.8\textwidth}{\centering\vspace{1cm}Captura pendiente: \texttt{figures/docker\_app.png}\vspace{1cm}}}}
-    \caption{Aplicación servida desde Docker en \texttt{http://localhost:3000}}
+    \includegraphics[width=0.95\textwidth]{figures/docker/docker-app.png}
+    \caption{Tablero de MisiOps servido desde Docker en \texttt{http://localhost:3000}, con datos reales de la base de datos}
     \label{fig:docker_app}
 \end{figure}

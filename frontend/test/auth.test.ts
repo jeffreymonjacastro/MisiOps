@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { getToken, handleUnauthorized, logout, purgeLegacyLedger, setToken } from "./auth.ts";
+import { getToken, handleUnauthorized, logout, purgeLegacyLedger, setToken } from "../app/lib/auth.ts";
 
 // auth.ts touches window only inside its functions, so stubbing here — before
 // any test runs — is enough.

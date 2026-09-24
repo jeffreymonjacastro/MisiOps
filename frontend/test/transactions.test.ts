@@ -1,14 +1,14 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { MAX_AMOUNT, parseAmount, validateAmount } from "./money.ts";
+import { MAX_AMOUNT, parseAmount, validateAmount } from "../app/lib/money.ts";
 import {
   draftFrom,
   hasErrors,
   validateDraft,
   type TransactionDraft,
-} from "./transactions.ts";
-import type { Category, Transaction } from "./types.ts";
+} from "../app/lib/transactions.ts";
+import type { Category, Transaction } from "../app/lib/types.ts";
 
 const categories: Category[] = [
   { id: 1, name: "Comida", type: "expense", budget: null },
