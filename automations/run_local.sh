@@ -3,11 +3,12 @@
 # Este script levanta simultáneamente los servidores de Frontend y Backend para desarrollo local.
 
 # Detener los procesos en segundo plano cuando este script sea interrumpido (Ctrl+C)
-trap 'echo "Deteniendo servidores..."; kill 0' SIGINT SIGTERM EXIT
+trap 'trap - SIGINT SIGTERM EXIT; echo "Deteniendo servidores..."; kill $BACKEND_PID $FRONTEND_PID 2>/dev/null; exit' SIGINT SIGTERM EXIT
 
 echo "======================================"
 echo "🚀 Iniciando Backend (FastAPI) en puerto 8000..."
 echo "======================================"
+export POSTGRES_PASSWORD=$(cat docker/pg_password.txt)
 cd backend || exit
 uv run fastapi dev main.py --port 8000 &
 BACKEND_PID=$!
