@@ -12,6 +12,7 @@
 \usepackage{setspace}
 \usepackage{listings}
 \usepackage{xcolor}
+\usepackage{float}
 
 \setstretch{1.15}
 \setlength{\parskip}{0.5em}
@@ -29,7 +30,7 @@
     numbers=none,
     showstringspaces=false
 }
-\lstset{style=mystyle}
+\lstset{style=mystyle,literate={á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'\i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1 {ñ}{{\~n}}1}
 
 \begin{document}
 
@@ -61,6 +62,6 @@
 
 \nocite{*}
 \bibliographystyle{plain}
-% \bibliography{references}
+\bibliography{references}
 
 \end{document}
