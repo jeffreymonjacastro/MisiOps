@@ -1,4 +1,4 @@
-# Local secret blocking (FR-009). Install once: pip install pre-commit==4.7.0 && pre-commit install
+# Local secret blocking (FR-009). Run by .githooks/pre-commit (core.hooksPath); needs pre-commit 4.7.0 or uv.
 repos:
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.30.1
