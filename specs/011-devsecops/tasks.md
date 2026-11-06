@@ -80,7 +80,7 @@ description: "Task list for DevSecOps for MisiOps"
 - [X] T023 [P] [US2] Job `scripts-test`: `bash security/tests/test_upload_to_defectdojo.sh` (NFR-006)
 - [X] T024 [US2] Job `summary` (needs all scanners, `if: always()`): download report artifacts, write one Markdown table tool × severity to `$GITHUB_STEP_SUMMARY` with `jq`; never fails
 - [X] T025 [US2] Job `deliver` (needs `sast, secrets, sca, container, iac, dast, scripts-test`; `if: github.event_name == 'push' && github.ref == 'refs/heads/main'`; `permissions: packages: write`): `docker load`, tag `ghcr.io/jeffreymonjacastro/misiops-{backend,frontend}:{sha,latest}`, login with `GITHUB_TOKEN`, push (FR-015a)
-- [ ] T026 [US2] Prove the pre-commit hook with the quickstart scenario 5 fake key and save the screenshot of the rejected commit to `docs/devsecops/img/precommit-bloqueo.png` (text goes in T042) (FR-009, SC-006)
+- [X] T026 [US2] Prove the pre-commit hook with the quickstart scenario 5 fake key and save the screenshot of the rejected commit to `docs/devsecops/img/precommit-bloqueo.png` (text goes in T042) (FR-009, SC-006)
 - [x] T026a [US2] Amend `.specify/memory/constitution.md` to v1.2.0 with temporary exemption EX-001 (security gate on `main`, report-only on `develop`, expires 2026-12-31) — approval by the team lead is manual step M6
 
 **Checkpoint**: Workflow green on syntax (`actionlint` via its pinned Docker image) and runnable
@@ -116,7 +116,7 @@ description: "Task list for DevSecOps for MisiOps"
 - [X] T036 [US4] Add the security headers flagged by ZAP until T035a passes: `headers()` in `frontend/next.config.ts` and a FastAPI middleware in `backend/main.py`. CSP must keep Next.js working (`script-src 'self' 'unsafe-inline'` only if the production build needs it; check with `pnpm build` + the running app that no UI changes) (Constitution III)
 - [X] T037 [US4] Fix remaining prioritized Semgrep/Trivy-config findings in this repo; anything unfixable goes to `.gitleaks.toml` / `.trivyignore` / `rules.conf` with ID, justification, review date (FR-012b)
 - [X] T038 [US4] Run existing suites locally: `cd backend && uv run pytest` and `cd frontend && node --import tsx --test test/*.test.ts`, plus `pnpm lint` and `pnpm build` (NFR-004, NFR-005)
-- [ ] T039 [US4] Push; re-scan; re-import; save run ID, metrics screenshot and reports under `docs/devsecops/reports/rescan/`; all security gates green (SC-003)
+- [X] T039 [US4] Push; re-scan; re-import; save run ID, metrics screenshot and reports under `docs/devsecops/reports/rescan/`; all security gates green (SC-003)
 
 **Checkpoint**: Before/after evidence captured; PR ready for review
 
@@ -128,10 +128,10 @@ description: "Task list for DevSecOps for MisiOps"
 
 **Independent Test**: Every item 2a-2k has an answer, a screenshot (or log with reason) and a repo path that opens
 
-- [ ] T040 [P] [US5] Write `docs/devsecops/pipeline/pipeline.md`: Mermaid diagram of `backend-ci`, `frontend-ci`, `docker-integration`, `sdd-enforcer`, `devsecops` with stages, gates, artifacts and delivery; render a PNG to `docs/devsecops/img/pipeline.png` (FR-015)
-- [ ] T041 [US5] Capture screenshots into `docs/devsecops/img/`: Actions run graph, each job's step summary, artifacts list, ZAP HTML report, DefectDojo product/engagement/tests/findings/metrics (baseline and re-scan), pre-commit rejection, GHCR packages (after merge)
-- [ ] T042 [US5] Write `docs/devsecops/EVIDENCIAS.md`: index with anchors per item; §2a título/descripción; §2b diagram + links (M4); §2c top-5; §2d SAST/DAST choice + evidence + reports; §2e secrets/SCA choice + evidence; §2f DefectDojo; §2g mitigation table ≥5 rows `ID | Descripción | Severidad | Herramienta | Mitigación | Estado` ordered by severity (`CRIT-001`, `HIGH-001`…) (FR-013); §2h before/after table by severity; §2i diagram + config file paths; §2j/§2k concise answers (FR-017); each answer ends with `Ubicación en el repo:`
-- [ ] T043 [US5] Add to EVIDENCIAS §política de gates: gate per tool (FR-012 mapping); report-only into `develop` vs blocking into `main` and exemption EX-001 with expiry; the "Protect main" required checks (screenshot after M5); steps to also require them on `develop` when EX-001 expires (Settings → Rules → Rulesets → Protect develop → Require status checks; only the owner) (FR-012a); accepted-risk register incl. DefectDojo `admin/admin` through the tunnel and every allow-list entry (FR-012b)
+- [X] T040 [P] [US5] Write `docs/devsecops/pipeline/pipeline.md`: Mermaid diagram of `backend-ci`, `frontend-ci`, `docker-integration`, `sdd-enforcer`, `devsecops` with stages, gates, artifacts and delivery; render a PNG to `docs/devsecops/img/pipeline.png` (FR-015)
+- [X] T041 [US5] Capture screenshots into `docs/devsecops/img/`: Actions run graph, each job's step summary, artifacts list, ZAP HTML report, DefectDojo product/engagement/tests/findings/metrics (baseline and re-scan), pre-commit rejection, GHCR packages (after merge)
+- [X] T042 [US5] Write `docs/devsecops/EVIDENCIAS.md`: index with anchors per item; §2a título/descripción; §2b diagram + links (M4); §2c top-5; §2d SAST/DAST choice + evidence + reports; §2e secrets/SCA choice + evidence; §2f DefectDojo; §2g mitigation table ≥5 rows `ID | Descripción | Severidad | Herramienta | Mitigación | Estado` ordered by severity (`CRIT-001`, `HIGH-001`…) (FR-013); §2h before/after table by severity; §2i diagram + config file paths; §2j/§2k concise answers (FR-017); each answer ends with `Ubicación en el repo:`
+- [X] T043 [US5] Add to EVIDENCIAS §política de gates: gate per tool (FR-012 mapping); report-only into `develop` vs blocking into `main` and exemption EX-001 with expiry; the "Protect main" required checks (screenshot after M5); steps to also require them on `develop` when EX-001 expires (Settings → Rules → Rulesets → Protect develop → Require status checks; only the owner) (FR-012a); accepted-risk register incl. DefectDojo `admin/admin` through the tunnel and every allow-list entry (FR-012b)
 - [ ] T043a [US5] **Blocked by M5 and the merge into `develop`** — open a PR `develop` → `main`; screenshot the security checks as required and, if any gate trips, the disabled *Merge* button (quickstart scenario 6, SC-008)
 - [ ] T044 [US5] **Blocked by M4** — paste the shareable drawio and xlsx links into EVIDENCIAS §2b
 
@@ -142,7 +142,7 @@ description: "Task list for DevSecOps for MisiOps"
 ## Phase 8: Polish & Cross-Cutting
 
 - [ ] T045 Run gitleaks over the whole working tree and history one last time; confirm no DefectDojo URL/token or real credential is committed (FR-018, SC-007)
-- [ ] T046 [P] Measure the devsecops run duration from the Actions UI (≤ 20 min, NFR-001); record it in EVIDENCIAS §2i
+- [X] T046 [P] Measure the devsecops run duration from the Actions UI (≤ 20 min, NFR-001); record it in EVIDENCIAS §2i
 - [ ] T047 Run `/speckit-converge`, then `/git-change-publisher` with `.github/pull_request_template.md` as the PR body, targeting `develop`
 
 ---
