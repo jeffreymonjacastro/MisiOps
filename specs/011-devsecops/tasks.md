@@ -141,7 +141,7 @@ description: "Task list for DevSecOps for MisiOps"
 
 ## Phase 8: Polish & Cross-Cutting
 
-- [ ] T045 Run gitleaks over the whole working tree and history one last time; confirm no DefectDojo URL/token or real credential is committed (FR-018, SC-007)
+- [X] T045 Run gitleaks over the whole working tree and history one last time; confirm no DefectDojo URL/token or real credential is committed (FR-018, SC-007)
 - [X] T046 [P] Measure the devsecops run duration from the Actions UI (≤ 20 min, NFR-001); record it in EVIDENCIAS §2i
 - [ ] T047 Run `/speckit-converge`, then `/git-change-publisher` with `.github/pull_request_template.md` as the PR body, targeting `develop`
 
@@ -165,3 +165,10 @@ description: "Task list for DevSecOps for MisiOps"
 1. MVP = Phases 1-2 + US2: every PR scanned with reports and gates
 2. Add US3 (DefectDojo) → US4 (before/after) → US5 (document), US1 in parallel
 3. Feature PR into `develop` runs report-only; the later `develop` → `main` PR is blocked by any red security check (FR-012, EX-001)
+
+---
+
+## Phase 9: Convergence
+
+- [X] T048 Mirror the repository allow-lists in DefectDojo: mark the 4 Gitleaks and 2 TruffleHog findings as False Positive and put the 26 gosu CVEs and the snakeoil key under a Risk Acceptance (expiry 2027-02-01) per data-model §Finding lifecycle / FR-012b (partial)
+- [ ] T049 After the merge into `main`, confirm the `deliver` job published `ghcr.io/jeffreymonjacastro/misiops-{backend,frontend}` and add the screenshot to EVIDENCIAS §2i per FR-015a (partial)

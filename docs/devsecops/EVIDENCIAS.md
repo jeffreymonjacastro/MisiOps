@@ -294,7 +294,7 @@ Duración medida: **3 min 29 s** la línea base y unos 4 min el re-escaneo (requ
 
 _Captura pendiente: los checks requeridos de "Protect main" y un PR `develop` → `main` con el merge bloqueado se agregan cuando el dueño del repo complete el paso M5._
 
-**Riesgos aceptados**: cada entrada vive en el mecanismo de excepciones de la propia herramienta, con su justificación y fecha de revisión.
+**Riesgos aceptados**: cada entrada vive en el mecanismo de excepciones de la propia herramienta, con su justificación y fecha de revisión. En DefectDojo se reflejan igual: los 6 falsos positivos de secretos quedaron marcados como *False Positive*, y los 26 CVE de `gosu` más la clave snakeoil quedaron bajo una *Risk Acceptance* con vencimiento al 2027-02-01. Se ve en el panel "Risk Acceptance" de [`img/dd-rescan-engagement.png`](img/dd-rescan-engagement.png).
 
 | Riesgo | Dónde | Justificación | Revisión |
 | --- | --- | --- | --- |
