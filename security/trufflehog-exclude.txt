@@ -1,0 +1,7 @@
+# TruffleHog path exclusions (FR-012b): one regex per line; reasons in docs/devsecops/EVIDENCIAS.md (riesgos aceptados).
+# Box detector on base64 image data inside the Excalidraw diagram (unverified, false positive) | review: 2027-05-01
+^diagrams/.*\.excalidraw$
+# SentryToken detector on a package hash inside the uv lockfile (unverified, false positive) | review: 2027-05-01
+^backend/uv\.lock$
+# Archived scan reports (they quote the findings above) | review: 2027-05-01
+^docs/devsecops/reports/
