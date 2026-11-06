@@ -195,8 +195,8 @@ jobs:
           printf 'POSTGRES_PASSWORD=%s\nSECRET_KEY=%s\n' "$pw" "$(openssl rand -hex 32)" > docker/.env.dev
           printf '%s' "$pw" > docker/pg_password.txt
           docker compose -f docker/docker-compose.yaml up -d --no-build
-          curl -fsS --retry 30 --retry-connrefused --retry-delay 2 -o /dev/null http://localhost:8000/
-          curl -fsS --retry 30 --retry-connrefused --retry-delay 2 -o /dev/null http://localhost:3000/
+          curl -fsS --retry 30 --retry-all-errors --retry-delay 2 -o /dev/null http://localhost:8000/
+          curl -fsS --retry 30 --retry-all-errors --retry-delay 2 -o /dev/null http://localhost:3000/
       - name: Get a bearer token for the authenticated API scan
         run: |
           email="zap-${GITHUB_RUN_ID}@example.com" pass=$(openssl rand -hex 16)
