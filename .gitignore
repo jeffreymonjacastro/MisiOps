@@ -224,3 +224,6 @@ __marimo__/
 # Docker secrets
 docker/.env.dev
 docker/pg_password.txt
+
+# Course STRIDE templates as downloaded (kept local; the filled copies are versioned)
+docs/devsecops/stride/*-original.*

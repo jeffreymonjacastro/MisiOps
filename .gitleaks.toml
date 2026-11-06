@@ -1,0 +1,5 @@
+# Gitleaks configuration (FR-006). Default rules; reviewed allow-list entries go below (FR-012b):
+# id | justification | review date, mirrored in docs/devsecops/EVIDENCIAS.md.
+
+[extend]
+useDefault = true
