@@ -128,3 +128,15 @@ None blocking. One accepted risk (DefectDojo default credentials over the tunnel
 ## 9. Recommendation
 
 ACCEPTABLE. Proceed to `/speckit-plan`.
+
+---
+
+## Iteration 3 — 2026-11-05 (re-check after team-lead gate decision)
+
+**Change evaluated**: FR-004, FR-012, FR-012a, FR-015a, SC-001, new SC-008 and Clarifications session 2026-11-05. Security gates now block merges into `main` (required checks on the "Protect main" ruleset). Pull requests into `develop` run the same scans as report-only.
+
+**Constitution check (Block B)**: Report-only merges into `develop` would contradict Development Workflow ("Code MUST NOT be merged until … security scans have passed"). Constitution v1.2.0 adds the temporary exemption **EX-001**. It has a defined scope (security scans, merges into `develop` only), a justification, team-lead approval (manual step M6) and an expiry date (2026-12-31). The contradiction is therefore covered by a governed exemption, not ignored. Additional Constraints ("Deployments MUST NOT occur without passing automated security scans") stays satisfied, because FR-015a now delivers only from `main` after every gate passes. Block B stays at 12/12.
+
+**Block C**: SC-008 is new, measurable and atomic. FR-012 and FR-012a stay single-purpose. No score change.
+
+**Verdict**: Unchanged — **9.66, ACCEPTABLE**. EX-001 becomes effective once M6 is done.

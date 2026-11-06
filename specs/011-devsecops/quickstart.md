@@ -28,7 +28,9 @@ or *Settings → Secrets and variables → Actions → New repository secret* fo
 
 **M4 — Shareable links (user).** Upload `misiops-stride.drawio` and `plantilla-stride-misiops.xlsx` to the cloud drive, share as "anyone with the link can view", and paste both links where `EVIDENCIAS.md` asks for them.
 
-**M5 — Required checks (owner, optional).** *Settings → Branches → develop → Require status checks to pass* → add the `devsecops` jobs. Full instructions in `EVIDENCIAS.md` (FR-012a).
+**M5 — Required checks on `main` (owner, required).** After the stages ran once: *Settings → Rules → Rulesets → Protect main → Edit → Require status checks to pass → Add checks* `sast`, `secrets`, `sca`, `container`, `iac`, `dast`, `scripts-test`; empty bypass list; *Save changes* (FR-012a).
+
+**M6 — Exemption approval (team lead).** Approve the PR that adds EX-001 to the constitution.
 
 ## Scenario 1 — DefectDojo up and reachable
 
@@ -73,11 +75,15 @@ git add docker/test-secret.txt && git commit -m "test: secret hook"
 
 Expected: the commit is rejected by the `gitleaks` hook. Clean up with `git reset docker/test-secret.txt && rm docker/test-secret.txt`.
 
-## Scenario 6 — Delivery gated by security (after merge)
+## Scenario 6 — Merge into `main` blocked by an alert
 
-Expected on the push run to `develop`: `deliver` runs only when every security job is green and publishes `ghcr.io/jeffreymonjacastro/misiops-backend` and `misiops-frontend`.
+Open a PR `develop` → `main` while any security stage reports a CRITICAL/HIGH finding or a secret. Expected: the stage is red and *Merge* is disabled by "Protect main". On a PR into `develop` the same finding shows as a warning only.
 
-## Scenario 7 — Script tests
+## Scenario 7 — Delivery gated by security (after merge to `main`)
+
+Expected on the push run to `main`: `deliver` runs only when every security job is green and publishes `ghcr.io/jeffreymonjacastro/misiops-backend` and `misiops-frontend`.
+
+## Scenario 8 — Script tests
 
 ```bash
 bash security/tests/test_upload_to_defectdojo.sh

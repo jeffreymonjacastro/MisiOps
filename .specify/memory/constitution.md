@@ -1,10 +1,10 @@
 <!--
 Sync Impact Report:
-- Version change: 1.0.0 -> 1.1.0
-- Modified principles: None (Code Quality, Testing Standards, User Experience Consistency, Performance Requirements preserved verbatim)
-- Added sections: Product Context (Problem Statement, Objectives, User Personas), Technology Stack (Stack, Repository Structure, Data Base Schema)
+- Version change: 1.1.0 -> 1.2.0
+- Modified principles: None
+- Added sections: Temporary Exemptions (EX-001: security-scan gate enforced on merges into `main`, report-only on merges into `develop`)
 - Removed sections: None
-- Follow-up TODOs: None
+- Follow-up TODOs: Review EX-001 on or before its expiry date
 -->
 
 # MisiOps Constitution
@@ -131,6 +131,16 @@ Technology stack choices and architectural decisions MUST prioritize security an
 
 Development MUST occur on feature branches and be integrated via Pull Requests (PRs). Every PR MUST receive at least one peer review that specifically checks for adherence to these constitutional principles. Code MUST NOT be merged until all automated Continuous Integration (CI) quality gates (tests, linting, security scans) have passed successfully.
 
+## Temporary Exemptions
+
+### EX-001 — Security-scan gate moves from `develop` to `main`
+
+- **Scope**: The Development Workflow clause "Code MUST NOT be merged until all automated CI quality gates (… security scans) have passed", **only for security scans and only for merges into `develop`**. Tests and linting still gate every merge.
+- **Rule while in force**: Security scans run and report on every pull request into `develop`. Every merge into `main` MUST pass every security scan (CRITICAL/HIGH findings and detected secrets block it), enforced by required status checks on `main`. Deployments still happen only from `main` after passing scans (Additional Constraints unchanged).
+- **Justification**: Requested by the team lead (2026-11-05) so that `develop` can integrate work while findings are triaged, while nothing with an open security alert reaches `main`.
+- **Approval**: Technical leadership review on the pull request that introduces it (feature `011-devsecops`).
+- **Expiry**: 2026-12-31. On expiry, either renew it with a new review or make the security checks required on `develop` as well (steps in `docs/devsecops/EVIDENCIAS.md`).
+
 ## Governance
 
 This Constitution supersedes all other engineering practices and guidelines.
@@ -138,4 +148,4 @@ Amendments to this document require a formal proposal, review by technical leade
 Versioning of this constitution follows Semantic Versioning (MAJOR for significant shifts or rule removals, MINOR for additions, PATCH for clarifications).
 All PRs and code reviews MUST actively verify compliance with these rules.
 
-**Version**: 1.1.0 | **Ratified**: 2026-09-09 | **Last Amended**: 2026-09-11
+**Version**: 1.2.0 | **Ratified**: 2026-09-09 | **Last Amended**: 2026-11-05

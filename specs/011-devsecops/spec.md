@@ -16,6 +16,10 @@
 - Q: Should security scans be able to block a pull request from merging, or only report? → A: Phased: report first, then block on CRITICAL/HIGH findings and on any secret, with the policy and the steps to make the checks mandatory documented. **Amended after `/speckit-evaluate`**: letting code merge into `develop` with failing scans contradicts the constitution ("Code MUST NOT be merged until all … security scans have passed"), so the report phase happens inside this feature's own pull request — baseline, remediation and re-scan — and the stages arrive in `develop` already enforcing. Unfixable findings go to documented, justified suppressions.
 - Q: Should DefectDojo use non-default credentials when exposed through the public tunnel? → A: No. It keeps the default `admin/admin`, because it is a controlled, temporary test environment. Recorded as an accepted risk.
 
+### Session 2026-11-05
+
+- Q: Where must the security gates block merges? → A: Team lead decision: any security alert in `develop` MUST block the merge into `main`; pull requests into `develop` run the same scans in report-only mode. This supersedes the 2026-11-03 amendment above and is made possible by the temporary constitution exemption EX-001 (constitution v1.2.0, expires 2026-12-31).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Know what can go wrong before scanning anything (Priority: P1)
@@ -116,7 +120,7 @@ The evaluator reads one document that answers every required item of the course 
 - **FR-001**: The project MUST include a STRIDE threat model of the deployed system as an editable data-flow diagram, covering components, data flows and trust boundaries.
 - **FR-002**: The project MUST include the course's STRIDE spreadsheet template filled in with threats for all six STRIDE categories.
 - **FR-003**: The evidence document MUST explain the five highest-ranked threats, ranked by risk = likelihood × impact as scored in the spreadsheet, stating each threat's score.
-- **FR-004**: The pipeline MUST run static application security testing over the backend and frontend source on every pull request to `develop` and every push to `develop`, producing a downloadable report.
+- **FR-004**: The pipeline MUST run static application security testing over the backend and frontend source on every pull request to `develop` or `main` and every push to `develop` or `main`, producing a downloadable report.
 - **FR-005**: The pipeline MUST run dynamic application security testing against the application started as the project deploys it, covering both the web frontend and the documented backend API, producing a downloadable report.
 - **FR-006**: The pipeline MUST scan the repository, including history, for exposed secrets using two independent detectors, producing downloadable reports.
 - **FR-007**: The pipeline MUST analyse third-party dependencies of both the backend and frontend for known vulnerabilities and produce a software bill of materials.
@@ -127,13 +131,13 @@ The evaluator reads one document that answers every required item of the course 
 - **FR-010a**: Re-importing a run MUST NOT duplicate unchanged findings, and findings absent from a newer run MUST be shown as closed.
 - **FR-011**: The pipeline MUST upload reports to the vulnerability-management platform through a public tunnel whenever the tunnel's address and credentials are configured as CI secrets, and MUST skip the upload, without failing any scan, when they are not. Scans MUST complete and keep their reports regardless of the platform's availability.
 - **FR-011a**: A local fallback MUST be able to download the reports of any pipeline run and import them into the platform without the tunnel.
-- **FR-012**: Security stages MUST fail on any CRITICAL or HIGH finding and on any detected secret, so that code reaching `develop` has passed them (Constitution, Development Workflow). The baseline and the remediation iterate **inside this feature's own pull request** before it merges: the first run of the new stages on that pull request is the baseline, and the security stages arrive in `develop` already enforcing. CRITICAL/HIGH maps per tool as: Trivy CRITICAL or HIGH with a fixed version available (unfixed ones are reported but do not gate, see the no-fixed-version edge case); Semgrep `ERROR`; ZAP High-risk alerts; any Gitleaks or TruffleHog finding not allow-listed.
-- **FR-012a**: The evidence document MUST describe the gate policy in force and give step-by-step instructions to make the security checks mandatory for merging, including the repository setting involved and who is able to change it.
+- **FR-012**: On pull requests into `main` and pushes to `main`, security stages MUST fail on any CRITICAL or HIGH finding and on any detected secret, so that nothing with an open security alert reaches `main`. On pull requests into `develop` and pushes to `develop`, the same stages run in report-only mode: they produce reports and a visible warning, but do not fail (constitution exemption EX-001). The baseline and the remediation iterate inside this feature's own pull request. CRITICAL/HIGH maps per tool as: Trivy CRITICAL or HIGH with a fixed version available (unfixed ones are reported but do not gate, see the no-fixed-version edge case); Semgrep `ERROR`; ZAP High-risk alerts; any Gitleaks or TruffleHog finding not allow-listed.
+- **FR-012a**: The security stages MUST be required status checks on `main` (repository ruleset "Protect main", changeable only by the repository owner), so a failing stage prohibits the merge. The evidence document MUST describe the gate policy, the exemption EX-001, and the steps to also make the checks required on `develop` when the exemption expires.
 - **FR-012b**: A finding that cannot be fixed in this repository MUST be suppressed only through the tool's own allow-list mechanism, each entry carrying the finding identifier, a justification and a review date, and listed as an accepted risk in the evidence document.
 - **FR-013**: The evidence document MUST contain a mitigation table of at least five findings ordered by severity, each with identifier, description, severity, detecting tool and recommended mitigation.
 - **FR-014**: The team MUST record a baseline of open findings, remediate the highest-priority findings that do not require product changes, and record a re-scan showing those findings closed. Priority is severity first; within a severity, findings tied to the STRIDE threats on user credentials and financial data come first.
 - **FR-015**: The project MUST include a diagram of the complete CI/CD pipeline and the pipeline's configuration files.
-- **FR-015a**: The pipeline MUST include a delivery stage that publishes the application's container images only after every security stage has passed (Constitution, Additional Constraints).
+- **FR-015a**: The pipeline MUST include a delivery stage, run on pushes to `main`, that publishes the application's container images only after every security stage has passed (Constitution, Additional Constraints).
 - **FR-016**: The evidence document MUST answer items 2a-2k in question-answer format, each with screenshots (logs only where a screenshot is impossible) and the repository path of every referenced artifact, and MUST include the shareable links of the STRIDE diagram and spreadsheet.
 - **FR-017**: The evidence document MUST answer the lessons-learned sub-questions (business problem, prior limitations, what changed, concrete advantages) and the recommendations concisely.
 - **FR-018**: No credential used by the pipeline MAY be stored in the repository; all such values MUST come from the CI platform's secret store.
@@ -158,13 +162,14 @@ The evaluator reads one document that answers every required item of the course 
 
 ### Measurable Outcomes
 
-- **SC-001**: 100% of pull requests to `develop` trigger all six scan categories (static, dynamic, secrets, dependencies, container, configuration) without manual action.
+- **SC-001**: 100% of pull requests to `develop` and `main` trigger all six scan categories (static, dynamic, secrets, dependencies, container, configuration) without manual action.
 - **SC-002**: 100% of tools used have their findings visible in the centralized platform after a single pipeline run.
 - **SC-003**: The open findings of the remediated severities drop between the baseline and the re-scan, and every remediated finding appears as closed.
 - **SC-004**: The mitigation table contains at least five findings, ordered by severity.
 - **SC-005**: An evaluator can locate the answer, the evidence and the repository artifact of any item 2a-2k in under one minute using the evidence document.
 - **SC-006**: A commit containing a test credential is blocked locally 100% of the time once the pre-commit check is installed.
 - **SC-007**: Zero real credentials are present in the repository or its history at the end of the feature.
+- **SC-008**: 100% of pull requests into `main` with a failing security stage cannot be merged.
 
 ## Assumptions
 
@@ -175,8 +180,8 @@ The evaluator reads one document that answers every required item of the course 
 - Shareable links for the draw.io diagram and the spreadsheet (required by the brief's delivery section) are produced by the team uploading the repository files to their cloud drive.
 - The PDF version of the final report is a later step; this feature delivers the Markdown evidence document that the PDF will be built from.
 - The evidence document is written in Spanish, the language of the course and of the graded report. AGENTS.md's English-only rule covers specs, plans, tasks, checklists, commits, PRs and issues — all of which stay in English — not course deliverables addressed to the evaluator.
-- Making checks required for merging is a repository setting only the repository owner can change; turning the enforcing stages into mandatory merge checks is therefore a documented manual step for the owner.
-- **Accepted risk (team decision)**: DefectDojo runs with its default `admin/admin` credentials, including while exposed through the tunnel. Justification: a controlled, temporary lab instance holding only scan results of this public repository. The tunnel URL is ephemeral (it changes on every session), which limits exposure time. This risk is listed in the evidence document's risk register.
+- Making checks required for merging is a repository ruleset only the repository owner can change; adding the security stages to the existing "Protect main" ruleset is therefore a manual step for the owner, done after the stages have run once.
+- **Accepted risk (team decision)**: DefectDojo runs with its default `admin/admin` credentials, including while exposed through the tunnel. Justification: a controlled, temporary lab instance holding only scan results of this public repository. The tunnel uses a fixed ngrok dev domain but is only up while the team runs it, which limits exposure time. This risk is listed in the evidence document's risk register.
 
 ## Out of Scope
 

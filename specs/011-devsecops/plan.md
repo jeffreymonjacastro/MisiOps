@@ -39,7 +39,7 @@ Add a security pipeline to MisiOps and produce the course's final-report evidenc
 | III. UX Consistency | No UI change; security headers added during remediation must not alter visible behaviour | PASS |
 | IV. Performance | Parallel jobs, ≤ 20 min budget, Trivy DB cached between jobs | PASS |
 | Additional Constraints | Deps audited (Trivy SCA); delivery gated by every security job (R9) | PASS |
-| Development Workflow | Security stages enforce from the first merge; baseline lives in this feature's PR (FR-012) | PASS |
+| Development Workflow | Security scans block merges into `main` (required checks); report-only into `develop` under temporary exemption EX-001 (constitution v1.2.0, expires 2026-12-31) | PASS (with EX-001) |
 
 **Post-design re-check (after Phase 1)**: PASS — no new principle conflicts; the only deviation is the accepted risk of DefectDojo default credentials, recorded in the spec.
 
@@ -93,6 +93,9 @@ docs/devsecops/                 # NEW: evidence for the course (Spanish)
 └── img/                        # screenshots
 
 frontend/package-lock.json      # REMOVE (stale npm lockfile, R3) — remediation candidate
+security/scripts/reports.tsv    # NEW: scan type / test title / report file, shared by CI and fallback
+docs/devsecops/reports/         # NEW: durable copies of baseline and re-scan reports
+.specify/memory/constitution.md # AMENDED: v1.2.0, temporary exemption EX-001
 backend/, frontend/, docker/    # TOUCHED only by remediation of prioritized findings
 ```
 
@@ -110,11 +113,12 @@ checkout ─┬─ build ──────┼─ sca (Trivy fs + SBOM) ──�
           └─ scripts-test (upload script tests)
 ```
 
-- Triggers: `pull_request` to `develop`, `push` to `develop`, `workflow_dispatch`.
+- Triggers: `pull_request` and `push` to `develop` and `main`, `workflow_dispatch`.
+- Gate mode: `ENFORCE=true` when the PR base or the pushed branch is `main`; otherwise gate steps emit `::warning::` and exit 0 (EX-001).
 - Every scanner job: write report → upload artifact (`if: always()`) → gate step → `$GITHUB_STEP_SUMMARY` table.
 - `summary` (`if: always()`) aggregates counts per tool into one table — the "security-summary" stage of the course template.
 - `defectdojo` (`if: always()`) skips cleanly when `DEFECTDOJO_URL` is empty (forks, sessions without tunnel).
-- `deliver` runs only on `push` to `develop` and only if every security job succeeded.
+- `deliver` runs only on `push` to `main` and only if every security job succeeded.
 
 Per-job inputs, outputs and gates: [contracts/pipeline-jobs.md](./contracts/pipeline-jobs.md).
 
@@ -124,7 +128,7 @@ Per-job inputs, outputs and gates: [contracts/pipeline-jobs.md](./contracts/pipe
 2. Rank findings: severity first; within a severity, threats on credentials and financial data first.
 3. Fix the top findings that live in this repository (expected: stale lockfile, unpinned `uv:latest`, base-image patch bumps, missing security headers, dependency bumps, CI secrets in plain text).
 4. Findings that cannot be fixed here → `.gitleaks.toml` / `.trivyignore` / ZAP `IGNORE` with ID, justification and review date; listed as accepted risks.
-5. Re-run; re-import closes fixed findings; capture "resultados después". The PR merges only when every gate is green.
+5. Re-run; re-import closes fixed findings; capture "resultados después". The aim is every gate green before merging to `develop`, so the later `develop` → `main` PR passes the enforcing gates.
 
 ## Manual steps the user (or the repo owner) must perform
 
@@ -134,7 +138,8 @@ Per-job inputs, outputs and gates: [contracts/pipeline-jobs.md](./contracts/pipe
 | M2 | User | Claim the free static domain in the ngrok dashboard | FR-011 |
 | M3 | Owner (Jeffrey) | Create repository secrets `DEFECTDOJO_URL` and `DEFECTDOJO_TOKEN` (exact steps in quickstart) | FR-011 |
 | M4 | User | Upload the `.drawio` and `.xlsx` to the cloud drive and share the links | FR-016 |
-| M5 | Owner (Jeffrey) | Optional: mark the security checks as required in Settings → Branches | FR-012a |
+| M5 | Owner (Jeffrey) | Required: add the security jobs as required status checks to the "Protect main" ruleset, empty bypass list | FR-012a, SC-008 |
+| M6 | Team lead | Approve the PR that adds constitution exemption EX-001 | Governance |
 
 Without M3 the pipeline still scans and the fallback import (FR-011a) covers centralization.
 
