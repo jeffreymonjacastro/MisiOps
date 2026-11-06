@@ -104,3 +104,8 @@ vulnerabilities:
     paths: ["usr/local/bin/gosu"]
     statement: "Go stdlib in gosu of the upstream postgres image; gosu only runs at container start to drop root, not reachable from the network. Fixed when the official image rebuilds gosu."
     expired_at: 2027-02-01
+secrets:
+  - id: private-key
+    paths: ["/etc/ssl/private/ssl-cert-snakeoil.key"]
+    statement: "Self-signed snakeoil key that Debian's ssl-cert package generates inside the upstream postgres image; SSL is off in our compose and the database only listens on the internal network."
+    expired_at: 2027-02-01
