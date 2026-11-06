@@ -14,6 +14,10 @@ repo=${GH_REPO:-jeffreymonjacastro/MisiOps}
 
 if [ -d "$1" ]; then
   dir=$1
+  # Outside CI there is no GITHUB_* branch: use the checked-out branch, never a generic "local" engagement.
+  if [ -z "${DEFECTDOJO_ENGAGEMENT:-}${GITHUB_HEAD_REF:-}${GITHUB_REF_NAME:-}" ]; then
+    export DEFECTDOJO_ENGAGEMENT="CI - $(git -C "$here" rev-parse --abbrev-ref HEAD)"
+  fi
 else
   dir=$(mktemp -d)
   trap 'rm -rf "$dir"' EXIT

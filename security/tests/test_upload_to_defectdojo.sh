@@ -104,6 +104,7 @@ check "import_run exits 0 when every upload succeeds or skips" '[ $code -eq 0 ]'
 reset; mkdir -p "$work/dir/report-sca" && echo '{}' > "$work/dir/report-sca/trivy-deps.json"
 run "$import_run" "$work/dir"
 check "import_run accepts a local directory" '[ $code -eq 0 ] && grep -qxF "test_title=Trivy - dependencies" "$CALLS"'
+check "import_run on a directory uses the checked-out branch as engagement"   'grep -qxF "engagement_name=CI - $(git -C "$root" rev-parse --abbrev-ref HEAD)" "$CALLS"'
 
 gate="$root/security/scripts/gate.sh"
 export GITHUB_STEP_SUMMARY="$work/summary"
