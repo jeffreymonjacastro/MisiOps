@@ -14,13 +14,14 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN pnpm run build
 
-# 3. Production runner stage
-FROM base AS runner
+# 3. Production runner stage: plain node image, so pnpm/corepack never reach production
+FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
+# Patch OS packages, drop the bundled npm/corepack/yarn (unused by `node server.js`, vulnerable deps)
+# and create a non-root user
+RUN apk upgrade --no-cache     && rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /opt/yarn* /usr/local/bin/yarn /usr/local/bin/yarnpkg     && addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
 
 # Copy only the necessary files from builder
 COPY --from=builder /app/public ./public
