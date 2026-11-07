@@ -95,7 +95,7 @@ description: "Task list for DevSecOps for MisiOps"
 
 - [X] T028 [US3] Job `defectdojo` in `.github/workflows/devsecops.yml` (needs scanners, `if: always()`, `continue-on-error: true`): if `secrets.DEFECTDOJO_URL` empty → echo `skipped: no DefectDojo configured`; else download artifacts and loop `reports.tsv` through `upload_to_defectdojo.sh` (FR-010, FR-011)
 - [X] T029 [US3] **Blocked by M2** — start DefectDojo locally (quickstart scenario 1), get the API token, start `ngrok http --url=<static-domain> 8080`, confirm `https://<static-domain>/api/v2/` answers
-- [ ] T030 [US3] **Blocked by M3** — confirm with `gh secret list -R jeffreymonjacastro/MisiOps` that `DEFECTDOJO_URL` and `DEFECTDOJO_TOKEN` exist; if not, use the fallback `security/scripts/import_run.sh <run-id>` and record that in EVIDENCIAS §2f
+- [X] T030 [US3] **Blocked by M3** — confirm with `gh secret list -R jeffreymonjacastro/MisiOps` that `DEFECTDOJO_URL` and `DEFECTDOJO_TOKEN` exist; if not, use the fallback `security/scripts/import_run.sh <run-id>` and record that in EVIDENCIAS §2f
 
 **Checkpoint**: Findings of every tool visible under Aplicaciones Web → MisiOps
 
@@ -132,8 +132,8 @@ description: "Task list for DevSecOps for MisiOps"
 - [X] T041 [US5] Capture screenshots into `docs/devsecops/img/`: Actions run graph, each job's step summary, artifacts list, ZAP HTML report, DefectDojo product/engagement/tests/findings/metrics (baseline and re-scan), pre-commit rejection, GHCR packages (after merge)
 - [X] T042 [US5] Write `docs/devsecops/EVIDENCIAS.md`: index with anchors per item; §2a título/descripción; §2b diagram + links (M4); §2c top-5; §2d SAST/DAST choice + evidence + reports; §2e secrets/SCA choice + evidence; §2f DefectDojo; §2g mitigation table ≥5 rows `ID | Descripción | Severidad | Herramienta | Mitigación | Estado` ordered by severity (`CRIT-001`, `HIGH-001`…) (FR-013); §2h before/after table by severity; §2i diagram + config file paths; §2j/§2k concise answers (FR-017); each answer ends with `Ubicación en el repo:`
 - [X] T043 [US5] Add to EVIDENCIAS §política de gates: gate per tool (FR-012 mapping); report-only into `develop` vs blocking into `main` and exemption EX-001 with expiry; the "Protect main" required checks (screenshot after M5); steps to also require them on `develop` when EX-001 expires (Settings → Rules → Rulesets → Protect develop → Require status checks; only the owner) (FR-012a); accepted-risk register incl. DefectDojo `admin/admin` through the tunnel and every allow-list entry (FR-012b)
-- [ ] T043a [US5] **Blocked by M5 and the merge into `develop`** — open a PR `develop` → `main`; screenshot the security checks as required and, if any gate trips, the disabled *Merge* button (quickstart scenario 6, SC-008)
-- [ ] T044 [US5] **Blocked by M4** — paste the shareable drawio and xlsx links into EVIDENCIAS §2b
+- [X] T043a [US5] open a PR `develop` → `main`; screenshot the security checks as required and, if any gate trips, the disabled *Merge* button (quickstart scenario 6, SC-008)
+- [X] T044 [US5] paste the shareable drawio and xlsx links into EVIDENCIAS §2b
 
 **Checkpoint**: Evaluator can walk 2a-2k in the document
 
