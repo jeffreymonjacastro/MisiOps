@@ -296,6 +296,10 @@ Duración medida: **3 min 29 s** la línea base y unos 4 min el re-escaneo (requ
 
 **Prueba del bloqueo en `main`** (PR de demostración [#131](https://github.com/jeffreymonjacastro/MisiOps/pull/131), cerrado sin merge): la rama es `develop` más un `security/demo/Dockerfile` que corre como root a propósito (Trivy DS002, HIGH). El gate `iac` falló con `Trivy config: 1 blocking findings`, y como "Protect main" exige los 7 checks de seguridad y no tiene *bypass*, GitHub dejó el PR en `mergeStateStatus: BLOCKED`. El mismo análisis sobre `develop` (corrida del merge de #130) terminó en verde con `ENFORCE: false`.
 
+![PR #131 hacia main: el check requerido iac falla y el botón Merge pull request queda deshabilitado](img/main-merge-bloqueado.png)
+
+GitHub muestra en "Merging is blocked" solo el primer motivo, que es la falta de aprobación. Aun con la aprobación, el merge seguiría bloqueado, porque `iac` está marcado como *Required* y falló.
+
 ![Ruleset "Protect main" con los checks requeridos y PR #131 bloqueado](img/main-ruleset-bloqueo.png)
 ![Corrida del PR #131: el gate de iac falla](img/main-gate-iac-falla.png)
 
