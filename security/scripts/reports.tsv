@@ -1,0 +1,12 @@
+# scan_type	test_title	report file (FR-010, distinct titles: research R7)
+Semgrep JSON Report	Semgrep - source	semgrep.json
+Gitleaks Scan	Gitleaks - history	gitleaks.json
+Trufflehog Scan	TruffleHog - history	trufflehog.json
+Trivy Scan	Trivy - dependencies	trivy-deps.json
+Trivy Scan	Trivy - image backend	trivy-image-backend.json
+Trivy Scan	Trivy - image frontend	trivy-image-frontend.json
+Trivy Scan	Trivy - image postgres	trivy-image-postgres.json
+Trivy Scan	Trivy - config	trivy-config.json
+ZAP Scan	ZAP - frontend baseline	zap-frontend.xml
+ZAP Scan	ZAP - API	zap-api.xml
+Semgrep JSON Report	Semgrep - compose	semgrep-compose.json

@@ -34,7 +34,7 @@ services:
         condition: service_healthy
 
   postgres:
-    image: postgres:16.3
+    image: postgres:16.15-bookworm
     restart: always
     environment:
       - POSTGRES_USER=myuser
