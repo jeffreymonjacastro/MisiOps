@@ -51,8 +51,8 @@ Diagrama de flujo de datos con los límites de confianza (Internet, red Docker `
 La plantilla STRIDE del curso quedó llena con 12 amenazas, que cubren las 6 categorías. Incluye probabilidad e impacto según OWASP Risk Rating, riesgo inherente, controles actuales, efectividad y riesgo residual.
 
 - Ubicación en el repo: [`docs/devsecops/stride/misiops-stride.drawio`](stride/misiops-stride.drawio) (editable en draw.io), [`misiops-stride.png`](stride/misiops-stride.png), [`plantilla-stride-misiops.xlsx`](stride/plantilla-stride-misiops.xlsx), [`amenazas.json`](stride/amenazas.json) (mismos datos en texto)
-- Link compartible del diagrama: _pendiente: se agrega tras subir el `.drawio` al drive del equipo (paso manual M4)_
-- Link compartible de la plantilla: _pendiente: se agrega tras subir el `.xlsx` al drive del equipo (paso manual M4)_
+- Link compartible del diagrama: <https://drive.google.com/file/d/1KUr076G14cM2zBuOgaE54n6_bmTbzVqY/view?usp=sharing>
+- Link compartible de la plantilla: <https://docs.google.com/spreadsheets/d/1e4LJ7QdhE3OWo3MIgwexaNvFtrVSTK0w/edit?usp=sharing>
 
 ---
 
@@ -143,9 +143,11 @@ La reimportación con `close_old_findings` no duplica hallazgos y cierra los que
 
 Si el túnel no está activo, la subida se omite sin romper los escaneos, y `security/scripts/import_run.sh <run-id>` descarga los artefactos de esa corrida y los importa desde la máquina local.
 
+Con los secretos de repositorio `DEFECTDOJO_URL` y `DEFECTDOJO_TOKEN` ya configurados, el job sube directo por el túnel. En la corrida [`42334876339`](https://github.com/jeffreymonjacastro/MisiOps/actions/runs/42334876339) el log del job `defectdojo` muestra `ok:` para los 11 reportes.
+
 ![Engagement con los 11 tests (línea base)](img/dd-baseline-engagement.png)
 
-- Ubicación en el repo: [`security/scripts/upload_to_defectdojo.sh`](../../security/scripts/upload_to_defectdojo.sh), [`security/scripts/import_run.sh`](../../security/scripts/import_run.sh), [`security/scripts/reports.tsv`](../../security/scripts/reports.tsv), [`security/tests/test_upload_to_defectdojo.sh`](../../security/tests/test_upload_to_defectdojo.sh) (36 casos, se ejecutan en CI en el job `scripts-test`)
+- Ubicación en el repo: [`security/scripts/upload_to_defectdojo.sh`](../../security/scripts/upload_to_defectdojo.sh), [`security/scripts/import_run.sh`](../../security/scripts/import_run.sh), [`security/scripts/reports.tsv`](../../security/scripts/reports.tsv), [`security/tests/test_upload_to_defectdojo.sh`](../../security/tests/test_upload_to_defectdojo.sh) (37 casos, se ejecutan en CI en el job `scripts-test`)
 
 ---
 
@@ -292,7 +294,10 @@ Duración medida: **3 min 29 s** la línea base y unos 4 min el re-escaneo (requ
   2. En `devsecops.yml`, cambiar `ENFORCE` por `${{ github.base_ref == 'main' || github.base_ref == 'develop' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' }}`.
   3. Quitar EX-001 de `.specify/memory/constitution.md`.
 
-_Captura pendiente: los checks requeridos de "Protect main" y un PR `develop` → `main` con el merge bloqueado se agregan cuando el dueño del repo complete el paso M5._
+**Prueba del bloqueo en `main`** (PR de demostración [#131](https://github.com/jeffreymonjacastro/MisiOps/pull/131), cerrado sin merge): la rama es `develop` más un `security/demo/Dockerfile` que corre como root a propósito (Trivy DS002, HIGH). El gate `iac` falló con `Trivy config: 1 blocking findings`, y como "Protect main" exige los 7 checks de seguridad y no tiene *bypass*, GitHub dejó el PR en `mergeStateStatus: BLOCKED`. El mismo análisis sobre `develop` (corrida del merge de #130) terminó en verde con `ENFORCE: false`.
+
+![Ruleset "Protect main" con los checks requeridos y PR #131 bloqueado](img/main-ruleset-bloqueo.png)
+![Corrida del PR #131: el gate de iac falla](img/main-gate-iac-falla.png)
 
 **Riesgos aceptados**: cada entrada vive en el mecanismo de excepciones de la propia herramienta, con su justificación y fecha de revisión. En DefectDojo se reflejan igual: los 6 falsos positivos de secretos quedaron marcados como *False Positive*, y los 26 CVE de `gosu` más la clave snakeoil quedaron bajo una *Risk Acceptance* con vencimiento al 2027-02-01. Se ve en el panel "Risk Acceptance" de [`img/dd-rescan-engagement.png`](img/dd-rescan-engagement.png).
 
