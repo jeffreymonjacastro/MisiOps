@@ -143,6 +143,8 @@ pnpm test
 pnpm synth -c env=dev -c imageTag=ci -c alertEmail=ci@example.com
 ```
 
+When credentials are present (the deploy job, or your workstation) the CDK CLI performs one availability-zone lookup through the bootstrap lookup role and writes `infra/cdk.context.json`; the file is git-ignored and safe to delete. In CI no account is resolved, so the synth runs fully offline.
+
 ## Tearing down dev
 
 ```bash

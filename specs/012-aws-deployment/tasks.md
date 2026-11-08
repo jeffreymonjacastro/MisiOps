@@ -255,3 +255,8 @@ Phase 9:   T042 ‖ T043
 - T045 is the only task that requires AWS credentials; everything else runs offline (no CDK context lookups)
 - Versions to pin are listed in plan.md §Technical Context and research.md; do not introduce others
 - Commit per task or per small group with Conventional Commits (`feat(infra): …`, `ci(deploy): …`, `test(infra): …`, `docs(deployment): …`, `fix(frontend): …`); no AI attribution
+
+## Phase 10: Convergence
+
+- [X] T046 Force request-time rendering of `frontend/app/layout.tsx` (`export const dynamic = "force-dynamic"`) so `generateMetadata` and `EnvBanner` read `APP_ENV` per request instead of being prerendered at `next build` with the variable unset; verify by running the built image with `APP_ENV=dev` and checking the HTML for the banner text and the ` · dev` title, and with no `APP_ENV` for their absence per FR-020 / US2 (partial)
+- [X] T047 Record in `specs/012-aws-deployment/research.md` R12 and `docs/deployment/README.md` that `ec2.Vpc` performs an availability-zone context lookup when the account is resolved (deploy job, through the CDK lookup role), that `infra/cdk.context.json` is git-ignored, and that CI synth stays offline because no account is resolved per plan: R12 offline synth (partial)

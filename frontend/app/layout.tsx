@@ -17,6 +17,10 @@ const instrumentSerif = Instrument_Serif({
   subsets: ["latin"],
 });
 
+// Render per request: `next build` would otherwise prerender the layout with APP_ENV unset and
+// bake "no label" into the image (FR-020, specs/012-aws-deployment T046).
+export const dynamic = "force-dynamic";
+
 // Read at request time so the same image serves dev (labelled) and prod (FR-020).
 export function generateMetadata(): Metadata {
   const label = envLabel();
