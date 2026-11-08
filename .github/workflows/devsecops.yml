@@ -28,7 +28,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm  # linux/arm64 images for Fargate Graviton (specs/012-aws-deployment R2)
     steps:
       - uses: actions/checkout@v4
       - name: Build images once (scanned, attacked and delivered as the same bytes)
@@ -183,7 +183,7 @@ jobs:
 
   dast:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm  # linux/arm64 images for Fargate Graviton (specs/012-aws-deployment R2)
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4

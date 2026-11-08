@@ -1,0 +1,22 @@
+{
+  "name": "infra",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AWS CDK infrastructure for MisiOps (specs/012-aws-deployment)",
+  "scripts": {
+    "test": "node --import tsx --test test/*.test.ts && bash scripts/tests/test_smoke.sh",
+    "synth": "cdk synth --all",
+    "cdk": "cdk"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "2.273.0",
+    "constructs": "10.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "20.19.9",
+    "aws-cdk": "2.1148.0",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3"
+  },
+  "packageManager": "pnpm@9.6.0+sha1.65cd48c20dd329b7f455088b6dd17d4d5b6d02e3"
+}

@@ -227,3 +227,11 @@ docker/pg_password.txt
 
 # Course STRIDE templates as downloaded (kept local; the filled copies are versioned)
 docs/devsecops/stride/*-original.*
+
+# AWS CDK (infra/): the Python "lib/" rule above must not hide the CDK stacks
+!infra/lib/
+infra/cdk.out/
+infra/cdk.context.json
+infra/node_modules/
+infra/outputs.json
+infra/foundation.json
