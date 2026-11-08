@@ -121,6 +121,13 @@ test('ECS services: circuit breaker with rollback, 100/200 healthy percent (FR-0
   });
 });
 
+test('backend service waits for the database writer instance', () => {
+  const [writerId] = Object.keys(dev.findResources('AWS::RDS::DBInstance'));
+  const backend = Object.values(dev.findResources('AWS::ECS::Service')).find((r) => JSON.stringify(r.Properties.TaskDefinition).includes('BackendTask'));
+  assert.ok(backend, 'backend service found');
+  assert.ok((backend.DependsOn as string[]).includes(writerId), 'DependsOn includes the DB writer');
+});
+
 test('ALB: HTTP listener, API paths to the backend (priority 10), health checks on /, 30 s deregistration', () => {
   dev.resourceCountIs('AWS::ElasticLoadBalancingV2::Listener', 1);
   dev.hasResourceProperties('AWS::ElasticLoadBalancingV2::Listener', { Port: 80, Protocol: 'HTTP' });

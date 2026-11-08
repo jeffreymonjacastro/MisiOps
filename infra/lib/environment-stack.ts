@@ -151,6 +151,9 @@ export class EnvironmentStack extends Stack {
         maxHealthyPercent: 200,
       });
     const backendService = service('Backend', backendTask, backendSg);
+    // The backend runs create_all at start-up: it must not start before the writer instance exists,
+    // or the circuit breaker trips while Aurora is still provisioning (first deploy, 2026-11-08).
+    backendService.node.addDependency(db);
     const frontendService = service('Frontend', frontendTask, frontendSg);
 
     // --- Load balancer and routing (T014, R5): one origin, API paths to the backend, the rest to the web app (FR-003).
