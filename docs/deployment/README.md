@@ -159,4 +159,14 @@ Nothing to code. Create the `prod` GitHub Environment as described above, merge 
 
 ## First deployment evidence
 
-Filled in when the first `dev` deployment runs after this feature is merged (run URL, `PublicUrl`, smoke output).
+Manual first deployment of `dev` from a workstation (administrator profile, 2026-11-08), before the automatic path is enabled by the owner steps above. Images: commit `1f450a36eefd25f32a27c5fa470313d50be52502` built for `linux/arm64` and pushed to ECR (backend `sha256:72593d1a…`, frontend `sha256:97dcb201…`); stack code: commit `d7637d1`.
+
+- `cdk deploy MisiOps-Foundation`: 62 s. Outputs: `DeployRoleArn = arn:aws:iam::857790693028:role/MisiOpsGithubDeploy`, repositories `misiops-backend`, `misiops-frontend`.
+- First `cdk deploy MisiOps-dev` attempt rolled back after 14 min: the backend service started while the Aurora writer was still provisioning and the circuit breaker tripped (fixed by making the service depend on the database; rollback left nothing behind).
+- Second `cdk deploy MisiOps-dev`: **9 min**, `PublicUrl = https://d2n2ap8z1x33no.cloudfront.net`.
+- `infra/scripts/smoke.sh https://d2n2ap8z1x33no.cloudfront.net` → exit 0: `GET /` and `GET /openapi.json` 200, p95 0.67 s and 0.62 s over 20 requests.
+- Home page title `MisiOps · dev` and the non-production banner present; `http://` redirects 301 to `https://`; `/docs` 200.
+- End to end through CloudFront: `POST /api/v1/auth/register` 201, `POST /api/v1/auth/login` 200, `POST /api/v1/transactions` 201, `GET /api/v1/transactions/summary` shows the transaction (data persisted in Aurora).
+- Backend log lines for the smoke requests visible in `/misiops/dev/backend` within seconds; the running task definition has only `ACCESS_TOKEN_EXPIRE_MINUTES` in `environment` and the five names in `secrets`; `runtimePlatform` ARM64/LINUX; Aurora `available`, 0–1 ACU, auto-pause 600 s, encrypted.
+
+The automatic `deploy` run (merge into `develop`) will add its run URL here once the owner configures the variables and environments.
