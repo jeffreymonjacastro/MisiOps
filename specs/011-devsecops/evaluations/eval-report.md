@@ -140,3 +140,5 @@ ACCEPTABLE. Proceed to `/speckit-plan`.
 **Block C**: SC-008 is new, measurable and atomic. FR-012 and FR-012a stay single-purpose. No score change.
 
 **Verdict**: Unchanged — **9.66, ACCEPTABLE**. EX-001 becomes effective once M6 is done.
+
+**Addendum 2026-11-11 (post-merge gate finding)**: the first `develop` → `main` pull request after the AWS deployment feature was blocked by the `container` gate (2 fixable HIGH CVEs in `zlib1g` of `python:3.13-slim`). FR-012 behaved as specified; the remediation (build-time OS upgrade, T050) is recorded in the plan's remediation approach. No score change.

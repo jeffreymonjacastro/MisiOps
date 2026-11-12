@@ -130,6 +130,8 @@ Per-job inputs, outputs and gates: [contracts/pipeline-jobs.md](./contracts/pipe
 4. Findings that cannot be fixed here → `.gitleaks.toml` / `.trivyignore` / ZAP `IGNORE` with ID, justification and review date; listed as accepted risks.
 5. Re-run; re-import closes fixed findings; capture "resultados después". The aim is every gate green before merging to `develop`, so the later `develop` → `main` PR passes the enforcing gates.
 
+Base-image drift (added 2026-11-11, T050): Debian and Alpine publish fixes for base-image packages after the pinned image was built, so both Dockerfiles upgrade OS packages at build time (`apt-get upgrade` in the backend, `apk upgrade` in the frontend). A fixable HIGH/CRITICAL that survives the upgrade means the base image itself needs bumping.
+
 ## Manual steps the user (or the repo owner) must perform
 
 | # | Who | Step | Needed for |
