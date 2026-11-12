@@ -64,6 +64,7 @@
 - [ ] CHK037 Are the minimum contents of the pipeline diagram (stages, gates, artifacts, delivery) specified for item 2i? [Clarity, Spec §FR-015]
 - [ ] CHK038 Is "concisely" for items 2j/2k quantified (e.g., length per sub-question)? [Ambiguity, Spec §FR-017]
 - [ ] CHK039 Can SC-005 ("locate any item in under one minute") be verified objectively (index, anchors per item)? [Measurability, Spec §SC-005]
+- [x] CHK041 Does the plan state how base-image package vulnerabilities published after the image pin are handled (build-time OS upgrade in every Dockerfile, bump the base image when a fixable finding survives)? [Completeness, Spec §FR-012, Plan §Remediation approach] (reviewed 2026-11-11)
 - [ ] CHK040 Is the dependency on manual steps (STRIDE templates, shared links, owner-set secrets) reflected in the acceptance criteria, with what the evidence shows if a step is not done? [Dependency, Plan §Manual steps]
 
 ## Notes

@@ -172,3 +172,7 @@ description: "Task list for DevSecOps for MisiOps"
 
 - [X] T048 Mirror the repository allow-lists in DefectDojo: mark the 4 Gitleaks and 2 TruffleHog findings as False Positive and put the 26 gosu CVEs and the snakeoil key under a Risk Acceptance (expiry 2027-02-01) per data-model §Finding lifecycle / FR-012b (partial)
 - [ ] T049 After the merge into `main`, confirm the `deliver` job published `ghcr.io/jeffreymonjacastro/misiops-{backend,frontend}` and add the screenshot to EVIDENCIAS §2i per FR-015a (partial)
+
+## Phase 10: Convergence
+
+- [X] T050 Patch OS packages in `backend/Dockerfile` (`apt-get upgrade` after `FROM python:3.13-slim`, as `frontend/Dockerfile` already does with `apk upgrade`) so fixable HIGH/CRITICAL base-image CVEs do not block the `container` gate on pull requests into `main`; verified locally with Trivy 0.76.1 and `trivy-blocking.jq` (2 blocking findings in zlib1g → 0) per FR-012, FR-014 (partial)
