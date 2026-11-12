@@ -20,6 +20,7 @@
 
 ## CI Identity & Least Privilege
 
+- [x] CHK008a Does the trust-policy requirement account for GitHub's immutable OIDC subject (`repo:<owner>@<id>/<repo>@<id>`), so that enabling the setting cannot break the deployment identity? [Completeness, Spec §FR-012, Research §R9] (reviewed 2026-11-12, after T048)
 - [x] CHK008 Are the trust conditions of the deploy role fully specified (audience, exact `sub` values for both branch refs and both environments) and is the repository name parameterised rather than hard-coded in the requirement? [Completeness, Spec §FR-012, Research §R9]
 - [x] CHK009 Is "limited to the permissions the deployment needs" enumerated as a closed action list (assume CDK bootstrap roles, ECR push/pull on two repositories, describe stacks) so a reviewer can detect scope creep? [Clarity, Spec §FR-012, Contracts cdk-stacks]
 - [x] CHK010 Is the accepted risk that the CDK bootstrap execution role keeps administrator permissions recorded with an owner, a review date and the documented mitigation path? [Assumption, Research §R9]
