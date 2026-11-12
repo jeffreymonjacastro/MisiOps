@@ -73,6 +73,8 @@ GitHub Environments (owner, Settings → Environments):
 | `dev` | `develop` only | none |
 | `prod` | `main` only | repository owner (enable "Prevent self-review") |
 
+If the repository has GitHub's **immutable subject** OIDC setting enabled, the subject becomes `repo:<owner>@<ownerId>/<repo>@<repoId>:environment:<name>`; the deploy role trusts both forms (`infra/lib/foundation-stack.ts`), so no action is needed when the setting is toggled. For another repository, pass `-c githubRepo=<owner>/<repo> -c githubRepoImmutable=<owner>@<ownerId>/<repo>@<repoId>` when deploying `MisiOps-Foundation` (ids from `gh api repos/<owner>/<repo> --jq '.owner.id, .id'`).
+
 The deployment-branch rule matters for security: a job inside an environment presents the OIDC subject `repo:<owner>/<repo>:environment:<name>` with no branch in it, so the rule is what guarantees that only `main` can reach `prod` and only `develop` can reach `dev` (FR-012).
 
 A push to `main` whose pipeline passes creates a `deploy` run that waits in `prod` until a reviewer approves it in the Actions UI; the approver is recorded in the run. The first approved run creates the `MisiOps-prod` stack; no code change is needed. A pending approval expires after 30 days.

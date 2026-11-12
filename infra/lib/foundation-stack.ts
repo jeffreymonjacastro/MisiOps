@@ -6,12 +6,17 @@ import { Construct } from 'constructs';
 
 export const REPOSITORY_NAMES = { backend: 'misiops-backend', frontend: 'misiops-frontend' } as const;
 export const DEFAULT_GITHUB_REPO = 'jeffreymonjacastro/MisiOps';
+// GitHub's "immutable subject" OIDC setting (enabled on this repository) adds the owner and repository
+// ids to the `sub` claim: repo:<owner>@<ownerId>/<repo>@<repoId>:... (first prod run, 2026-11-12).
+export const DEFAULT_GITHUB_REPO_IMMUTABLE = 'jeffreymonjacastro@104637993/MisiOps@1362166500';
 const GITHUB_OIDC_URL = 'https://token.actions.githubusercontent.com';
 const GITHUB_OIDC_AUDIENCE = 'sts.amazonaws.com';
 
 export interface FoundationStackProps extends StackProps {
   /** `<owner>/<repo>` allowed to assume the deploy role (R9). */
   githubRepo?: string;
+  /** `<owner>@<ownerId>/<repo>@<repoId>`, the immutable-subject form of the same repository. */
+  githubRepoImmutable?: string;
 }
 
 export class FoundationStack extends Stack {
@@ -22,6 +27,7 @@ export class FoundationStack extends Stack {
   constructor(scope: Construct, id: string, props: FoundationStackProps = {}) {
     super(scope, id, props);
     const githubRepo = props.githubRepo ?? DEFAULT_GITHUB_REPO;
+    const githubRepoImmutable = props.githubRepoImmutable ?? DEFAULT_GITHUB_REPO_IMMUTABLE;
 
     // --- Image registry (R10): immutable tags = commit SHA, scanned on push, kept on stack deletion.
     const repository = (name: string) =>
@@ -40,14 +46,15 @@ export class FoundationStack extends Stack {
       url: GITHUB_OIDC_URL,
       clientIds: [GITHUB_OIDC_AUDIENCE],
     });
-    const subjects = [
-      `repo:${githubRepo}:ref:refs/heads/develop`,
-      `repo:${githubRepo}:ref:refs/heads/main`,
-      // Jobs running inside a GitHub Environment carry no branch in `sub`; the environment's
-      // "deployment branches" rule (dev -> develop, prod -> main) binds it (FR-012).
-      `repo:${githubRepo}:environment:dev`,
-      `repo:${githubRepo}:environment:prod`,
-    ];
+    // Jobs running inside a GitHub Environment carry no branch in `sub`; the environment's
+    // "deployment branches" rule (dev -> develop, prod -> main) binds it (FR-012).
+    // Both subject forms are accepted so toggling the immutable-subject setting never locks CI out.
+    const subjects = [githubRepo, githubRepoImmutable].flatMap((repo) => [
+      `repo:${repo}:ref:refs/heads/develop`,
+      `repo:${repo}:ref:refs/heads/main`,
+      `repo:${repo}:environment:dev`,
+      `repo:${repo}:environment:prod`,
+    ]);
     this.deployRole = new iam.Role(this, 'DeployRole', {
       roleName: 'MisiOpsGithubDeploy',
       description: `GitHub Actions deploy role for ${githubRepo} (develop -> dev, main -> prod)`,

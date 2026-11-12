@@ -7,6 +7,7 @@ import { FoundationStack } from '../lib/foundation-stack.js';
 
 const template = Template.fromStack(new FoundationStack(new App(), 'MisiOps-Foundation'));
 const REPO = 'jeffreymonjacastro/MisiOps';
+const REPO_IMMUTABLE = 'jeffreymonjacastro@104637993/MisiOps@1362166500';
 
 test('two ECR repositories: immutable tags, scan on push, retained on delete', () => {
   template.resourceCountIs('AWS::ECR::Repository', 2);
@@ -29,7 +30,7 @@ test('GitHub OIDC provider for the STS audience', () => {
   });
 });
 
-test('deploy role trusts only this repository (develop, main, environments dev and prod), 1 h sessions', () => {
+test('deploy role trusts only this repository in both subject forms (develop, main, environments dev and prod), 1 h sessions', () => {
   const roles = template.findResources('AWS::IAM::Role', { Properties: Match.objectLike({ RoleName: 'MisiOpsGithubDeploy' }) });
   const [role] = Object.values(roles);
   assert.ok(role, 'deploy role exists');
@@ -39,12 +40,18 @@ test('deploy role trusts only this repository (develop, main, environments dev a
   const [trust] = statements;
   assert.equal(trust.Action, 'sts:AssumeRoleWithWebIdentity');
   assert.deepEqual(trust.Condition.StringEquals, { 'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com' });
-  assert.deepEqual(trust.Condition.StringLike['token.actions.githubusercontent.com:sub'], [
-    `repo:${REPO}:ref:refs/heads/develop`,
-    `repo:${REPO}:ref:refs/heads/main`,
-    `repo:${REPO}:environment:dev`,
-    `repo:${REPO}:environment:prod`,
-  ]);
+  assert.deepEqual(
+    trust.Condition.StringLike['token.actions.githubusercontent.com:sub'],
+    [REPO, REPO_IMMUTABLE].flatMap((repo) => [
+      `repo:${repo}:ref:refs/heads/develop`,
+      `repo:${repo}:ref:refs/heads/main`,
+      `repo:${repo}:environment:dev`,
+      `repo:${repo}:environment:prod`,
+    ]),
+  );
+  for (const sub of trust.Condition.StringLike['token.actions.githubusercontent.com:sub']) {
+    assert.match(sub, /^repo:jeffreymonjacastro(@104637993)?\/MisiOps(@1362166500)?:/);
+  }
 });
 
 test('deploy role policy: no wildcard actions; "*" resources only for ECR login and DescribeStacks', () => {
