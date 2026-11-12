@@ -1,10 +1,15 @@
 <!--
 Sync Impact Report:
-- Version change: 1.0.0 -> 1.1.0
-- Modified principles: None (Code Quality, Testing Standards, User Experience Consistency, Performance Requirements preserved verbatim)
-- Added sections: Product Context (Problem Statement, Objectives, User Personas), Technology Stack (Stack, Repository Structure, Data Base Schema)
+- Version change: 1.2.0 -> 1.3.0
+- Modified principles: None
+- Added sections: Deployment Environments (`dev` deployed automatically from `develop` after the
+  DevSecOps pipeline completes in report-only mode under EX-001; `prod` deployed only from `main`
+  after every security gate passes)
+- Modified sections: Additional Constraints (deployment clause now distinguishes `prod` from `dev`);
+  Temporary Exemptions / EX-001 (deployment sentence now points to Deployment Environments)
 - Removed sections: None
-- Follow-up TODOs: None
+- Follow-up TODOs: Review EX-001 on or before its expiry date; when it expires, `dev` deployments
+  MUST again require passing security gates (see Deployment Environments)
 -->
 
 # MisiOps Constitution
@@ -69,6 +74,7 @@ MisiOps/
 │   └── pyproject.toml # Backend dependencies (managed with uv)
 ├── diagrams/          # Architecture diagrams (e.g. Excalidraw, ERDs)
 ├── frontend/          # Next.js client application
+├── infra/             # AWS CDK infrastructure (TypeScript)
 ├── specs/             # Feature specifications (spec-kit output)
 ├── AGENTS.md          # Agent rules and guidelines
 └── mcp-config.json    # MCP server configuration
@@ -125,11 +131,32 @@ erDiagram
 
 ## Additional Constraints
 
-Technology stack choices and architectural decisions MUST prioritize security and maintainability. Third-party dependencies MUST be kept up-to-date and audited regularly for known vulnerabilities. Deployments MUST NOT occur without passing automated security scans.
+Technology stack choices and architectural decisions MUST prioritize security and maintainability. Third-party dependencies MUST be kept up-to-date and audited regularly for known vulnerabilities. Production deployments MUST NOT occur without passing automated security scans; non-production deployments follow the Deployment Environments section.
 
 ## Development Workflow
 
 Development MUST occur on feature branches and be integrated via Pull Requests (PRs). Every PR MUST receive at least one peer review that specifically checks for adherence to these constitutional principles. Code MUST NOT be merged until all automated Continuous Integration (CI) quality gates (tests, linting, security scans) have passed successfully.
+
+## Deployment Environments
+
+MisiOps has exactly two deployment environments, both provisioned from the same infrastructure-as-code definition stored in this repository:
+
+- **`dev` (non-production)**: Deployed automatically on every push to `develop`, triggered when the DevSecOps pipeline for that push completes. While EX-001 is in force, the pipeline runs in report-only mode on `develop`, so `dev` MAY receive code with open security findings; it MUST NOT hold real user data and MUST NOT be exposed as a production service. Tests and linting still gate every pull request into `develop`, so nothing reaches `dev` without passing them.
+- **`prod` (production)**: Deployed only from `main`, and only after every security gate of the DevSecOps pipeline has passed in blocking mode. Production deployments MUST require an explicit approval by a reviewer before the deployment job runs.
+
+Both environments MUST deploy the exact container images that the DevSecOps pipeline built and scanned for that commit; rebuilding images in the deployment step is forbidden. Deployment credentials MUST be short-lived (OIDC federation); long-lived cloud access keys MUST NOT be stored in the repository or in CI secrets. A failed deployment MUST roll back automatically to the previous healthy version.
+
+When EX-001 expires without renewal, `dev` deployments MUST also require passing security gates.
+
+## Temporary Exemptions
+
+### EX-001 — Security-scan gate moves from `develop` to `main`
+
+- **Scope**: The Development Workflow clause "Code MUST NOT be merged until all automated CI quality gates (… security scans) have passed", **only for security scans and only for merges into `develop`**. Tests and linting still gate every merge.
+- **Rule while in force**: Security scans run and report on every pull request into `develop`. Every merge into `main` MUST pass every security scan (CRITICAL/HIGH findings and detected secrets block it), enforced by required status checks on `main`. Production deployments still happen only from `main` after passing scans; the non-production `dev` environment is deployed from `develop` as described in Deployment Environments.
+- **Justification**: Requested by the team lead (2026-11-05) so that `develop` can integrate work while findings are triaged, while nothing with an open security alert reaches `main`.
+- **Approval**: Technical leadership review on the pull request that introduces it (feature `011-devsecops`).
+- **Expiry**: 2026-12-31. On expiry, either renew it with a new review or make the security checks required on `develop` as well (steps in `docs/devsecops/EVIDENCIAS.md`).
 
 ## Governance
 
@@ -138,4 +165,4 @@ Amendments to this document require a formal proposal, review by technical leade
 Versioning of this constitution follows Semantic Versioning (MAJOR for significant shifts or rule removals, MINOR for additions, PATCH for clarifications).
 All PRs and code reviews MUST actively verify compliance with these rules.
 
-**Version**: 1.1.0 | **Ratified**: 2026-09-09 | **Last Amended**: 2026-09-11
+**Version**: 1.3.0 | **Ratified**: 2026-09-09 | **Last Amended**: 2026-11-07
