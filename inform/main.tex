@@ -8,13 +8,20 @@
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{tabularx}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\usepackage{xurl}
 \usepackage{hyperref}
 \usepackage{setspace}
 \usepackage{listings}
 \usepackage{xcolor}
 \usepackage{float}
 
+% Marca visible para contenido que falta completar con evidencia real
+\newcommand{\pendiente}[1]{\textcolor{red}{\textbf{[Pendiente:} #1\textbf{]}}}
+
 \setstretch{1.15}
+\setlength{\emergencystretch}{3em}
 \setlength{\parskip}{0.5em}
 \setlength{\parindent}{0pt}
 
@@ -28,7 +35,9 @@
     breaklines=true,
     keepspaces=true,
     numbers=none,
-    showstringspaces=false
+    showstringspaces=false,
+    upquote=true,
+    tabsize=4
 }
 \lstset{style=mystyle,literate={á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'\i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1 {ñ}{{\~n}}1}
 
@@ -48,12 +57,18 @@
 
 \input{sections/1-descripcion.tex}
 
-\input{sections/plan.tex}
+\input{sections/2-devsecops.tex}
+
+\input{sections/3-iac.tex}
+
+\input{sections/4-mlops.tex}
 
 \input{sections/conclusiones.tex}
 
 \nocite{*}
 \bibliographystyle{plain}
 \bibliography{references}
+
+\input{sections/anexos.tex}
 
 \end{document}

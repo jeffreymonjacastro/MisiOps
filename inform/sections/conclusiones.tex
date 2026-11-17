@@ -1,3 +1,43 @@
 \section{Conclusiones}
 
-Lorem ipsun
+\subsection{Lecciones aprendidas}
+
+\textbf{Problema de negocio resuelto.} MisiOps guarda credenciales y datos financieros de sus usuarios. Una fuga o una dependencia vulnerable destruiría la confianza en el producto. Necesitábamos detectar esos riesgos antes de publicar, no después, y poder desplegar de forma repetible y segura.
+
+\textbf{Limitaciones iniciales.} La seguridad dependía de la revisión manual del PR y de \texttt{pip-audit}. No se revisaban secretos en el historial, ni imágenes, ni configuración, ni la aplicación en ejecución. Los resultados quedaban dispersos y nada impedía integrar un cambio inseguro. Además, la aplicación solo corría en local con Docker Compose y no tenía un entorno en la nube.
+
+\textbf{Qué cambió con DevOps.}
+\begin{itemize}
+    \item La seguridad corre en cada PR, automatizada y con versiones fijadas de cada herramienta.
+    \item Los hallazgos llegan a un solo lugar (DefectDojo), con historial y estado de cada uno.
+    \item \texttt{main} solo recibe código que pasó todos los escaneos.
+    \item La infraestructura es código probado: un merge a \texttt{develop} actualiza \texttt{dev}, y un merge aprobado a \texttt{main} actualiza \texttt{prod} con exactamente las imágenes que se escanearon.
+\end{itemize}
+
+\textbf{Ventajas medidas.}
+\begin{itemize}
+    \item Se cerraron vulnerabilidades críticas reales (Next.js, certifi, imagen de PostgreSQL): los hallazgos críticos activos bajaron de 39 a 3 y los bloqueantes de 263 a 0.
+    \item El pipeline de seguridad completo tarda unos 4 minutos, y el despliegue a \texttt{prod} unos 11 minutos incluyendo la aprobación.
+    \item El gate demostró su valor en un caso real: además de bloquear el PR de prueba \#131, bloqueó la promoción a \texttt{main} cuando Debian publicó el fix de dos CVE HIGH en la imagen base del backend.
+    \item El rollback automático de ECS actuó en el primer despliegue fallido sin dejar recursos huérfanos.
+\end{itemize}
+
+\textbf{Lecciones técnicas.}
+\begin{itemize}
+    \item Un escáner que no alcanza su objetivo no equivale a ``cero hallazgos'': los jobs fallan explícitamente si ZAP no llega a la aplicación.
+    \item Un gate útil bloquea solo lo accionable. Bloquear CVE sin fix publicado frenaría todos los merges sin mejorar la seguridad.
+    \item Los títulos de \textit{Test} en DefectDojo deben ser únicos por reporte, porque si no una importación cierra los hallazgos de otra.
+    \item Construir las imágenes una sola vez y reutilizarlas para escanear, probar y desplegar garantiza que lo que llega a producción es lo que se analizó.
+\end{itemize}
+
+\subsection{Recomendaciones}
+
+\begin{itemize}
+    \item Alojar DefectDojo en un servidor propio con credenciales robustas, en lugar del equipo local con \texttt{admin/admin} y un túnel ngrok.
+    \item Agregar \textit{rate limiting} y bloqueo temporal en \texttt{/auth/login} (amenazas T1 y T10) y rotación de la \texttt{SECRET\_KEY} (T2).
+    \item Al vencer la exención EX-001 (2026-12-31), exigir los checks de seguridad también en \texttt{develop}.
+    \item Fijar las GitHub Actions por SHA y activar Dependabot o Renovate para actualizar dependencias de forma continua.
+    \item Agregar una bitácora de auditoría de los cambios financieros (amenaza T6).
+    \item Restringir la política del rol de ejecución de CloudFormation creado por el \textit{bootstrap} de CDK, que hoy conserva \texttt{AdministratorAccess}.
+    \item Migrar la CSP del frontend a una política con \textit{nonce} para eliminar \texttt{'unsafe-inline'}.
+\end{itemize}
