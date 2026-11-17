@@ -1,0 +1,35 @@
+# Gitleaks configuration (FR-006). Default rules plus a reviewed allow-list (FR-012b).
+# Every entry: id | justification | review date. Mirrored in docs/devsecops/EVIDENCIAS.md (riesgos aceptados).
+
+[extend]
+useDefault = true
+
+# id: generic-api-key @ frontend/app/lib/{auth,storage}.ts | justification: "misiops.ledger.v1" and
+# "misiops.token.v1" are localStorage key *names*, not credentials | review: 2027-05-01
+[[allowlists]]
+description = "localStorage key names flagged as generic API keys"
+regexTarget = "match"
+regexes = ['''misiops\.(ledger|token)\.v1''']
+
+# id: aws-access-token @ specs/011-devsecops/quickstart.md | justification: fake AWS key used by the
+# documented pre-commit test (quickstart scenario 5); never valid | review: 2027-05-01
+[[allowlists]]
+description = "Fake AWS key of the pre-commit demo"
+# AND: the key stays blocked anywhere else, so the pre-commit demo still fails as intended.
+condition = "AND"
+regexes = ['''AKIAQ3ZX7YT2LMNOPQ4R''']
+paths = ['''^specs/011-devsecops/quickstart\.md$''']
+
+# id: any rule @ docs/devsecops/reports/ | justification: archived scanner reports (baseline and re-scan
+# evidence) quote the redacted findings above; scanning them again would only re-report them | review: 2027-05-01
+[[allowlists]]
+description = "Archived scan reports used as course evidence"
+paths = ['''^docs/devsecops/reports/''']
+
+# id: generic-api-key @ security/tests/test_upload_to_defectdojo.sh | justification: fake token the
+# upload-script test uses to assert the real one is never printed | review: 2027-05-01
+[[allowlists]]
+description = "Fake DefectDojo token of the upload-script test"
+condition = "AND"
+regexes = ['''tok-SECRET-123''']
+paths = ['''^security/tests/test_upload_to_defectdojo\.sh$''']

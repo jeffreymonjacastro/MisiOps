@@ -1,0 +1,9 @@
+# Replaces Semgrep's default ignore list, so keep .gitignore'd paths out too.
+:include .gitignore
+frontend/node_modules/
+frontend/.next/
+backend/.venv/
+specs/
+docs/
+inform/
+diagrams/

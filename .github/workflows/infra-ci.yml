@@ -1,0 +1,41 @@
+name: infra-ci
+
+# Infrastructure gate (specs/012-aws-deployment, FR-007, NFR-007): tests and an offline synth of the CDK app.
+# No AWS credentials: the stacks have no context lookups and the region is fixed in infra/bin/misiops.ts.
+
+on:
+  pull_request:
+    branches: [develop]
+    paths: ["infra/**", ".github/workflows/infra-ci.yml"]
+  push:
+    branches: [develop]
+    paths: ["infra/**", ".github/workflows/infra-ci.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  infra-ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: infra
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.6.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: infra/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - name: Unit tests (stack assertions + smoke script)
+        run: pnpm test
+      - name: Synth dev and prod without credentials
+        run: |
+          pnpm synth -c env=dev -c imageTag=ci -c alertEmail=ci@example.com --quiet
+          pnpm synth -c env=prod -c imageTag=ci -c alertEmail=ci@example.com --quiet
+          test "$(grep -c '"SecretString"' cdk.out/MisiOps-dev.template.json)" = 0

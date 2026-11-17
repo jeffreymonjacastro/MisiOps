@@ -1,0 +1,9 @@
+{
+  "app": "npx tsx bin/misiops.ts",
+  "watch": { "include": ["bin/**", "lib/**"], "exclude": ["node_modules", "cdk.out"] },
+  "context": {
+    "@aws-cdk/aws-ecs:disableExplicitDeploymentControllerForCircuitBreaker": true,
+    "@aws-cdk/aws-cloudfront:defaultViewerProtocolPolicyRedirectToHttps": true,
+    "@aws-cdk/aws-iam:minimizePolicies": true
+  }
+}

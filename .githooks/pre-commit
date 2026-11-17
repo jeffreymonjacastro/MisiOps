@@ -1,0 +1,11 @@
+#!/bin/bash
+# pre-commit hook: block secrets before they reach the repository (specs/011-devsecops, FR-009).
+# Runs the pinned hooks of .pre-commit-config.yaml (gitleaks, detect-private-key) on the staged files.
+# Active for everyone with `git config core.hooksPath .githooks`; needs pre-commit or uv installed.
+
+if command -v pre-commit >/dev/null 2>&1; then
+  exec pre-commit run --hook-stage pre-commit
+elif command -v uvx >/dev/null 2>&1; then
+  exec uvx pre-commit@4.7.0 run --hook-stage pre-commit
+fi
+echo "pre-commit not found: secret scan skipped. Install it with: pip install pre-commit==4.7.0" >&2

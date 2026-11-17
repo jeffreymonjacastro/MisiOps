@@ -1,7 +1,7 @@
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 import models.category  # noqa: F401
@@ -32,6 +32,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(api_router)
+
+# Hardening headers flagged by the ZAP API scan (specs/011-devsecops). Added after CORS so it is the
+# outermost middleware and also covers preflight and error responses.
+SECURITY_HEADERS = {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "no-referrer",
+    "Cross-Origin-Resource-Policy": "same-site",
+}
+
+
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers.update(SECURITY_HEADERS)
+    return response
 
 
 @app.get("/")

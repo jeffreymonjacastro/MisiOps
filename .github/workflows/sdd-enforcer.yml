@@ -25,11 +25,11 @@ jobs:
           
           echo "Checking SDD artifacts for feature branch: $BRANCH_NAME"
           
-          # Check if the PR modifies frontend/ or backend/ code
-          CODE_CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...origin/${{ github.head_ref }} | grep -E "^(frontend/|backend/)" || true)
+          # Check if the PR modifies frontend/, backend/ or infra/ code
+          CODE_CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...origin/${{ github.head_ref }} | grep -E "^(frontend/|backend/|infra/)" || true)
           
           if [[ -z "$CODE_CHANGED" ]]; then
-            echo "No implementation code changed in frontend/ or backend/. Passing."
+            echo "No implementation code changed in frontend/, backend/ or infra/. Passing."
             exit 0
           fi
           

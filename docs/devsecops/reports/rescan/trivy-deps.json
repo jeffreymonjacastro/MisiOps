@@ -1,0 +1,2510 @@
+{
+  "SchemaVersion": 2,
+  "Trivy": {
+    "Version": "0.76.1"
+  },
+  "ReportID": "01a1af1f-8872-7484-8ea9-1ee7f01645b9",
+  "CreatedAt": "2026-11-06T04:30:41.778297364Z",
+  "ArtifactID": "sha256:780cb617446f4b357f5f7781e4895a254cf9430801ea961ce60446617082e919",
+  "ArtifactName": ".",
+  "ArtifactType": "repository",
+  "Metadata": {
+    "RepoURL": "https://github.com/jeffreymonjacastro/MisiOps",
+    "Commit": "c79ec08b7390b95e9dd5b273e20fb22b43a6992d",
+    "CommitMsg": "Merge a628e9d45485a9c9fc77fbcb1c17e2eacdf00bd0 into 3b19799f962fca5af5014b96a49ddca2927a7c1f",
+    "Author": "Yared Riveros Rodriguez \u003c83974222+YaredRiveros@users.noreply.github.com\u003e",
+    "Committer": "GitHub \u003cnoreply@github.com\u003e"
+  },
+  "Results": [
+    {
+      "Target": ".agents/skills/pretty-mermaid/package-lock.json",
+      "Class": "lang-pkgs",
+      "Type": "npm",
+      "Packages": [
+        {
+          "ID": "@resvg/resvg-js@2.6.2",
+          "Name": "@resvg/resvg-js",
+          "Identifier": {
+            "PURL": "pkg:npm/%40resvg/resvg-js@2.6.2",
+            "UID": "639801da3f2d5ff1"
+          },
+          "Version": "2.6.2",
+          "Licenses": [
+            "MPL-2.0"
+          ],
+          "Relationship": "direct",
+          "DependsOn": [
+            "@resvg/resvg-js-android-arm-eabi@2.6.2",
+            "@resvg/resvg-js-android-arm64@2.6.2",
+            "@resvg/resvg-js-darwin-arm64@2.6.2",
+            "@resvg/resvg-js-darwin-x64@2.6.2",
+            "@resvg/resvg-js-linux-arm-gnueabihf@2.6.2",
+            "@resvg/resvg-js-linux-arm64-gnu@2.6.2",
+            "@resvg/resvg-js-linux-arm64-musl@2.6.2",
+            "@resvg/resvg-js-linux-x64-gnu@2.6.2",
+            "@resvg/resvg-js-linux-x64-musl@2.6.2",
+            "@resvg/resvg-js-win32-arm64-msvc@2.6.2",
+            "@resvg/resvg-js-win32-ia32-msvc@2.6.2",
+            "@resvg/resvg-js-win32-x64-msvc@2.6.2"
+          ],
+          "Locations": [
+            {
+              "StartLine": 23,
+              "EndLine": 45
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "beautiful-mermaid@1.1.3",
+          "Name": "beautiful-mermaid",
+          "Identifier": {
+            "PURL": "pkg:npm/beautiful-mermaid@1.1.3",
+            "UID": "429be3e6e32ef528"
+          },
+          "Version": "1.1.3",
+          "Licenses": [
+            "MIT"
+          ],
+          "Relationship": "direct",
+          "DependsOn": [
+            "elkjs@0.11.1",
+            "entities@7.0.1"
+          ],
+          "Locations": [
+            {
+              "StartLine": 238,
+              "EndLine": 247
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@resvg/resvg-js-android-arm-eabi@2.6.2",
+          "Name": "@resvg/resvg-js-android-arm-eabi",
+          "Identifier": {
+            "PURL": "pkg:npm/%40resvg/resvg-js-android-arm-eabi@2.6.2",
+            "UID": "48089451392cae38"
+          },
+          "Version": "2.6.2",
+          "Licenses": [
+            "MPL-2.0"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 46,
+              "EndLine": 61
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@resvg/resvg-js-android-arm64@2.6.2",
+          "Name": "@resvg/resvg-js-android-arm64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40resvg/resvg-js-android-arm64@2.6.2",
+            "UID": "febcad5523d2d7f6"
+          },
+          "Version": "2.6.2",
+          "Licenses": [
+            "MPL-2.0"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 62,
+              "EndLine": 77
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@resvg/resvg-js-darwin-arm64@2.6.2",
+          "Name": "@resvg/resvg-js-darwin-arm64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40resvg/resvg-js-darwin-arm64@2.6.2",
+            "UID": "4e8ea77f900821c7"
+          },
+          "Version": "2.6.2",
+          "Licenses": [
+            "MPL-2.0"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 78,
+              "EndLine": 93
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@resvg/resvg-js-darwin-x64@2.6.2",
+          "Name": "@resvg/resvg-js-darwin-x64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40resvg/resvg-js-darwin-x64@2.6.2",
+            "UID": "d0a44440bb0fb5ec"
+          },
+          "Version": "2.6.2",
+          "Licenses": [
+            "MPL-2.0"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 94,
+              "EndLine": 109
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@resvg/resvg-js-linux-arm-gnueabihf@2.6.2",
+          "Name": "@resvg/resvg-js-linux-arm-gnueabihf",
+          "Identifier": {
+            "PURL": "pkg:npm/%40resvg/resvg-js-linux-arm-gnueabihf@2.6.2",
+            "UID": "ab16923452e87032"
+          },
+          "Version": "2.6.2",
+          "Licenses": [
+            "MPL-2.0"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 110,
+              "EndLine": 125
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@resvg/resvg-js-linux-arm64-gnu@2.6.2",
+          "Name": "@resvg/resvg-js-linux-arm64-gnu",
+          "Identifier": {
+            "PURL": "pkg:npm/%40resvg/resvg-js-linux-arm64-gnu@2.6.2",
+            "UID": "ac07f56658ad6f6c"
+          },
+          "Version": "2.6.2",
+          "Licenses": [
+            "MPL-2.0"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 126,
+              "EndLine": 141
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@resvg/resvg-js-linux-arm64-musl@2.6.2",
+          "Name": "@resvg/resvg-js-linux-arm64-musl",
+          "Identifier": {
+            "PURL": "pkg:npm/%40resvg/resvg-js-linux-arm64-musl@2.6.2",
+            "UID": "9e42d43e0319b476"
+          },
+          "Version": "2.6.2",
+          "Licenses": [
+            "MPL-2.0"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 142,
+              "EndLine": 157
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@resvg/resvg-js-linux-x64-gnu@2.6.2",
+          "Name": "@resvg/resvg-js-linux-x64-gnu",
+          "Identifier": {
+            "PURL": "pkg:npm/%40resvg/resvg-js-linux-x64-gnu@2.6.2",
+            "UID": "9dceb7812e64406d"
+          },
+          "Version": "2.6.2",
+          "Licenses": [
+            "MPL-2.0"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 158,
+              "EndLine": 173
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@resvg/resvg-js-linux-x64-musl@2.6.2",
+          "Name": "@resvg/resvg-js-linux-x64-musl",
+          "Identifier": {
+            "PURL": "pkg:npm/%40resvg/resvg-js-linux-x64-musl@2.6.2",
+            "UID": "2e7a17657d114fec"
+          },
+          "Version": "2.6.2",
+          "Licenses": [
+            "MPL-2.0"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 174,
+              "EndLine": 189
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@resvg/resvg-js-win32-arm64-msvc@2.6.2",
+          "Name": "@resvg/resvg-js-win32-arm64-msvc",
+          "Identifier": {
+            "PURL": "pkg:npm/%40resvg/resvg-js-win32-arm64-msvc@2.6.2",
+            "UID": "8d1817604a8a63b3"
+          },
+          "Version": "2.6.2",
+          "Licenses": [
+            "MPL-2.0"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 190,
+              "EndLine": 205
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@resvg/resvg-js-win32-ia32-msvc@2.6.2",
+          "Name": "@resvg/resvg-js-win32-ia32-msvc",
+          "Identifier": {
+            "PURL": "pkg:npm/%40resvg/resvg-js-win32-ia32-msvc@2.6.2",
+            "UID": "63cd75e6f879750c"
+          },
+          "Version": "2.6.2",
+          "Licenses": [
+            "MPL-2.0"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 206,
+              "EndLine": 221
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@resvg/resvg-js-win32-x64-msvc@2.6.2",
+          "Name": "@resvg/resvg-js-win32-x64-msvc",
+          "Identifier": {
+            "PURL": "pkg:npm/%40resvg/resvg-js-win32-x64-msvc@2.6.2",
+            "UID": "5c73a6def9266cd2"
+          },
+          "Version": "2.6.2",
+          "Licenses": [
+            "MPL-2.0"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 222,
+              "EndLine": 237
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "elkjs@0.11.1",
+          "Name": "elkjs",
+          "Identifier": {
+            "PURL": "pkg:npm/elkjs@0.11.1",
+            "UID": "a8012f23433d4f3b"
+          },
+          "Version": "0.11.1",
+          "Licenses": [
+            "EPL-2.0"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 248,
+              "EndLine": 253
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "entities@7.0.1",
+          "Name": "entities",
+          "Identifier": {
+            "PURL": "pkg:npm/entities@7.0.1",
+            "UID": "f4848ecd74e4e4da"
+          },
+          "Version": "7.0.1",
+          "Licenses": [
+            "BSD-2-Clause"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 254,
+              "EndLine": 265
+            }
+          ],
+          "AnalyzedBy": "npm"
+        }
+      ]
+    },
+    {
+      "Target": "backend/uv.lock",
+      "Class": "lang-pkgs",
+      "Type": "uv",
+      "Packages": [
+        {
+          "ID": "backend@0.1.0",
+          "Name": "backend",
+          "Identifier": {
+            "PURL": "pkg:pypi/backend@0.1.0",
+            "UID": "328ebf47d33d4378"
+          },
+          "Version": "0.1.0",
+          "Relationship": "root",
+          "DependsOn": [
+            "anyio@4.15.1",
+            "asyncpg@0.31.0",
+            "email-validator@2.3.0",
+            "fastapi@0.141.1",
+            "httpx@0.28.1",
+            "psycopg2-binary@2.9.13",
+            "pwdlib@0.3.1",
+            "pydantic-settings@2.15.0",
+            "pydantic@2.13.5",
+            "pyjwt@2.15.1",
+            "sqlalchemy@2.0.52",
+            "uvicorn@0.52.4"
+          ],
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "anyio@4.15.1",
+          "Name": "anyio",
+          "Identifier": {
+            "PURL": "pkg:pypi/anyio@4.15.1",
+            "UID": "f440797a0cad6a82"
+          },
+          "Version": "4.15.1",
+          "Relationship": "direct",
+          "DependsOn": [
+            "idna@3.19",
+            "typing-extensions@4.16.0"
+          ],
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "asyncpg@0.31.0",
+          "Name": "asyncpg",
+          "Identifier": {
+            "PURL": "pkg:pypi/asyncpg@0.31.0",
+            "UID": "7f01d9c5b051255d"
+          },
+          "Version": "0.31.0",
+          "Relationship": "direct",
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "email-validator@2.3.0",
+          "Name": "email-validator",
+          "Identifier": {
+            "PURL": "pkg:pypi/email-validator@2.3.0",
+            "UID": "c806f939820d56dd"
+          },
+          "Version": "2.3.0",
+          "Relationship": "direct",
+          "DependsOn": [
+            "dnspython@2.9.2",
+            "idna@3.19"
+          ],
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "fastapi@0.141.1",
+          "Name": "fastapi",
+          "Identifier": {
+            "PURL": "pkg:pypi/fastapi@0.141.1",
+            "UID": "dd1542b01b1a430c"
+          },
+          "Version": "0.141.1",
+          "Relationship": "direct",
+          "DependsOn": [
+            "annotated-doc@0.0.5",
+            "email-validator@2.3.0",
+            "fastapi-cli@0.0.32",
+            "fastar@0.12.0",
+            "httpx@0.28.1",
+            "jinja2@3.1.6",
+            "pydantic-extra-types@2.11.1",
+            "pydantic-settings@2.15.0",
+            "pydantic@2.13.5",
+            "python-multipart@0.0.32",
+            "starlette@1.6.0",
+            "typing-extensions@4.16.0",
+            "typing-inspection@0.4.4",
+            "uvicorn@0.52.4"
+          ],
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "httpx@0.28.1",
+          "Name": "httpx",
+          "Identifier": {
+            "PURL": "pkg:pypi/httpx@0.28.1",
+            "UID": "5efd77d212633f3b"
+          },
+          "Version": "0.28.1",
+          "Relationship": "direct",
+          "DependsOn": [
+            "anyio@4.15.1",
+            "certifi@2026.10.23",
+            "httpcore@1.0.9",
+            "idna@3.19"
+          ],
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "psycopg2-binary@2.9.13",
+          "Name": "psycopg2-binary",
+          "Identifier": {
+            "PURL": "pkg:pypi/psycopg2-binary@2.9.13",
+            "UID": "a8daccc2ef6c778e"
+          },
+          "Version": "2.9.13",
+          "Relationship": "direct",
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "pwdlib@0.3.1",
+          "Name": "pwdlib",
+          "Identifier": {
+            "PURL": "pkg:pypi/pwdlib@0.3.1",
+            "UID": "6a8962bdf37dbb29"
+          },
+          "Version": "0.3.1",
+          "Relationship": "direct",
+          "DependsOn": [
+            "argon2-cffi@25.1.0"
+          ],
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "pydantic@2.13.5",
+          "Name": "pydantic",
+          "Identifier": {
+            "PURL": "pkg:pypi/pydantic@2.13.5",
+            "UID": "d44ee76bb2cc3842"
+          },
+          "Version": "2.13.5",
+          "Relationship": "direct",
+          "DependsOn": [
+            "annotated-types@0.8.0",
+            "email-validator@2.3.0",
+            "pydantic-core@2.46.5",
+            "typing-extensions@4.16.0",
+            "typing-inspection@0.4.4"
+          ],
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "pydantic-settings@2.15.0",
+          "Name": "pydantic-settings",
+          "Identifier": {
+            "PURL": "pkg:pypi/pydantic-settings@2.15.0",
+            "UID": "242bdeaa12575ef0"
+          },
+          "Version": "2.15.0",
+          "Relationship": "direct",
+          "DependsOn": [
+            "pydantic@2.13.5",
+            "python-dotenv@1.2.3",
+            "typing-inspection@0.4.4"
+          ],
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "pyjwt@2.15.1",
+          "Name": "pyjwt",
+          "Identifier": {
+            "PURL": "pkg:pypi/pyjwt@2.15.1",
+            "UID": "a93df43d729aead3"
+          },
+          "Version": "2.15.1",
+          "Relationship": "direct",
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "sqlalchemy@2.0.52",
+          "Name": "sqlalchemy",
+          "Identifier": {
+            "PURL": "pkg:pypi/sqlalchemy@2.0.52",
+            "UID": "cb129a922267eb1a"
+          },
+          "Version": "2.0.52",
+          "Relationship": "direct",
+          "DependsOn": [
+            "greenlet@3.5.5",
+            "typing-extensions@4.16.0"
+          ],
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "uvicorn@0.52.4",
+          "Name": "uvicorn",
+          "Identifier": {
+            "PURL": "pkg:pypi/uvicorn@0.52.4",
+            "UID": "54af33c420c906e9"
+          },
+          "Version": "0.52.4",
+          "Relationship": "direct",
+          "DependsOn": [
+            "click@8.5.0",
+            "h11@0.16.0",
+            "httptools@0.8.0",
+            "python-dotenv@1.2.3",
+            "pyyaml@6.0.3",
+            "uvloop@0.22.1",
+            "watchfiles@1.3.0",
+            "websockets@17.1"
+          ],
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "agent-detector@2.0.0",
+          "Name": "agent-detector",
+          "Identifier": {
+            "PURL": "pkg:pypi/agent-detector@2.0.0",
+            "UID": "ca7110de48c59a18"
+          },
+          "Version": "2.0.0",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "annotated-doc@0.0.5",
+          "Name": "annotated-doc",
+          "Identifier": {
+            "PURL": "pkg:pypi/annotated-doc@0.0.5",
+            "UID": "d9aefc4a573070d2"
+          },
+          "Version": "0.0.5",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "annotated-types@0.8.0",
+          "Name": "annotated-types",
+          "Identifier": {
+            "PURL": "pkg:pypi/annotated-types@0.8.0",
+            "UID": "627d487ca312a8f"
+          },
+          "Version": "0.8.0",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "argon2-cffi@25.1.0",
+          "Name": "argon2-cffi",
+          "Identifier": {
+            "PURL": "pkg:pypi/argon2-cffi@25.1.0",
+            "UID": "447ca1d5ab962ee7"
+          },
+          "Version": "25.1.0",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "argon2-cffi-bindings@26.1.0"
+          ],
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "argon2-cffi-bindings@26.1.0",
+          "Name": "argon2-cffi-bindings",
+          "Identifier": {
+            "PURL": "pkg:pypi/argon2-cffi-bindings@26.1.0",
+            "UID": "8b194f42c497ae5c"
+          },
+          "Version": "26.1.0",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "cffi@2.1.1"
+          ],
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "certifi@2026.10.23",
+          "Name": "certifi",
+          "Identifier": {
+            "PURL": "pkg:pypi/certifi@2026.10.23",
+            "UID": "64fb33970b24612b"
+          },
+          "Version": "2026.10.23",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "cffi@2.1.1",
+          "Name": "cffi",
+          "Identifier": {
+            "PURL": "pkg:pypi/cffi@2.1.1",
+            "UID": "7faaaa90808e9311"
+          },
+          "Version": "2.1.1",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "pycparser@3.0"
+          ],
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "click@8.5.0",
+          "Name": "click",
+          "Identifier": {
+            "PURL": "pkg:pypi/click@8.5.0",
+            "UID": "378c35fd9d9f7599"
+          },
+          "Version": "8.5.0",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "colorama@0.4.6",
+          "Name": "colorama",
+          "Identifier": {
+            "PURL": "pkg:pypi/colorama@0.4.6",
+            "UID": "6aaa77d39d9937dd"
+          },
+          "Version": "0.4.6",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "detect-installer@0.2.1",
+          "Name": "detect-installer",
+          "Identifier": {
+            "PURL": "pkg:pypi/detect-installer@0.2.1",
+            "UID": "8af6c3c05472e9e8"
+          },
+          "Version": "0.2.1",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "dnspython@2.9.2",
+          "Name": "dnspython",
+          "Identifier": {
+            "PURL": "pkg:pypi/dnspython@2.9.2",
+            "UID": "563721f70f26165e"
+          },
+          "Version": "2.9.2",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "fastapi-cli@0.0.32",
+          "Name": "fastapi-cli",
+          "Identifier": {
+            "PURL": "pkg:pypi/fastapi-cli@0.0.32",
+            "UID": "2afc829c64722dc2"
+          },
+          "Version": "0.0.32",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "fastapi-cloud-cli@0.26.0",
+            "rich-toolkit@0.20.5",
+            "typer@0.27.2",
+            "uvicorn@0.52.4"
+          ],
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "fastapi-cloud-cli@0.26.0",
+          "Name": "fastapi-cloud-cli",
+          "Identifier": {
+            "PURL": "pkg:pypi/fastapi-cloud-cli@0.26.0",
+            "UID": "5fa1d71a8b87e25"
+          },
+          "Version": "0.26.0",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "agent-detector@2.0.0",
+            "detect-installer@0.2.1",
+            "fastar@0.12.0",
+            "httpx@0.28.1",
+            "pydantic@2.13.5",
+            "rich-toolkit@0.20.5",
+            "rignore@0.8.1",
+            "sentry-sdk@2.70.0",
+            "typer@0.27.2",
+            "uvicorn@0.52.4"
+          ],
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "fastar@0.12.0",
+          "Name": "fastar",
+          "Identifier": {
+            "PURL": "pkg:pypi/fastar@0.12.0",
+            "UID": "d0eb6ddc00cb4e6e"
+          },
+          "Version": "0.12.0",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "greenlet@3.5.5",
+          "Name": "greenlet",
+          "Identifier": {
+            "PURL": "pkg:pypi/greenlet@3.5.5",
+            "UID": "d5c6a719eb1654ce"
+          },
+          "Version": "3.5.5",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "h11@0.16.0",
+          "Name": "h11",
+          "Identifier": {
+            "PURL": "pkg:pypi/h11@0.16.0",
+            "UID": "984a6e81e299f64"
+          },
+          "Version": "0.16.0",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "httpcore@1.0.9",
+          "Name": "httpcore",
+          "Identifier": {
+            "PURL": "pkg:pypi/httpcore@1.0.9",
+            "UID": "8f88a56bcb21665c"
+          },
+          "Version": "1.0.9",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "certifi@2026.10.23",
+            "h11@0.16.0"
+          ],
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "httptools@0.8.0",
+          "Name": "httptools",
+          "Identifier": {
+            "PURL": "pkg:pypi/httptools@0.8.0",
+            "UID": "d2da24872162f803"
+          },
+          "Version": "0.8.0",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "idna@3.19",
+          "Name": "idna",
+          "Identifier": {
+            "PURL": "pkg:pypi/idna@3.19",
+            "UID": "e868d2b22c1c693c"
+          },
+          "Version": "3.19",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "jinja2@3.1.6",
+          "Name": "jinja2",
+          "Identifier": {
+            "PURL": "pkg:pypi/jinja2@3.1.6",
+            "UID": "88f3da5030da3b8f"
+          },
+          "Version": "3.1.6",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "markupsafe@3.0.3"
+          ],
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "markdown-it-py@4.2.0",
+          "Name": "markdown-it-py",
+          "Identifier": {
+            "PURL": "pkg:pypi/markdown-it-py@4.2.0",
+            "UID": "994291086ce13098"
+          },
+          "Version": "4.2.0",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "mdurl@0.1.2"
+          ],
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "markupsafe@3.0.3",
+          "Name": "markupsafe",
+          "Identifier": {
+            "PURL": "pkg:pypi/markupsafe@3.0.3",
+            "UID": "405c2baf81f62de"
+          },
+          "Version": "3.0.3",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "mdurl@0.1.2",
+          "Name": "mdurl",
+          "Identifier": {
+            "PURL": "pkg:pypi/mdurl@0.1.2",
+            "UID": "9d9ecd54e5e92368"
+          },
+          "Version": "0.1.2",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "pycparser@3.0",
+          "Name": "pycparser",
+          "Identifier": {
+            "PURL": "pkg:pypi/pycparser@3.0",
+            "UID": "d52d7d9dc23af753"
+          },
+          "Version": "3.0",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "pydantic-core@2.46.5",
+          "Name": "pydantic-core",
+          "Identifier": {
+            "PURL": "pkg:pypi/pydantic-core@2.46.5",
+            "UID": "dc1b3841aaad644"
+          },
+          "Version": "2.46.5",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "typing-extensions@4.16.0"
+          ],
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "pydantic-extra-types@2.11.1",
+          "Name": "pydantic-extra-types",
+          "Identifier": {
+            "PURL": "pkg:pypi/pydantic-extra-types@2.11.1",
+            "UID": "38a5117370c570dd"
+          },
+          "Version": "2.11.1",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "pydantic@2.13.5",
+            "typing-extensions@4.16.0"
+          ],
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "pygments@2.21.0",
+          "Name": "pygments",
+          "Identifier": {
+            "PURL": "pkg:pypi/pygments@2.21.0",
+            "UID": "5499f610c7b12577"
+          },
+          "Version": "2.21.0",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "python-dotenv@1.2.3",
+          "Name": "python-dotenv",
+          "Identifier": {
+            "PURL": "pkg:pypi/python-dotenv@1.2.3",
+            "UID": "4a061016131a6c28"
+          },
+          "Version": "1.2.3",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "python-multipart@0.0.32",
+          "Name": "python-multipart",
+          "Identifier": {
+            "PURL": "pkg:pypi/python-multipart@0.0.32",
+            "UID": "4be7b1df4eafc502"
+          },
+          "Version": "0.0.32",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "pyyaml@6.0.3",
+          "Name": "pyyaml",
+          "Identifier": {
+            "PURL": "pkg:pypi/pyyaml@6.0.3",
+            "UID": "a8c8e910f6719bfb"
+          },
+          "Version": "6.0.3",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "rich@15.0.0",
+          "Name": "rich",
+          "Identifier": {
+            "PURL": "pkg:pypi/rich@15.0.0",
+            "UID": "bbfe1e9775cd2f4b"
+          },
+          "Version": "15.0.0",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "markdown-it-py@4.2.0",
+            "pygments@2.21.0"
+          ],
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "rich-toolkit@0.20.5",
+          "Name": "rich-toolkit",
+          "Identifier": {
+            "PURL": "pkg:pypi/rich-toolkit@0.20.5",
+            "UID": "2704fb8c92d2499e"
+          },
+          "Version": "0.20.5",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "click@8.5.0",
+            "rich@15.0.0",
+            "typing-extensions@4.16.0"
+          ],
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "rignore@0.8.1",
+          "Name": "rignore",
+          "Identifier": {
+            "PURL": "pkg:pypi/rignore@0.8.1",
+            "UID": "3bc7b2444dc61052"
+          },
+          "Version": "0.8.1",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "sentry-sdk@2.70.0",
+          "Name": "sentry-sdk",
+          "Identifier": {
+            "PURL": "pkg:pypi/sentry-sdk@2.70.0",
+            "UID": "b66106ea3fbbad5d"
+          },
+          "Version": "2.70.0",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "certifi@2026.10.23",
+            "urllib3@2.8.0"
+          ],
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "shellingham@1.5.4",
+          "Name": "shellingham",
+          "Identifier": {
+            "PURL": "pkg:pypi/shellingham@1.5.4",
+            "UID": "bbf1bac0e208fd06"
+          },
+          "Version": "1.5.4",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "starlette@1.6.0",
+          "Name": "starlette",
+          "Identifier": {
+            "PURL": "pkg:pypi/starlette@1.6.0",
+            "UID": "a97f251cc2b3608e"
+          },
+          "Version": "1.6.0",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "anyio@4.15.1"
+          ],
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "typer@0.27.2",
+          "Name": "typer",
+          "Identifier": {
+            "PURL": "pkg:pypi/typer@0.27.2",
+            "UID": "da7771dc3c2075dd"
+          },
+          "Version": "0.27.2",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "annotated-doc@0.0.5",
+            "colorama@0.4.6",
+            "rich@15.0.0",
+            "shellingham@1.5.4"
+          ],
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "typing-extensions@4.16.0",
+          "Name": "typing-extensions",
+          "Identifier": {
+            "PURL": "pkg:pypi/typing-extensions@4.16.0",
+            "UID": "fde244078e4f702a"
+          },
+          "Version": "4.16.0",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "typing-inspection@0.4.4",
+          "Name": "typing-inspection",
+          "Identifier": {
+            "PURL": "pkg:pypi/typing-inspection@0.4.4",
+            "UID": "a1ece5593329cbbc"
+          },
+          "Version": "0.4.4",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "typing-extensions@4.16.0"
+          ],
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "urllib3@2.8.0",
+          "Name": "urllib3",
+          "Identifier": {
+            "PURL": "pkg:pypi/urllib3@2.8.0",
+            "UID": "7828d6eea39bac2e"
+          },
+          "Version": "2.8.0",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "uvloop@0.22.1",
+          "Name": "uvloop",
+          "Identifier": {
+            "PURL": "pkg:pypi/uvloop@0.22.1",
+            "UID": "16787f882b80276f"
+          },
+          "Version": "0.22.1",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "watchfiles@1.3.0",
+          "Name": "watchfiles",
+          "Identifier": {
+            "PURL": "pkg:pypi/watchfiles@1.3.0",
+            "UID": "4ee6ab73b7979aca"
+          },
+          "Version": "1.3.0",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "anyio@4.15.1"
+          ],
+          "AnalyzedBy": "uv"
+        },
+        {
+          "ID": "websockets@17.1",
+          "Name": "websockets",
+          "Identifier": {
+            "PURL": "pkg:pypi/websockets@17.1",
+            "UID": "4e05ad5e9e426bb0"
+          },
+          "Version": "17.1",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "uv"
+        }
+      ]
+    },
+    {
+      "Target": "frontend/pnpm-lock.yaml",
+      "Class": "lang-pkgs",
+      "Type": "pnpm",
+      "Packages": [
+        {
+          "ID": "@types/node@20.19.43",
+          "Name": "@types/node",
+          "Identifier": {
+            "PURL": "pkg:npm/%40types/node@20.19.43",
+            "UID": "39d50df00933b84b"
+          },
+          "Version": "20.19.43",
+          "Relationship": "direct",
+          "DependsOn": [
+            "undici-types@6.21.0"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "next@16.4.5(@babel/core@7.29.7)(@types/node@20.19.43)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)",
+          "Name": "next",
+          "Identifier": {
+            "PURL": "pkg:npm/next@16.4.5",
+            "UID": "7ed75241c9da1f6d"
+          },
+          "Version": "16.4.5",
+          "Relationship": "direct",
+          "DependsOn": [
+            "@next/swc-linux-arm64-gnu@16.4.5",
+            "@next/swc-linux-x64-gnu@16.4.5",
+            "@next/swc-linux-x64-musl@16.4.5",
+            "@next/swc-win32-x64-msvc@16.4.5",
+            "sharp@0.35.5(@types/node@20.19.43)",
+            "baseline-browser-mapping@2.11.25",
+            "react-dom@19.2.8(react@19.2.8)",
+            "styled-jsx@5.1.6(@babel/core@7.29.7)(react@19.2.8)",
+            "@next/swc-darwin-x64@16.4.5",
+            "postcss@8.5.23",
+            "@next/swc-darwin-arm64@16.4.5",
+            "@next/swc-linux-arm64-musl@16.4.5",
+            "@next/swc-win32-arm64-msvc@16.4.5",
+            "caniuse-lite@1.0.30001810",
+            "@next/env@16.4.5",
+            "@swc/helpers@0.5.23",
+            "react@19.2.8"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "react@19.2.8",
+          "Name": "react",
+          "Identifier": {
+            "PURL": "pkg:npm/react@19.2.8",
+            "UID": "56fea54acd7ad05b"
+          },
+          "Version": "19.2.8",
+          "Relationship": "direct",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "react-dom@19.2.8(react@19.2.8)",
+          "Name": "react-dom",
+          "Identifier": {
+            "PURL": "pkg:npm/react-dom@19.2.8",
+            "UID": "edf0bca2c459bcb1"
+          },
+          "Version": "19.2.8",
+          "Relationship": "direct",
+          "DependsOn": [
+            "react@19.2.8",
+            "scheduler@0.27.0"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@babel/code-frame@7.29.7",
+          "Name": "@babel/code-frame",
+          "Identifier": {
+            "PURL": "pkg:npm/%40babel/code-frame@7.29.7",
+            "UID": "b64f015181495040"
+          },
+          "Version": "7.29.7",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@babel/helper-validator-identifier@7.29.7",
+            "js-tokens@4.0.0",
+            "picocolors@1.1.1"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@babel/compat-data@7.29.7",
+          "Name": "@babel/compat-data",
+          "Identifier": {
+            "PURL": "pkg:npm/%40babel/compat-data@7.29.7",
+            "UID": "61131f6cc59cbe22"
+          },
+          "Version": "7.29.7",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@babel/core@7.29.7",
+          "Name": "@babel/core",
+          "Identifier": {
+            "PURL": "pkg:npm/%40babel/core@7.29.7",
+            "UID": "340024dbd62d74e3"
+          },
+          "Version": "7.29.7",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@babel/types@7.29.8",
+            "@babel/helper-module-transforms@7.29.7(@babel/core@7.29.7)",
+            "@babel/template@7.29.7",
+            "debug@4.4.3",
+            "@babel/parser@7.29.8",
+            "@babel/helper-compilation-targets@7.29.7",
+            "convert-source-map@2.0.0",
+            "gensync@1.0.0-beta.2",
+            "json5@2.2.3",
+            "semver@6.3.1",
+            "@jridgewell/remapping@2.3.5",
+            "@babel/helpers@7.29.7",
+            "@babel/traverse@7.29.8",
+            "@babel/code-frame@7.29.7",
+            "@babel/generator@7.29.8"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@babel/generator@7.29.8",
+          "Name": "@babel/generator",
+          "Identifier": {
+            "PURL": "pkg:npm/%40babel/generator@7.29.8",
+            "UID": "ec1c775a147dde3b"
+          },
+          "Version": "7.29.8",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@jridgewell/gen-mapping@0.3.13",
+            "@jridgewell/trace-mapping@0.3.31",
+            "jsesc@3.1.0",
+            "@babel/parser@7.29.8",
+            "@babel/types@7.29.8"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@babel/helper-compilation-targets@7.29.7",
+          "Name": "@babel/helper-compilation-targets",
+          "Identifier": {
+            "PURL": "pkg:npm/%40babel/helper-compilation-targets@7.29.7",
+            "UID": "140d24f4595e58e6"
+          },
+          "Version": "7.29.7",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@babel/compat-data@7.29.7",
+            "@babel/helper-validator-option@7.29.7",
+            "browserslist@4.29.0",
+            "lru-cache@5.1.1",
+            "semver@6.3.1"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@babel/helper-globals@7.29.7",
+          "Name": "@babel/helper-globals",
+          "Identifier": {
+            "PURL": "pkg:npm/%40babel/helper-globals@7.29.7",
+            "UID": "abbe9cb1736ed68a"
+          },
+          "Version": "7.29.7",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@babel/helper-module-imports@7.29.7",
+          "Name": "@babel/helper-module-imports",
+          "Identifier": {
+            "PURL": "pkg:npm/%40babel/helper-module-imports@7.29.7",
+            "UID": "dc15c2970eab207b"
+          },
+          "Version": "7.29.7",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@babel/traverse@7.29.8",
+            "@babel/types@7.29.8"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@babel/helper-module-transforms@7.29.7(@babel/core@7.29.7)",
+          "Name": "@babel/helper-module-transforms",
+          "Identifier": {
+            "PURL": "pkg:npm/%40babel/helper-module-transforms@7.29.7",
+            "UID": "f9616449d0a13da"
+          },
+          "Version": "7.29.7",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@babel/core@7.29.7",
+            "@babel/helper-module-imports@7.29.7",
+            "@babel/helper-validator-identifier@7.29.7",
+            "@babel/traverse@7.29.8"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@babel/helper-string-parser@7.29.7",
+          "Name": "@babel/helper-string-parser",
+          "Identifier": {
+            "PURL": "pkg:npm/%40babel/helper-string-parser@7.29.7",
+            "UID": "7bf126b3e3141400"
+          },
+          "Version": "7.29.7",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@babel/helper-validator-identifier@7.29.7",
+          "Name": "@babel/helper-validator-identifier",
+          "Identifier": {
+            "PURL": "pkg:npm/%40babel/helper-validator-identifier@7.29.7",
+            "UID": "293b2c2e2d266bc1"
+          },
+          "Version": "7.29.7",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@babel/helper-validator-option@7.29.7",
+          "Name": "@babel/helper-validator-option",
+          "Identifier": {
+            "PURL": "pkg:npm/%40babel/helper-validator-option@7.29.7",
+            "UID": "af94babc8b8c2fec"
+          },
+          "Version": "7.29.7",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@babel/helpers@7.29.7",
+          "Name": "@babel/helpers",
+          "Identifier": {
+            "PURL": "pkg:npm/%40babel/helpers@7.29.7",
+            "UID": "d445d7dea96c5bc9"
+          },
+          "Version": "7.29.7",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@babel/types@7.29.8",
+            "@babel/template@7.29.7"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@babel/parser@7.29.8",
+          "Name": "@babel/parser",
+          "Identifier": {
+            "PURL": "pkg:npm/%40babel/parser@7.29.8",
+            "UID": "f5db7984a0e19c88"
+          },
+          "Version": "7.29.8",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@babel/types@7.29.8"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@babel/template@7.29.7",
+          "Name": "@babel/template",
+          "Identifier": {
+            "PURL": "pkg:npm/%40babel/template@7.29.7",
+            "UID": "db59563a9af48c6"
+          },
+          "Version": "7.29.7",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@babel/parser@7.29.8",
+            "@babel/types@7.29.8",
+            "@babel/code-frame@7.29.7"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@babel/traverse@7.29.8",
+          "Name": "@babel/traverse",
+          "Identifier": {
+            "PURL": "pkg:npm/%40babel/traverse@7.29.8",
+            "UID": "4777161b06c3a2e2"
+          },
+          "Version": "7.29.8",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@babel/template@7.29.7",
+            "@babel/types@7.29.8",
+            "debug@4.4.3",
+            "@babel/code-frame@7.29.7",
+            "@babel/generator@7.29.8",
+            "@babel/helper-globals@7.29.7",
+            "@babel/parser@7.29.8"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@babel/types@7.29.8",
+          "Name": "@babel/types",
+          "Identifier": {
+            "PURL": "pkg:npm/%40babel/types@7.29.8",
+            "UID": "a552afdb23c640de"
+          },
+          "Version": "7.29.8",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@babel/helper-string-parser@7.29.7",
+            "@babel/helper-validator-identifier@7.29.7"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@emnapi/runtime@1.11.3",
+          "Name": "@emnapi/runtime",
+          "Identifier": {
+            "PURL": "pkg:npm/%40emnapi/runtime@1.11.3",
+            "UID": "47cba6f1540e51d7"
+          },
+          "Version": "1.11.3",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "tslib@2.8.1"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@img/colour@1.1.0",
+          "Name": "@img/colour",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/colour@1.1.0",
+            "UID": "25348e1397a9b16b"
+          },
+          "Version": "1.1.0",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@img/sharp-darwin-arm64@0.35.5",
+          "Name": "@img/sharp-darwin-arm64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-darwin-arm64@0.35.5",
+            "UID": "a0c072633a15b9e8"
+          },
+          "Version": "0.35.5",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@img/sharp-libvips-darwin-arm64@1.3.4"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@img/sharp-darwin-x64@0.35.5",
+          "Name": "@img/sharp-darwin-x64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-darwin-x64@0.35.5",
+            "UID": "473fec9887672cce"
+          },
+          "Version": "0.35.5",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@img/sharp-libvips-darwin-x64@1.3.4"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@img/sharp-freebsd-wasm32@0.35.5",
+          "Name": "@img/sharp-freebsd-wasm32",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-freebsd-wasm32@0.35.5",
+            "UID": "7b436e6393d804fa"
+          },
+          "Version": "0.35.5",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@img/sharp-wasm32@0.35.5"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@img/sharp-libvips-darwin-arm64@1.3.4",
+          "Name": "@img/sharp-libvips-darwin-arm64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-libvips-darwin-arm64@1.3.4",
+            "UID": "fd23923875e5b9a1"
+          },
+          "Version": "1.3.4",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@img/sharp-libvips-darwin-x64@1.3.4",
+          "Name": "@img/sharp-libvips-darwin-x64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-libvips-darwin-x64@1.3.4",
+            "UID": "f37c5f65b9a15ae5"
+          },
+          "Version": "1.3.4",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@img/sharp-libvips-linux-arm@1.3.4",
+          "Name": "@img/sharp-libvips-linux-arm",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-libvips-linux-arm@1.3.4",
+            "UID": "536c377f61686270"
+          },
+          "Version": "1.3.4",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@img/sharp-libvips-linux-arm64@1.3.4",
+          "Name": "@img/sharp-libvips-linux-arm64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-libvips-linux-arm64@1.3.4",
+            "UID": "389f121a026bc291"
+          },
+          "Version": "1.3.4",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@img/sharp-libvips-linux-ppc64@1.3.4",
+          "Name": "@img/sharp-libvips-linux-ppc64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-libvips-linux-ppc64@1.3.4",
+            "UID": "dc57c12cfa978f17"
+          },
+          "Version": "1.3.4",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@img/sharp-libvips-linux-riscv64@1.3.4",
+          "Name": "@img/sharp-libvips-linux-riscv64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-libvips-linux-riscv64@1.3.4",
+            "UID": "f9f08c73fa0cf135"
+          },
+          "Version": "1.3.4",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@img/sharp-libvips-linux-s390x@1.3.4",
+          "Name": "@img/sharp-libvips-linux-s390x",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-libvips-linux-s390x@1.3.4",
+            "UID": "72d6908fbefac23d"
+          },
+          "Version": "1.3.4",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@img/sharp-libvips-linux-x64@1.3.4",
+          "Name": "@img/sharp-libvips-linux-x64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-libvips-linux-x64@1.3.4",
+            "UID": "3518380cc80f471b"
+          },
+          "Version": "1.3.4",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@img/sharp-libvips-linuxmusl-arm64@1.3.4",
+          "Name": "@img/sharp-libvips-linuxmusl-arm64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-libvips-linuxmusl-arm64@1.3.4",
+            "UID": "385b3e599f1c649"
+          },
+          "Version": "1.3.4",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@img/sharp-libvips-linuxmusl-x64@1.3.4",
+          "Name": "@img/sharp-libvips-linuxmusl-x64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-libvips-linuxmusl-x64@1.3.4",
+            "UID": "7cd3b81afd6f6c20"
+          },
+          "Version": "1.3.4",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@img/sharp-linux-arm@0.35.5",
+          "Name": "@img/sharp-linux-arm",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-linux-arm@0.35.5",
+            "UID": "cc4b708722cd52e1"
+          },
+          "Version": "0.35.5",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@img/sharp-libvips-linux-arm@1.3.4"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@img/sharp-linux-arm64@0.35.5",
+          "Name": "@img/sharp-linux-arm64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-linux-arm64@0.35.5",
+            "UID": "f1b59baf9610b108"
+          },
+          "Version": "0.35.5",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@img/sharp-libvips-linux-arm64@1.3.4"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@img/sharp-linux-ppc64@0.35.5",
+          "Name": "@img/sharp-linux-ppc64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-linux-ppc64@0.35.5",
+            "UID": "17bb3f5ebeb62ec2"
+          },
+          "Version": "0.35.5",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@img/sharp-libvips-linux-ppc64@1.3.4"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@img/sharp-linux-riscv64@0.35.5",
+          "Name": "@img/sharp-linux-riscv64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-linux-riscv64@0.35.5",
+            "UID": "79ff58fcecf19451"
+          },
+          "Version": "0.35.5",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@img/sharp-libvips-linux-riscv64@1.3.4"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@img/sharp-linux-s390x@0.35.5",
+          "Name": "@img/sharp-linux-s390x",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-linux-s390x@0.35.5",
+            "UID": "50d56b4434753dfb"
+          },
+          "Version": "0.35.5",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@img/sharp-libvips-linux-s390x@1.3.4"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@img/sharp-linux-x64@0.35.5",
+          "Name": "@img/sharp-linux-x64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-linux-x64@0.35.5",
+            "UID": "c27b1a7fa4b5d3ea"
+          },
+          "Version": "0.35.5",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@img/sharp-libvips-linux-x64@1.3.4"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@img/sharp-linuxmusl-arm64@0.35.5",
+          "Name": "@img/sharp-linuxmusl-arm64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-linuxmusl-arm64@0.35.5",
+            "UID": "269a6b78c3343a16"
+          },
+          "Version": "0.35.5",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@img/sharp-libvips-linuxmusl-arm64@1.3.4"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@img/sharp-linuxmusl-x64@0.35.5",
+          "Name": "@img/sharp-linuxmusl-x64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-linuxmusl-x64@0.35.5",
+            "UID": "62ecac96c985ac0b"
+          },
+          "Version": "0.35.5",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@img/sharp-libvips-linuxmusl-x64@1.3.4"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@img/sharp-wasm32@0.35.5",
+          "Name": "@img/sharp-wasm32",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-wasm32@0.35.5",
+            "UID": "1c29ae124572e42c"
+          },
+          "Version": "0.35.5",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@emnapi/runtime@1.11.3"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@img/sharp-webcontainers-wasm32@0.35.5",
+          "Name": "@img/sharp-webcontainers-wasm32",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-webcontainers-wasm32@0.35.5",
+            "UID": "3a82aa14c45fddea"
+          },
+          "Version": "0.35.5",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@img/sharp-wasm32@0.35.5"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@img/sharp-win32-arm64@0.35.5",
+          "Name": "@img/sharp-win32-arm64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-win32-arm64@0.35.5",
+            "UID": "1c21b05a7414f84f"
+          },
+          "Version": "0.35.5",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@img/sharp-win32-ia32@0.35.5",
+          "Name": "@img/sharp-win32-ia32",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-win32-ia32@0.35.5",
+            "UID": "376f7811dece0682"
+          },
+          "Version": "0.35.5",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@img/sharp-win32-x64@0.35.5",
+          "Name": "@img/sharp-win32-x64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-win32-x64@0.35.5",
+            "UID": "c5662d1f0162e342"
+          },
+          "Version": "0.35.5",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@jridgewell/gen-mapping@0.3.13",
+          "Name": "@jridgewell/gen-mapping",
+          "Identifier": {
+            "PURL": "pkg:npm/%40jridgewell/gen-mapping@0.3.13",
+            "UID": "8e183ecaf901177"
+          },
+          "Version": "0.3.13",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@jridgewell/sourcemap-codec@1.6.0",
+            "@jridgewell/trace-mapping@0.3.31"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@jridgewell/remapping@2.3.5",
+          "Name": "@jridgewell/remapping",
+          "Identifier": {
+            "PURL": "pkg:npm/%40jridgewell/remapping@2.3.5",
+            "UID": "c40d1d17fcfacd44"
+          },
+          "Version": "2.3.5",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@jridgewell/trace-mapping@0.3.31",
+            "@jridgewell/gen-mapping@0.3.13"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@jridgewell/resolve-uri@3.1.2",
+          "Name": "@jridgewell/resolve-uri",
+          "Identifier": {
+            "PURL": "pkg:npm/%40jridgewell/resolve-uri@3.1.2",
+            "UID": "dc7ab55c1ffbae6e"
+          },
+          "Version": "3.1.2",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@jridgewell/sourcemap-codec@1.6.0",
+          "Name": "@jridgewell/sourcemap-codec",
+          "Identifier": {
+            "PURL": "pkg:npm/%40jridgewell/sourcemap-codec@1.6.0",
+            "UID": "c795d2a8006546ba"
+          },
+          "Version": "1.6.0",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@jridgewell/trace-mapping@0.3.31",
+          "Name": "@jridgewell/trace-mapping",
+          "Identifier": {
+            "PURL": "pkg:npm/%40jridgewell/trace-mapping@0.3.31",
+            "UID": "91b3c6cc16d43ce2"
+          },
+          "Version": "0.3.31",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@jridgewell/resolve-uri@3.1.2",
+            "@jridgewell/sourcemap-codec@1.6.0"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@next/env@16.4.5",
+          "Name": "@next/env",
+          "Identifier": {
+            "PURL": "pkg:npm/%40next/env@16.4.5",
+            "UID": "325cdaca3d7bf528"
+          },
+          "Version": "16.4.5",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@next/swc-darwin-arm64@16.4.5",
+          "Name": "@next/swc-darwin-arm64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40next/swc-darwin-arm64@16.4.5",
+            "UID": "4d14a235d2ce6dad"
+          },
+          "Version": "16.4.5",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@next/swc-darwin-x64@16.4.5",
+          "Name": "@next/swc-darwin-x64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40next/swc-darwin-x64@16.4.5",
+            "UID": "6b2e31b7195fdfa0"
+          },
+          "Version": "16.4.5",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@next/swc-linux-arm64-gnu@16.4.5",
+          "Name": "@next/swc-linux-arm64-gnu",
+          "Identifier": {
+            "PURL": "pkg:npm/%40next/swc-linux-arm64-gnu@16.4.5",
+            "UID": "dc4b28540ca9a939"
+          },
+          "Version": "16.4.5",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@next/swc-linux-arm64-musl@16.4.5",
+          "Name": "@next/swc-linux-arm64-musl",
+          "Identifier": {
+            "PURL": "pkg:npm/%40next/swc-linux-arm64-musl@16.4.5",
+            "UID": "33a049997caacba8"
+          },
+          "Version": "16.4.5",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@next/swc-linux-x64-gnu@16.4.5",
+          "Name": "@next/swc-linux-x64-gnu",
+          "Identifier": {
+            "PURL": "pkg:npm/%40next/swc-linux-x64-gnu@16.4.5",
+            "UID": "96ba408ae02f3ec4"
+          },
+          "Version": "16.4.5",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@next/swc-linux-x64-musl@16.4.5",
+          "Name": "@next/swc-linux-x64-musl",
+          "Identifier": {
+            "PURL": "pkg:npm/%40next/swc-linux-x64-musl@16.4.5",
+            "UID": "868f303b02ddfe52"
+          },
+          "Version": "16.4.5",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@next/swc-win32-arm64-msvc@16.4.5",
+          "Name": "@next/swc-win32-arm64-msvc",
+          "Identifier": {
+            "PURL": "pkg:npm/%40next/swc-win32-arm64-msvc@16.4.5",
+            "UID": "b059cc561b86a66a"
+          },
+          "Version": "16.4.5",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@next/swc-win32-x64-msvc@16.4.5",
+          "Name": "@next/swc-win32-x64-msvc",
+          "Identifier": {
+            "PURL": "pkg:npm/%40next/swc-win32-x64-msvc@16.4.5",
+            "UID": "6bf9aaf518306751"
+          },
+          "Version": "16.4.5",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "@swc/helpers@0.5.23",
+          "Name": "@swc/helpers",
+          "Identifier": {
+            "PURL": "pkg:npm/%40swc/helpers@0.5.23",
+            "UID": "2be69343fcf0a295"
+          },
+          "Version": "0.5.23",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "tslib@2.8.1"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "baseline-browser-mapping@2.11.25",
+          "Name": "baseline-browser-mapping",
+          "Identifier": {
+            "PURL": "pkg:npm/baseline-browser-mapping@2.11.25",
+            "UID": "ec63744432495921"
+          },
+          "Version": "2.11.25",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "browserslist@4.29.0",
+          "Name": "browserslist",
+          "Identifier": {
+            "PURL": "pkg:npm/browserslist@4.29.0",
+            "UID": "a2259f11fb52dc96"
+          },
+          "Version": "4.29.0",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "baseline-browser-mapping@2.11.25",
+            "caniuse-lite@1.0.30001810",
+            "electron-to-chromium@1.5.431",
+            "node-releases@2.0.56",
+            "update-browserslist-db@1.3.3(browserslist@4.29.0)"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "caniuse-lite@1.0.30001810",
+          "Name": "caniuse-lite",
+          "Identifier": {
+            "PURL": "pkg:npm/caniuse-lite@1.0.30001810",
+            "UID": "29fa04d1ed10c5e0"
+          },
+          "Version": "1.0.30001810",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "client-only@0.0.1",
+          "Name": "client-only",
+          "Identifier": {
+            "PURL": "pkg:npm/client-only@0.0.1",
+            "UID": "9ec0fbae1f0fb489"
+          },
+          "Version": "0.0.1",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "convert-source-map@2.0.0",
+          "Name": "convert-source-map",
+          "Identifier": {
+            "PURL": "pkg:npm/convert-source-map@2.0.0",
+            "UID": "12776eaf0943cb98"
+          },
+          "Version": "2.0.0",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "debug@4.4.3",
+          "Name": "debug",
+          "Identifier": {
+            "PURL": "pkg:npm/debug@4.4.3",
+            "UID": "1b44ad2a3f63fd1f"
+          },
+          "Version": "4.4.3",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "ms@2.1.3"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "detect-libc@2.1.2",
+          "Name": "detect-libc",
+          "Identifier": {
+            "PURL": "pkg:npm/detect-libc@2.1.2",
+            "UID": "4fc1d523e36b055f"
+          },
+          "Version": "2.1.2",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "electron-to-chromium@1.5.431",
+          "Name": "electron-to-chromium",
+          "Identifier": {
+            "PURL": "pkg:npm/electron-to-chromium@1.5.431",
+            "UID": "d7f97c3b77b464cf"
+          },
+          "Version": "1.5.431",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "escalade@3.2.0",
+          "Name": "escalade",
+          "Identifier": {
+            "PURL": "pkg:npm/escalade@3.2.0",
+            "UID": "7172254c0ba54a3d"
+          },
+          "Version": "3.2.0",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "gensync@1.0.0-beta.2",
+          "Name": "gensync",
+          "Identifier": {
+            "PURL": "pkg:npm/gensync@1.0.0-beta.2",
+            "UID": "541394cf9e16f891"
+          },
+          "Version": "1.0.0-beta.2",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "js-tokens@4.0.0",
+          "Name": "js-tokens",
+          "Identifier": {
+            "PURL": "pkg:npm/js-tokens@4.0.0",
+            "UID": "c8be5280067146c4"
+          },
+          "Version": "4.0.0",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "jsesc@3.1.0",
+          "Name": "jsesc",
+          "Identifier": {
+            "PURL": "pkg:npm/jsesc@3.1.0",
+            "UID": "709f5c91c9e03228"
+          },
+          "Version": "3.1.0",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "json5@2.2.3",
+          "Name": "json5",
+          "Identifier": {
+            "PURL": "pkg:npm/json5@2.2.3",
+            "UID": "882c3ff77860e23c"
+          },
+          "Version": "2.2.3",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "lru-cache@5.1.1",
+          "Name": "lru-cache",
+          "Identifier": {
+            "PURL": "pkg:npm/lru-cache@5.1.1",
+            "UID": "e2708104f4fd3c2b"
+          },
+          "Version": "5.1.1",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "yallist@3.1.1"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "ms@2.1.3",
+          "Name": "ms",
+          "Identifier": {
+            "PURL": "pkg:npm/ms@2.1.3",
+            "UID": "c5b1b31c59bab760"
+          },
+          "Version": "2.1.3",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "nanoid@3.3.19",
+          "Name": "nanoid",
+          "Identifier": {
+            "PURL": "pkg:npm/nanoid@3.3.19",
+            "UID": "920149d4b491d5fa"
+          },
+          "Version": "3.3.19",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "node-releases@2.0.56",
+          "Name": "node-releases",
+          "Identifier": {
+            "PURL": "pkg:npm/node-releases@2.0.56",
+            "UID": "dd795fabcf134e30"
+          },
+          "Version": "2.0.56",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "picocolors@1.1.1",
+          "Name": "picocolors",
+          "Identifier": {
+            "PURL": "pkg:npm/picocolors@1.1.1",
+            "UID": "5267b16bbc6107d"
+          },
+          "Version": "1.1.1",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "postcss@8.5.23",
+          "Name": "postcss",
+          "Identifier": {
+            "PURL": "pkg:npm/postcss@8.5.23",
+            "UID": "fbc3dc12ce06c90c"
+          },
+          "Version": "8.5.23",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "picocolors@1.1.1",
+            "source-map-js@1.2.2",
+            "nanoid@3.3.19"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "scheduler@0.27.0",
+          "Name": "scheduler",
+          "Identifier": {
+            "PURL": "pkg:npm/scheduler@0.27.0",
+            "UID": "3cd1678e5eb27ceb"
+          },
+          "Version": "0.27.0",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "semver@6.3.1",
+          "Name": "semver",
+          "Identifier": {
+            "PURL": "pkg:npm/semver@6.3.1",
+            "UID": "b89eaef9be457c76"
+          },
+          "Version": "6.3.1",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "semver@7.8.5",
+          "Name": "semver",
+          "Identifier": {
+            "PURL": "pkg:npm/semver@7.8.5",
+            "UID": "d68f0725423e5538"
+          },
+          "Version": "7.8.5",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "sharp@0.35.5(@types/node@20.19.43)",
+          "Name": "sharp",
+          "Identifier": {
+            "PURL": "pkg:npm/sharp@0.35.5",
+            "UID": "1ceed4f5c4ac9e87"
+          },
+          "Version": "0.35.5",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@img/sharp-linux-s390x@0.35.5",
+            "@img/sharp-linuxmusl-x64@0.35.5",
+            "@img/sharp-libvips-linuxmusl-x64@1.3.4",
+            "@img/sharp-linux-x64@0.35.5",
+            "@types/node@20.19.43",
+            "semver@7.8.5",
+            "@img/sharp-linux-riscv64@0.35.5",
+            "@img/sharp-libvips-darwin-arm64@1.3.4",
+            "@img/sharp-libvips-linux-s390x@1.3.4",
+            "@img/sharp-linux-ppc64@0.35.5",
+            "@img/sharp-linux-arm@0.35.5",
+            "@img/colour@1.1.0",
+            "@img/sharp-libvips-linux-arm@1.3.4",
+            "@img/sharp-libvips-linux-ppc64@1.3.4",
+            "@img/sharp-libvips-darwin-x64@1.3.4",
+            "@img/sharp-linux-arm64@0.35.5",
+            "@img/sharp-libvips-linux-arm64@1.3.4",
+            "@img/sharp-darwin-arm64@0.35.5",
+            "@img/sharp-win32-x64@0.35.5",
+            "@img/sharp-freebsd-wasm32@0.35.5",
+            "@img/sharp-darwin-x64@0.35.5",
+            "@img/sharp-libvips-linux-x64@1.3.4",
+            "@img/sharp-win32-arm64@0.35.5",
+            "detect-libc@2.1.2",
+            "@img/sharp-win32-ia32@0.35.5",
+            "@img/sharp-libvips-linux-riscv64@1.3.4",
+            "@img/sharp-webcontainers-wasm32@0.35.5",
+            "@img/sharp-linuxmusl-arm64@0.35.5",
+            "@img/sharp-libvips-linuxmusl-arm64@1.3.4"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "source-map-js@1.2.2",
+          "Name": "source-map-js",
+          "Identifier": {
+            "PURL": "pkg:npm/source-map-js@1.2.2",
+            "UID": "d8bdee8c307b2231"
+          },
+          "Version": "1.2.2",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "styled-jsx@5.1.6(@babel/core@7.29.7)(react@19.2.8)",
+          "Name": "styled-jsx",
+          "Identifier": {
+            "PURL": "pkg:npm/styled-jsx@5.1.6",
+            "UID": "6be3571b2eb90a5b"
+          },
+          "Version": "5.1.6",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@babel/core@7.29.7",
+            "react@19.2.8",
+            "client-only@0.0.1"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "tslib@2.8.1",
+          "Name": "tslib",
+          "Identifier": {
+            "PURL": "pkg:npm/tslib@2.8.1",
+            "UID": "b162717cfcded2ea"
+          },
+          "Version": "2.8.1",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "undici-types@6.21.0",
+          "Name": "undici-types",
+          "Identifier": {
+            "PURL": "pkg:npm/undici-types@6.21.0",
+            "UID": "113803c3b7fc1c34"
+          },
+          "Version": "6.21.0",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "update-browserslist-db@1.3.3(browserslist@4.29.0)",
+          "Name": "update-browserslist-db",
+          "Identifier": {
+            "PURL": "pkg:npm/update-browserslist-db@1.3.3",
+            "UID": "be0f78966e77f39f"
+          },
+          "Version": "1.3.3",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "escalade@3.2.0",
+            "picocolors@1.1.1",
+            "browserslist@4.29.0"
+          ],
+          "AnalyzedBy": "pnpm"
+        },
+        {
+          "ID": "yallist@3.1.1",
+          "Name": "yallist",
+          "Identifier": {
+            "PURL": "pkg:npm/yallist@3.1.1",
+            "UID": "c02b12ff394690c0"
+          },
+          "Version": "3.1.1",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "AnalyzedBy": "pnpm"
+        }
+      ]
+    }
+  ]
+}

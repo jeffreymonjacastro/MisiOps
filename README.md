@@ -6,6 +6,8 @@
 
 ## Get Started
 
+> Despliegue en AWS (entornos `dev`/`prod`, pipeline DevSecOps → deploy, rollback, logs): ver [docs/deployment/README.md](docs/deployment/README.md).
+
 ### Prerrequisitos
 
 Para ejecutar este proyecto de forma local o mediante contenedores, necesitarás tener instalado lo siguiente en tu sistema:

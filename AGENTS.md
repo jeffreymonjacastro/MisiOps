@@ -17,6 +17,7 @@ MisiOps/
 │   └── pyproject.toml            # Backend dependencies (managed with uv)
 ├── diagrams/                     # Architecture diagrams (e.g. Excalidraw)
 ├── frontend/                     # 📊 User interface and client application (Next.js)
+├── infra/                        # ☁️ AWS CDK infrastructure (TypeScript)
 ├── specs/                        # Detailed documentation or technical specifications
 ├── .gitignore                    # Excludes venv, node_modules, etc.
 ├── AGENTS.md                     # Rules and guidelines for agents

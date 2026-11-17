@@ -30,7 +30,7 @@ fi
 push_changed_files=$(git diff --name-only "$push_range" 2>/dev/null || echo "")
 
 # If no code changed in this push, it's fine
-if ! echo "$push_changed_files" | grep -qE "^(frontend/|backend/)"; then
+if ! echo "$push_changed_files" | grep -qE "^(frontend/|backend/|infra/)"; then
   exit 0
 fi
 

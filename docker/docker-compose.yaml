@@ -4,6 +4,8 @@ services:
     build:
       context: ../frontend
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: "http://localhost:8000"
     ports:
       - "3000:3000"
     networks:
@@ -34,7 +36,7 @@ services:
         condition: service_healthy
 
   postgres:
-    image: postgres:16.3
+    image: postgres:16.15-bookworm
     restart: always
     environment:
       - POSTGRES_USER=myuser

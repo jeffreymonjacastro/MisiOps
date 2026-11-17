@@ -1,0 +1,158 @@
+
+Report Summary
+
+┌─────────────────────────────────────────────────┬──────┬─────────────────┐
+│                     Target                      │ Type │ Vulnerabilities │
+├─────────────────────────────────────────────────┼──────┼─────────────────┤
+│ .agents/skills/pretty-mermaid/package-lock.json │ npm  │        0        │
+├─────────────────────────────────────────────────┼──────┼─────────────────┤
+│ backend/uv.lock                                 │  uv  │        4        │
+├─────────────────────────────────────────────────┼──────┼─────────────────┤
+│ frontend/package-lock.json                      │ npm  │       13        │
+├─────────────────────────────────────────────────┼──────┼─────────────────┤
+│ frontend/pnpm-lock.yaml                         │ pnpm │       13        │
+└─────────────────────────────────────────────────┴──────┴─────────────────┘
+Legend:
+- '-': Not scanned
+- '0': Clean (no security findings detected)
+
+
+backend/uv.lock (uv)
+====================
+Total: 4 (UNKNOWN: 0, LOW: 0, MEDIUM: 2, HIGH: 1, CRITICAL: 1)
+
+┌───────────┬─────────────────────┬──────────┬────────┬───────────────────┬───────────────┬──────────────────────────────────────────────────────────────┐
+│  Library  │    Vulnerability    │ Severity │ Status │ Installed Version │ Fixed Version │                            Title                             │
+├───────────┼─────────────────────┼──────────┼────────┼───────────────────┼───────────────┼──────────────────────────────────────────────────────────────┤
+│ certifi   │ GHSA-6q48-6c7w-9gw2 │ CRITICAL │ fixed  │ 2026.7.22         │ 2026.10.18    │ certifi bundles emSign root CAs with compromised             │
+│           │                     │          │        │                   │               │ intermediate CA keys                                         │
+│           │                     │          │        │                   │               │ https://github.com/advisories/GHSA-6q48-6c7w-9gw2            │
+├───────────┼─────────────────────┼──────────┤        ├───────────────────┼───────────────┼──────────────────────────────────────────────────────────────┤
+│ dnspython │ CVE-2026-114605     │ HIGH     │        │ 2.8.0             │ 2.9.0         │ dnspython: dnspython: Denial of Service via excessive DNS    │
+│           │                     │          │        │                   │               │ compression pointer traversal                                │
+│           │                     │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2026-114605                  │
+├───────────┼─────────────────────┼──────────┤        ├───────────────────┼───────────────┼──────────────────────────────────────────────────────────────┤
+│ pyjwt     │ CVE-2026-101918     │ MEDIUM   │        │ 2.14.0            │ 2.15.0        │ pyjwt: PyJWT: Denial of Service via deeply nested JSON token │
+│           │                     │          │        │                   │               │ payload                                                      │
+│           │                     │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2026-101918                  │
+│           ├─────────────────────┤          │        │                   │               ├──────────────────────────────────────────────────────────────┤
+│           │ CVE-2026-102275     │          │        │                   │               │ pyjwt: PyJWT: Token verification bypass via mismatched OKP   │
+│           │                     │          │        │                   │               │ key components                                               │
+│           │                     │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2026-102275                  │
+└───────────┴─────────────────────┴──────────┴────────┴───────────────────┴───────────────┴──────────────────────────────────────────────────────────────┘
+
+frontend/package-lock.json (npm)
+================================
+Total: 13 (UNKNOWN: 0, LOW: 1, MEDIUM: 5, HIGH: 4, CRITICAL: 3)
+
+┌───────────────┬─────────────────────┬──────────┬────────┬───────────────────┬─────────────────┬──────────────────────────────────────────────────────────────┐
+│    Library    │    Vulnerability    │ Severity │ Status │ Installed Version │  Fixed Version  │                            Title                             │
+├───────────────┼─────────────────────┼──────────┼────────┼───────────────────┼─────────────────┼──────────────────────────────────────────────────────────────┤
+│ next          │ GHSA-2464-fhr4-w9xw │ CRITICAL │ fixed  │ 16.3.4            │ 15.5.28, 16.4.1 │ Next.js: Unauthenticated Remote Code Execution in Image      │
+│               │                     │          │        │                   │                 │ Optimization API when SVG files...                           │
+│               │                     │          │        │                   │                 │ https://github.com/advisories/GHSA-2464-fhr4-w9xw            │
+│               ├─────────────────────┤          │        │                   ├─────────────────┼──────────────────────────────────────────────────────────────┤
+│               │ GHSA-673q-mjm6-r5xr │          │        │                   │ 16.4.1          │ Next.js: Unauthenticated Remote Code Execution in `use       │
+│               │                     │          │        │                   │                 │ cache` functions returning typed arrays...                   │
+│               │                     │          │        │                   │                 │ https://github.com/advisories/GHSA-673q-mjm6-r5xr            │
+│               ├─────────────────────┤          │        │                   ├─────────────────┼──────────────────────────────────────────────────────────────┤
+│               │ GHSA-vcvr-r3jv-pc5j │          │        │                   │ 16.3.6          │ Next.js: Remote Code Execution in next/og ImageResponse      │
+│               │                     │          │        │                   │                 │ https://github.com/advisories/GHSA-vcvr-r3jv-pc5j            │
+│               ├─────────────────────┼──────────┤        │                   ├─────────────────┼──────────────────────────────────────────────────────────────┤
+│               │ CVE-2026-94482      │ HIGH     │        │                   │ 15.5.28, 16.4.1 │ next: Next.js: Denial of Service via crafted requests        │
+│               │                     │          │        │                   │                 │ targeting Server Actions                                     │
+│               │                     │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-94482                   │
+│               ├─────────────────────┤          │        │                   ├─────────────────┼──────────────────────────────────────────────────────────────┤
+│               │ CVE-2026-94483      │          │        │                   │ 16.3.8          │ next: Next.js: Information disclosure via SSRF in Image      │
+│               │                     │          │        │                   │                 │ Optimization                                                 │
+│               │                     │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-94483                   │
+│               ├─────────────────────┼──────────┤        │                   │                 ├──────────────────────────────────────────────────────────────┤
+│               │ CVE-2026-103004     │ MEDIUM   │        │                   │                 │ next: Next.js: Information disclosure via cache key omission │
+│               │                     │          │        │                   │                 │ in nested cache handlers...                                  │
+│               │                     │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-103004                  │
+│               ├─────────────────────┤          │        │                   ├─────────────────┼──────────────────────────────────────────────────────────────┤
+│               │ CVE-2026-94484      │          │        │                   │ 16.3.8, 15.5.27 │ next: Next.js: Denial of Service via response cache          │
+│               │                     │          │        │                   │                 │ poisoning                                                    │
+│               │                     │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-94484                   │
+│               ├─────────────────────┤          │        │                   ├─────────────────┼──────────────────────────────────────────────────────────────┤
+│               │ CVE-2026-94485      │          │        │                   │ 16.3.8          │ next: Next.js: Information disclosure via unrestricted       │
+│               │                     │          │        │                   │                 │ cross-site requests on development server                    │
+│               │                     │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-94485                   │
+│               ├─────────────────────┤          │        │                   ├─────────────────┼──────────────────────────────────────────────────────────────┤
+│               │ CVE-2026-94543      │          │        │                   │ 15.5.27, 16.3.8 │ next: Next.js: Response cache poisoning via improper route   │
+│               │                     │          │        │                   │                 │ binding                                                      │
+│               │                     │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-94543                   │
+│               ├─────────────────────┤          │        │                   ├─────────────────┼──────────────────────────────────────────────────────────────┤
+│               │ CVE-2026-94544      │          │        │                   │ 16.3.8          │ next: Next.js: Information disclosure via shared cache fills │
+│               │                     │          │        │                   │                 │ in Draft Mode                                                │
+│               │                     │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-94544                   │
+│               ├─────────────────────┼──────────┤        │                   │                 ├──────────────────────────────────────────────────────────────┤
+│               │ CVE-2026-94486      │ LOW      │        │                   │                 │ next: Next.js: Information disclosure via unrestricted       │
+│               │                     │          │        │                   │                 │ cross-site requests                                          │
+│               │                     │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-94486                   │
+├───────────────┼─────────────────────┼──────────┤        ├───────────────────┼─────────────────┼──────────────────────────────────────────────────────────────┤
+│ sharp         │ GHSA-wq5f-xc86-pv6w │ HIGH     │        │ 0.35.4            │ 0.35.5          │ sharp : Vulnerability in librsvg dependency CVE-2026-96889   │
+│               │                     │          │        │                   │                 │ https://github.com/advisories/GHSA-wq5f-xc86-pv6w            │
+├───────────────┼─────────────────────┤          │        ├───────────────────┼─────────────────┼──────────────────────────────────────────────────────────────┤
+│ source-map-js │ CVE-2026-93749      │          │        │ 1.2.1             │ 1.2.2           │ source-map-js: source-map-js: Denial of Service via          │
+│               │                     │          │        │                   │                 │ malformed indexed source maps                                │
+│               │                     │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-93749                   │
+└───────────────┴─────────────────────┴──────────┴────────┴───────────────────┴─────────────────┴──────────────────────────────────────────────────────────────┘
+
+frontend/pnpm-lock.yaml (pnpm)
+==============================
+Total: 13 (UNKNOWN: 0, LOW: 1, MEDIUM: 5, HIGH: 4, CRITICAL: 3)
+
+┌───────────────┬─────────────────────┬──────────┬────────┬───────────────────┬─────────────────┬──────────────────────────────────────────────────────────────┐
+│    Library    │    Vulnerability    │ Severity │ Status │ Installed Version │  Fixed Version  │                            Title                             │
+├───────────────┼─────────────────────┼──────────┼────────┼───────────────────┼─────────────────┼──────────────────────────────────────────────────────────────┤
+│ next          │ GHSA-2464-fhr4-w9xw │ CRITICAL │ fixed  │ 16.3.4            │ 15.5.28, 16.4.1 │ Next.js: Unauthenticated Remote Code Execution in Image      │
+│               │                     │          │        │                   │                 │ Optimization API when SVG files...                           │
+│               │                     │          │        │                   │                 │ https://github.com/advisories/GHSA-2464-fhr4-w9xw            │
+│               ├─────────────────────┤          │        │                   ├─────────────────┼──────────────────────────────────────────────────────────────┤
+│               │ GHSA-673q-mjm6-r5xr │          │        │                   │ 16.4.1          │ Next.js: Unauthenticated Remote Code Execution in `use       │
+│               │                     │          │        │                   │                 │ cache` functions returning typed arrays...                   │
+│               │                     │          │        │                   │                 │ https://github.com/advisories/GHSA-673q-mjm6-r5xr            │
+│               ├─────────────────────┤          │        │                   ├─────────────────┼──────────────────────────────────────────────────────────────┤
+│               │ GHSA-vcvr-r3jv-pc5j │          │        │                   │ 16.3.6          │ Next.js: Remote Code Execution in next/og ImageResponse      │
+│               │                     │          │        │                   │                 │ https://github.com/advisories/GHSA-vcvr-r3jv-pc5j            │
+│               ├─────────────────────┼──────────┤        │                   ├─────────────────┼──────────────────────────────────────────────────────────────┤
+│               │ CVE-2026-94482      │ HIGH     │        │                   │ 15.5.28, 16.4.1 │ next: Next.js: Denial of Service via crafted requests        │
+│               │                     │          │        │                   │                 │ targeting Server Actions                                     │
+│               │                     │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-94482                   │
+│               ├─────────────────────┤          │        │                   ├─────────────────┼──────────────────────────────────────────────────────────────┤
+│               │ CVE-2026-94483      │          │        │                   │ 16.3.8          │ next: Next.js: Information disclosure via SSRF in Image      │
+│               │                     │          │        │                   │                 │ Optimization                                                 │
+│               │                     │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-94483                   │
+│               ├─────────────────────┼──────────┤        │                   │                 ├──────────────────────────────────────────────────────────────┤
+│               │ CVE-2026-103004     │ MEDIUM   │        │                   │                 │ next: Next.js: Information disclosure via cache key omission │
+│               │                     │          │        │                   │                 │ in nested cache handlers...                                  │
+│               │                     │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-103004                  │
+│               ├─────────────────────┤          │        │                   ├─────────────────┼──────────────────────────────────────────────────────────────┤
+│               │ CVE-2026-94484      │          │        │                   │ 16.3.8, 15.5.27 │ next: Next.js: Denial of Service via response cache          │
+│               │                     │          │        │                   │                 │ poisoning                                                    │
+│               │                     │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-94484                   │
+│               ├─────────────────────┤          │        │                   ├─────────────────┼──────────────────────────────────────────────────────────────┤
+│               │ CVE-2026-94485      │          │        │                   │ 16.3.8          │ next: Next.js: Information disclosure via unrestricted       │
+│               │                     │          │        │                   │                 │ cross-site requests on development server                    │
+│               │                     │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-94485                   │
+│               ├─────────────────────┤          │        │                   ├─────────────────┼──────────────────────────────────────────────────────────────┤
+│               │ CVE-2026-94543      │          │        │                   │ 15.5.27, 16.3.8 │ next: Next.js: Response cache poisoning via improper route   │
+│               │                     │          │        │                   │                 │ binding                                                      │
+│               │                     │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-94543                   │
+│               ├─────────────────────┤          │        │                   ├─────────────────┼──────────────────────────────────────────────────────────────┤
+│               │ CVE-2026-94544      │          │        │                   │ 16.3.8          │ next: Next.js: Information disclosure via shared cache fills │
+│               │                     │          │        │                   │                 │ in Draft Mode                                                │
+│               │                     │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-94544                   │
+│               ├─────────────────────┼──────────┤        │                   │                 ├──────────────────────────────────────────────────────────────┤
+│               │ CVE-2026-94486      │ LOW      │        │                   │                 │ next: Next.js: Information disclosure via unrestricted       │
+│               │                     │          │        │                   │                 │ cross-site requests                                          │
+│               │                     │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-94486                   │
+├───────────────┼─────────────────────┼──────────┤        ├───────────────────┼─────────────────┼──────────────────────────────────────────────────────────────┤
+│ sharp         │ GHSA-wq5f-xc86-pv6w │ HIGH     │        │ 0.35.4            │ 0.35.5          │ sharp : Vulnerability in librsvg dependency CVE-2026-96889   │
+│               │                     │          │        │                   │                 │ https://github.com/advisories/GHSA-wq5f-xc86-pv6w            │
+├───────────────┼─────────────────────┤          │        ├───────────────────┼─────────────────┼──────────────────────────────────────────────────────────────┤
+│ source-map-js │ CVE-2026-93749      │          │        │ 1.2.1             │ 1.2.2           │ source-map-js: source-map-js: Denial of Service via          │
+│               │                     │          │        │                   │                 │ malformed indexed source maps                                │
+│               │                     │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-93749                   │
+└───────────────┴─────────────────────┴──────────┴────────┴───────────────────┴─────────────────┴──────────────────────────────────────────────────────────────┘
