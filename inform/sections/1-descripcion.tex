@@ -8,14 +8,12 @@ Muchas personas no llevan un control de su dinero: llegan a fin de mes con poco 
 
 MisiOps propone una solución de extremo a extremo compuesta por tres piezas desplegadas con Docker Compose:
 
-% Agregar el stack utilizado para el deployment (IaC) y herramientas de DevSecOps y MLOps
 \begin{itemize}
     \item \textbf{Backend (FastAPI + PostgreSQL)}: expone una API REST versionada (\texttt{/api/v1}) con autenticación JWT, perfil de usuario, categorías por usuario con presupuesto opcional, transacciones con filtros y paginación, y un endpoint de resumen que calcula totales por periodo presupuestario y por categoría.
     \item \textbf{Frontend (Next.js + TypeScript + Tailwind)}: interfaz con registro e inicio de sesión, formulario de registro manual de movimientos, historial agrupado por día con filtros, gestión de categorías y tablero de resumen alimentado por la API.
     \item \textbf{Base de datos (PostgreSQL 16)}: persiste usuarios, categorías y transacciones con integridad referencial (borrado en cascada de usuario a sus datos; una categoría no se elimina ni cambia de tipo mientras tenga transacciones).
 \end{itemize}
 
-% Cambiar arquitectura del proyecto
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=\textwidth]{figures/architecture/main-arch.png}
@@ -23,9 +21,18 @@ MisiOps propone una solución de extremo a extremo compuesta por tres piezas des
     \label{fig:main_arch}
 \end{figure}
 
+El proceso de desarrollo sigue un flujo \emph{Spec-Driven Development} (SDD): cada funcionalidad nace como una especificación en \texttt{specs/}, pasa por plan, checklist y tareas, y recién entonces se implementa. Un workflow de GitHub Actions (\texttt{sdd-enforcer}) bloquea los Pull Requests de ramas \texttt{feature/} que modifican \texttt{frontend/} o \texttt{backend/} sin esos artefactos.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/architecture/sdd.png}
+    \caption{Flujo de Spec-Driven Development (SDD)}
+    \label{fig:sdd}
+\end{figure}
+
 \subsection{Integrantes y roles}
 \begin{itemize}
-    \item \textbf{Gabriel Espinoza}: Platform Engineer con especialización en Forward Deployment.
-    \item \textbf{Jeffrey Monja Castro}: Machine Learning Engineer con especialización en MLOps.
-    \item \textbf{Yared Riveros Rodriguez}: DevSecOps Engineer con especialización en hacking.
+    \item \textbf{Jeffrey Monja Castro}: Arquitecto y responsable de DevOps. Definió la estructura del monorepo, la constitución del proyecto y el flujo SDD; construyó los \texttt{Dockerfile}, el \texttt{docker-compose.yaml}, los workflows de CI y las plantillas de Pull Request.
+    \item \textbf{Gabriel Espinoza}: Desarrollador Backend. Implementó la API en FastAPI (autenticación, usuarios, categorías y transacciones), los modelos SQLAlchemy asíncronos, y la suite de pruebas con \texttt{pytest} (119 pruebas).
+    \item \textbf{Yared Riveros Rodriguez}: Desarrollador Frontend. Diseñó e implementó la aplicación Next.js (pantallas de movimientos, categorías, tablero y login), su integración con la API y las pruebas unitarias del cliente con \texttt{node:test} (39 pruebas).
 \end{itemize}
