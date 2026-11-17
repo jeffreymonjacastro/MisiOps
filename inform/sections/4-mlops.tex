@@ -1,0 +1,59 @@
+\section{MLOps}
+
+% NOTA: a la fecha de redacción, el repositorio (develop y main) no contiene código, workflows ni
+% capturas de MLOps. Los textos marcados con \pendiente{} deben completarse con la evidencia real.
+
+\subsection{Importancia de MLOps y CRISP-ML(Q)}
+
+Un modelo de machine learning no es un artefacto estático como un binario: su comportamiento depende de los datos con los que se entrenó, y esos datos cambian con el tiempo. MLOps aplica las prácticas de DevOps (versionado, automatización, pruebas, despliegue continuo y monitoreo) a todo el ciclo de vida del modelo: datos, entrenamiento, validación, despliegue y observación en producción. Sin MLOps, los modelos se entrenan a mano en notebooks, no se pueden reproducir, se despliegan sin validar y se degradan sin que nadie lo note (\textit{data drift} o \textit{concept drift}).
+
+CRISP-ML(Q) (\textit{Cross-Industry Standard Process for Machine Learning with Quality assurance}) extiende el clásico CRISP-DM con aseguramiento de calidad en cada fase. Define seis fases iterativas:
+\begin{enumerate}
+    \item Entendimiento del negocio y de los datos.
+    \item Preparación de datos.
+    \item Modelado.
+    \item Evaluación.
+    \item Despliegue.
+    \item Monitoreo y mantenimiento.
+\end{enumerate}
+En cada fase se identifican los riesgos que podrían afectar la calidad del modelo y se definen métodos para mitigarlos. Así cada etapa tiene criterios de salida verificables, lo que encaja con los gates del pipeline ya usados en DevSecOps.
+
+En MisiOps, la constitución del proyecto define como caso de uso de MLOps \textbf{entrenar modelos sobre el historial de transacciones del usuario para predecir su ahorro a fin de mes}. Esa predicción responde directamente al problema de negocio: que el usuario sepa con anticipación si llegará a fin de mes con ahorro o con deuda.
+
+\subsection{Arquitectura de MLOps y componentes}
+
+\pendiente{diagrama de arquitectura de MLOps (\texttt{figures/mlops/arquitectura.png}) y explicación de cada componente: origen de datos, \textit{feature store} o \textit{pipeline} de features, registro de experimentos y modelos, servicio de inferencia y monitoreo.}
+
+\subsection{Pipeline de CI/CD en GitHub Actions}
+
+\pendiente{workflow de MLOps (archivo en \texttt{.github/workflows/}), sus etapas, sus disparadores y una captura de una corrida exitosa.}
+
+\subsection{Implementación}
+
+\subsubsection{Entendimiento del negocio}
+
+El objetivo es estimar, a mitad de mes, el ahorro con el que el usuario cerrará el periodo presupuestario: ingresos menos gastos. Con esa estimación MisiOps podría alertar con anticipación cuando el ritmo de gasto lleve a cerrar el mes en negativo. \pendiente{métrica de éxito del negocio y métrica técnica (por ejemplo, MAE en soles) con su umbral de aceptación.}
+
+\subsubsection{Feature engineering}
+
+\pendiente{origen y volumen de los datos, variables construidas (por ejemplo, gasto acumulado por categoría, ingresos del periodo, días transcurridos, gasto del mismo periodo del mes anterior) y validaciones de calidad de datos.}
+
+\subsubsection{Selección del modelo}
+
+\pendiente{modelos comparados, métricas obtenidas y criterio de selección del modelo final.}
+
+\subsubsection{Smoke test}
+
+\pendiente{prueba automática que valida el modelo empaquetado: carga, predicción sobre un caso conocido y tiempo de respuesta.}
+
+\subsubsection{Despliegue}
+
+\pendiente{forma de servir el modelo (endpoint, contenedor o batch) y relación con la infraestructura de la sección de IaC.}
+
+\subsubsection{Monitoreo}
+
+\pendiente{métricas que se monitorean en producción (deriva de datos, error de predicción, latencia) y criterio para reentrenar.}
+
+\subsection{Evidencias}
+
+\pendiente{capturas de las corridas del pipeline de MLOps, del registro de experimentos o modelos y del modelo desplegado.}

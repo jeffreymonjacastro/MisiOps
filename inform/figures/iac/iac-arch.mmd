@@ -1,0 +1,17 @@
+flowchart TB
+  user([Usuario])
+  cf[CloudFront HTTPS]
+  alb[Application Load Balancer]
+  be[ECS Fargate ARM64<br/>backend FastAPI]
+  fe[ECS Fargate ARM64<br/>frontend Next.js]
+  db[(Aurora Serverless v2<br/>PostgreSQL 16)]
+  sm[Secrets Manager]
+  cw[CloudWatch Logs]
+  user -->|HTTPS| cf
+  cf -->|HTTP| alb
+  alb -->|/api/*| be
+  alb -->|resto| fe
+  sm -.->|secretos| be
+  be -->|5432| db
+  be -.-> cw
+  fe -.-> cw

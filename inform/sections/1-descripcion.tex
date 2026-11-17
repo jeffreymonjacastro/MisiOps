@@ -6,13 +6,20 @@
 \subsection{Breve explicación del problema y la solución propuesta}
 Muchas personas no llevan un control de su dinero: llegan a fin de mes con poco o nada ahorrado, o incluso endeudadas, porque no tienen trazabilidad de en qué gastan. Las aplicaciones bancarias muestran movimientos aislados por cuenta, pero no una visión consolidada ni por categoría, y las hojas de cálculo exigen disciplina y tiempo que el usuario típico no tiene.
 
-MisiOps propone una solución de extremo a extremo compuesta por tres piezas desplegadas con Docker Compose:
+MisiOps propone una solución de extremo a extremo compuesta por tres piezas que corren en local con Docker Compose y en la nube sobre AWS:
 
-% Agregar el stack utilizado para el deployment (IaC) y herramientas de DevSecOps y MLOps
 \begin{itemize}
     \item \textbf{Backend (FastAPI + PostgreSQL)}: expone una API REST versionada (\texttt{/api/v1}) con autenticación JWT, perfil de usuario, categorías por usuario con presupuesto opcional, transacciones con filtros y paginación, y un endpoint de resumen que calcula totales por periodo presupuestario y por categoría.
     \item \textbf{Frontend (Next.js + TypeScript + Tailwind)}: interfaz con registro e inicio de sesión, formulario de registro manual de movimientos, historial agrupado por día con filtros, gestión de categorías y tablero de resumen alimentado por la API.
     \item \textbf{Base de datos (PostgreSQL 16)}: persiste usuarios, categorías y transacciones con integridad referencial (borrado en cascada de usuario a sus datos; una categoría no se elimina ni cambia de tipo mientras tenga transacciones).
+\end{itemize}
+
+Sobre esa aplicación se construyó la plataforma de entrega:
+
+\begin{itemize}
+    \item \textbf{DevSecOps}: GitHub Actions con Semgrep (SAST), OWASP ZAP (DAST), Gitleaks y TruffleHog (secretos), Trivy (SCA, SBOM, imágenes y configuración) y DefectDojo para centralizar los hallazgos, con gates que bloquean el merge a \texttt{main}.
+    \item \textbf{Infraestructura como código}: AWS CDK en TypeScript, que genera plantillas de CloudFormation para dos entornos (\texttt{dev} y \texttt{prod}) con CloudFront, ALB, ECS Fargate ARM64, Aurora Serverless v2, Secrets Manager y ECR, desplegados automáticamente por GitHub Actions mediante OIDC.
+    \item \textbf{MLOps}: predicción del ahorro a fin de mes a partir del historial de transacciones del usuario, siguiendo la metodología CRISP-ML(Q).
 \end{itemize}
 
 % Cambiar arquitectura del proyecto
