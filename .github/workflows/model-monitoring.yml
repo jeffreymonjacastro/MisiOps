@@ -1,0 +1,94 @@
+name: MLOps model monitoring
+
+on:
+  schedule:
+    - cron: '25 13 * * 1'
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Use develop for dev (staging), main for prod'
+        type: choice
+        options: [synthetic, dev, prod]
+        default: synthetic
+      request_candidate:
+        description: 'On a qualifying dev run, launch a new synthetic staging candidate'
+        type: boolean
+        default: false
+      candidate_months:
+        description: 'Synthetic months for the requested candidate'
+        type: number
+        default: 48
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic:
+    name: Synthetic · Replay monitoring scenarios
+    if: github.event_name == 'schedule' || inputs.target == 'synthetic'
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: ../backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - working-directory: mlops
+        run: |
+          for scenario in steady input_shift degraded_close; do
+            uv run --locked python -m src.monitor --scenario "$scenario" | tee -a "$GITHUB_STEP_SUMMARY"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: synthetic-monitoring
+          path: mlops/reports/monitor-*.json
+
+  validate-target:
+    if: github.event_name == 'workflow_dispatch' && inputs.target != 'synthetic'
+    runs-on: ubuntu-latest
+    env:
+      MONITOR_ENV: ${{ inputs.target }}
+    steps:
+      - run: |
+          case "$MONITOR_ENV:$GITHUB_REF" in
+            dev:refs/heads/develop|prod:refs/heads/main) exit 0 ;;
+            *) echo "Select develop for staging or main for production." >&2; exit 1 ;;
+          esac
+
+  cloud:
+    name: Monitor ${{ inputs.target }} in ECS
+    needs: validate-target
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: ${{ inputs.target }}
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      retrain: ${{ steps.monitor.outputs.retrain }}
+    env:
+      MONITOR_ENV: ${{ inputs.target }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ vars.AWS_MLOPS_MONITOR_ROLE_ARN }}
+      - id: monitor
+        run: bash mlops/scripts/run_cloud_monitor.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: monitoring-${{ inputs.target }}
+          path: forecast-monitor.json
+
+  request-candidate:
+    if: inputs.target == 'dev' && inputs.request_candidate && needs.cloud.outputs.retrain == 'true'
+    needs: cloud
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      CANDIDATE_MONTHS: ${{ inputs.candidate_months }}
+    steps:
+      - run: gh workflow run mlops.yml --repo "$GITHUB_REPOSITORY" --ref develop -f "months=$CANDIDATE_MONTHS"

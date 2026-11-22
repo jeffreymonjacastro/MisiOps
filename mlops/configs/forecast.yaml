@@ -1,0 +1,10 @@
+seed: 20261122
+users: 80
+months: 42
+first_month: "2023-01-01"
+cutoff_days: [7, 14, 21, 27]
+test_months: 6
+validation_months: 3
+validation_folds: 3
+minimum_deficits: 15
+maximum_deficit_miss_rate: 0.65

@@ -31,6 +31,12 @@ jobs:
     runs-on: ubuntu-24.04-arm  # linux/arm64 images for Fargate Graviton (specs/012-aws-deployment R2)
     steps:
       - uses: actions/checkout@v4
+      - name: Verify approved forecast artifact checksums
+        run: |
+          cd backend/forecast_release
+          echo "$(jq -er .model_sha256 manifest.json)  model.skops" | sha256sum -c -
+          echo "$(jq -er .evaluation_sha256 manifest.json)  evaluation.json" | sha256sum -c -
+          jq -e '.gate.decision == "accepted"' evaluation.json > /dev/null
       - name: Build images once (scanned, attacked and delivered as the same bytes)
         run: |
           docker build -t misiops-backend:latest backend
@@ -199,6 +205,10 @@ jobs:
           docker compose -f docker/docker-compose.yaml up -d --no-build
           curl -fsS --retry 30 --retry-all-errors --retry-delay 2 -o /dev/null http://localhost:8000/
           curl -fsS --retry 30 --retry-all-errors --retry-delay 2 -o /dev/null http://localhost:3000/
+      - name: Verify real forecast parity in the built image
+        run: |
+          docker compose -f docker/docker-compose.yaml exec -T backend python - < mlops/scripts/check_legacy_schema.py
+          docker compose -f docker/docker-compose.yaml exec -T backend python - < mlops/simulation/demo.py
       - name: Get a bearer token for the authenticated API scan
         run: |
           email="zap-${GITHUB_RUN_ID}@example.com" pass=$(openssl rand -hex 16)
@@ -313,3 +323,35 @@ jobs:
               docker push "ghcr.io/jeffreymonjacastro/misiops-$app:$tag"
             done
           done
+
+  production-model:
+    name: Production · Verify staging approval evidence
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [build, container, dast]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash mlops/scripts/verify_staging.sh
+
+  deploy:
+    name: Deploy the scanned images
+    if: |
+      always() && !cancelled() && github.event_name == 'push' &&
+      needs.build.result == 'success' && needs.sast.result == 'success' &&
+      needs.secrets.result == 'success' && needs.sca.result == 'success' &&
+      needs.container.result == 'success' && needs.iac.result == 'success' &&
+      needs.dast.result == 'success' && needs.scripts-test.result == 'success' &&
+      needs.summary.result == 'success' &&
+      (github.ref == 'refs/heads/develop' ||
+       (github.ref == 'refs/heads/main' && needs.production-model.result == 'success' &&
+        needs.deliver.result == 'success'))
+    needs: [build, sast, secrets, sca, container, iac, dast, scripts-test, summary, production-model, deliver]
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/deploy.yml

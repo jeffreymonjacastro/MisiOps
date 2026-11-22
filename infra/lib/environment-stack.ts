@@ -14,6 +14,7 @@ import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import { Construct } from 'constructs';
 import { EnvName, REGION, envConfig } from './config.js';
 import { REPOSITORY_NAMES } from './foundation-stack.js';
+import { addForecastMonitor } from './forecast-monitor.js';
 
 export interface EnvironmentStackProps extends StackProps {
   envName: EnvName;
@@ -85,6 +86,10 @@ export class EnvironmentStack extends Stack {
       deletionProtection: cfg.dbDeletionProtection,
     });
     const dbSecret = db.secret!;
+    const monitorPassword = new secretsmanager.Secret(this, 'ForecastMonitorPassword', {
+      secretName: `misiops/${envName}/forecast-monitor`,
+      generateSecretString: { passwordLength: 48, excludePunctuation: true },
+    });
 
     // --- Logs and cluster (T011, R13)
     const logGroup = (service: string) =>
@@ -104,16 +109,17 @@ export class EnvironmentStack extends Stack {
     };
     const image = (name: string) =>
       ecs.ContainerImage.fromEcrRepository(ecr.Repository.fromRepositoryName(this, `${name}Repository`, name), imageTag);
+    const backendImage = image(REPOSITORY_NAMES.backend);
 
     const backendTask = new ecs.FargateTaskDefinition(this, 'BackendTask', {
       cpu: cfg.taskCpu,
       memoryLimitMiB: cfg.taskMemoryMiB,
       runtimePlatform,
     });
-    // FR-006 / R7: only the task execution role reads these two secrets, through the grants
+    // FR-006 / R7: only the task execution role reads these secrets, through the grants
     // ecs.Secret.fromSecretsManager adds; no other principal is granted access anywhere in this stack.
     backendTask.addContainer('backend', {
-      image: image(REPOSITORY_NAMES.backend),
+      image: backendImage,
       portMappings: [{ containerPort: BACKEND_PORT }],
       logging: ecs.LogDrivers.awsLogs({ logGroup: backendLogs, streamPrefix: 'backend' }),
       environment: { ACCESS_TOKEN_EXPIRE_MINUTES: '1440' },
@@ -123,6 +129,7 @@ export class EnvironmentStack extends Stack {
         POSTGRES_SERVER: ecs.Secret.fromSecretsManager(dbSecret, 'host'),
         POSTGRES_DB: ecs.Secret.fromSecretsManager(dbSecret, 'dbname'),
         SECRET_KEY: ecs.Secret.fromSecretsManager(appSecret),
+        FORECAST_MONITOR_PASSWORD: ecs.Secret.fromSecretsManager(monitorPassword),
       },
     });
 
@@ -155,6 +162,12 @@ export class EnvironmentStack extends Stack {
     // or the circuit breaker trips while Aurora is still provisioning (first deploy, 2026-11-08).
     backendService.node.addDependency(db);
     const frontendService = service('Frontend', frontendTask, frontendSg);
+    addForecastMonitor(this, {
+      environment: envName, cluster, vpc, subnets: { subnetType: ec2.SubnetType.PUBLIC },
+      databaseGroup: dbSg,
+      databaseHost: db.clusterEndpoint.hostname, password: monitorPassword, runtimePlatform,
+      image: backendImage,
+    });
 
     // --- Load balancer and routing (T014, R5): one origin, API paths to the backend, the rest to the web app (FR-003).
     const alb = new elbv2.ApplicationLoadBalancer(this, 'Alb', {

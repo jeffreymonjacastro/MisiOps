@@ -1,0 +1,686 @@
+{
+  "champion_comparison": "First release",
+  "code_revision": "6e7c369e7d2b4640e65143f94904ddcfd418580b",
+  "dataset_sha256": "3dcf8d1487c5ac3047199042f8e688062fcb238135f6ff95d1492a6240522a86",
+  "error_bands": {
+    "early": 439.8796360588065,
+    "late": 332.6770567243235,
+    "middle": 417.2836541685762
+  },
+  "fit_through": "2025-11-01",
+  "gate": {
+    "decision": "accepted",
+    "reasons": []
+  },
+  "holdout": {
+    "baseline": {
+      "early": {
+        "count": 480,
+        "deficit_miss_rate": 0.49222797927461137,
+        "deficit_recall": 0.5077720207253886,
+        "deficits": 193,
+        "mae": 799.7617222222221,
+        "median_absolute_error": 609.3383333333334,
+        "missed_deficits": 95,
+        "rmse": 1100.9095016258148,
+        "sign_errors": 138,
+        "tight_closes": 0
+      },
+      "late": {
+        "count": 960,
+        "deficit_miss_rate": 0.21243523316062177,
+        "deficit_recall": 0.7875647668393783,
+        "deficits": 386,
+        "mae": 499.4044131944445,
+        "median_absolute_error": 184.63333333333338,
+        "missed_deficits": 82,
+        "rmse": 958.0958590303595,
+        "sign_errors": 158,
+        "tight_closes": 0
+      },
+      "middle": {
+        "count": 480,
+        "deficit_miss_rate": 0.45595854922279794,
+        "deficit_recall": 0.5440414507772021,
+        "deficits": 193,
+        "mae": 688.9804097222222,
+        "median_absolute_error": 499.54999999999984,
+        "missed_deficits": 88,
+        "rmse": 950.7108091899338,
+        "sign_errors": 121,
+        "tight_closes": 0
+      },
+      "overall": {
+        "count": 1920,
+        "deficit_miss_rate": 0.3432642487046632,
+        "deficit_recall": 0.6567357512953368,
+        "deficits": 772,
+        "mae": 621.8877395833333,
+        "median_absolute_error": 317.4533333333335,
+        "missed_deficits": 265,
+        "rmse": 993.9502155116754,
+        "sign_errors": 417,
+        "tight_closes": 0
+      }
+    },
+    "candidate": {
+      "early": {
+        "count": 480,
+        "deficit_miss_rate": 0.8134715025906736,
+        "deficit_recall": 0.18652849740932642,
+        "deficits": 193,
+        "mae": 557.8268071056548,
+        "median_absolute_error": 391.46273521936916,
+        "missed_deficits": 157,
+        "rmse": 748.4273766075096,
+        "sign_errors": 145,
+        "tight_closes": 315
+      },
+      "late": {
+        "count": 960,
+        "deficit_miss_rate": 0.4481865284974093,
+        "deficit_recall": 0.5518134715025906,
+        "deficits": 386,
+        "mae": 462.4799392213421,
+        "median_absolute_error": 326.14160027764535,
+        "missed_deficits": 173,
+        "rmse": 642.8294800081726,
+        "sign_errors": 182,
+        "tight_closes": 327
+      },
+      "middle": {
+        "count": 480,
+        "deficit_miss_rate": 0.7098445595854922,
+        "deficit_recall": 0.29015544041450775,
+        "deficits": 193,
+        "mae": 553.6773582118201,
+        "median_absolute_error": 396.07700319479625,
+        "missed_deficits": 137,
+        "rmse": 736.8182465910767,
+        "sign_errors": 136,
+        "tight_closes": 291
+      },
+      "overall": {
+        "count": 1920,
+        "deficit_miss_rate": 0.6049222797927462,
+        "deficit_recall": 0.3950777202072539,
+        "deficits": 772,
+        "mae": 509.11601094003976,
+        "median_absolute_error": 357.8408414373801,
+        "missed_deficits": 467,
+        "rmse": 694.5329630946796,
+        "sign_errors": 463,
+        "tight_closes": 933
+      }
+    },
+    "champion": null
+  },
+  "prepared_sha256": "a1f10154c877de9c86683483a38adcbb319d01f3fb6e58a5547c29fd5da9b0c1",
+  "recipe": {
+    "common.py": "bb271477ab6ad343770e073b9e008390eed2d6ff5b8dc7944dcad2d1689d27e4",
+    "data_prep.py": "a0dc83ffced2f63c72e993b5c3336094c648097bd2578b784ebf04408678954e",
+    "evaluate_and_register.py": "7de21aa9331fd24a58de517f47dd85fb37b2216b32642b018bf5c15bad86e6fb",
+    "forecast.yaml": "6731f927ceb523d38c79952022dad864d092b2eb82b5af718b3840043a70641b",
+    "forecast_features.py": "9553474f797815665e0047e95dcf10c109af0654c8d067b95ecd35a91bcf72b7",
+    "generate.py": "e68b690a00d9d3aa15e0934dd906e3465a706f4d4aadb98ec0a1152b7b19a02c",
+    "train.py": "2ee535846fd64e8f678383c1d9bc7ecc5c61ec255de5d169f087554f3789e6cc",
+    "uv.lock": "ad19992acc01616c93d374cbf5c71b99ca89089693e42fe79a4c8fa52d349418",
+    "validate_data.py": "05d0408bd116a653124684fad405a28defe335321224003f2488cdfb52a23f58"
+  },
+  "selected_model": "random_forest",
+  "test_months": [
+    "2026-01-01",
+    "2026-02-01",
+    "2026-03-01",
+    "2026-04-01",
+    "2026-05-01",
+    "2026-06-01"
+  ],
+  "validation": {
+    "gradient_boosting": {
+      "folds": [
+        {
+          "count": 960,
+          "deficit_miss_rate": 0.29120879120879123,
+          "deficit_recall": 0.7087912087912088,
+          "deficits": 364,
+          "mae": 486.67684100661086,
+          "median_absolute_error": 373.15272236880816,
+          "missed_deficits": 106,
+          "rmse": 649.8129132235941,
+          "sign_errors": 236,
+          "tight_closes": 0,
+          "train_through": "2025-01-01",
+          "validation_months": [
+            "2025-03-01",
+            "2025-04-01",
+            "2025-05-01"
+          ]
+        },
+        {
+          "count": 960,
+          "deficit_miss_rate": 0.4411764705882353,
+          "deficit_recall": 0.5588235294117647,
+          "deficits": 272,
+          "mae": 710.2307358428053,
+          "median_absolute_error": 453.331947014339,
+          "missed_deficits": 120,
+          "rmse": 1033.2320794153454,
+          "sign_errors": 183,
+          "tight_closes": 0,
+          "train_through": "2025-04-01",
+          "validation_months": [
+            "2025-06-01",
+            "2025-07-01",
+            "2025-08-01"
+          ]
+        },
+        {
+          "count": 960,
+          "deficit_miss_rate": 0.37142857142857144,
+          "deficit_recall": 0.6285714285714286,
+          "deficits": 420,
+          "mae": 486.57286516618586,
+          "median_absolute_error": 360.57803661621415,
+          "missed_deficits": 156,
+          "rmse": 667.8532760629213,
+          "sign_errors": 246,
+          "tight_closes": 0,
+          "train_through": "2025-07-01",
+          "validation_months": [
+            "2025-09-01",
+            "2025-10-01",
+            "2025-11-01"
+          ]
+        }
+      ],
+      "metrics": {
+        "early": {
+          "count": 720,
+          "deficit_miss_rate": 0.4621212121212121,
+          "deficit_recall": 0.5378787878787878,
+          "deficits": 264,
+          "mae": 647.7617541567793,
+          "median_absolute_error": 456.57084808211175,
+          "missed_deficits": 122,
+          "rmse": 908.3307296310678,
+          "sign_errors": 199,
+          "tight_closes": 0
+        },
+        "late": {
+          "count": 1440,
+          "deficit_miss_rate": 0.2859848484848485,
+          "deficit_recall": 0.7140151515151515,
+          "deficits": 528,
+          "mae": 496.0525161121933,
+          "median_absolute_error": 334.07263244317437,
+          "missed_deficits": 151,
+          "rmse": 715.0315460377017,
+          "sign_errors": 290,
+          "tight_closes": 0
+        },
+        "middle": {
+          "count": 720,
+          "deficit_miss_rate": 0.4128787878787879,
+          "deficit_recall": 0.5871212121212122,
+          "deficits": 264,
+          "mae": 604.7738029729702,
+          "median_absolute_error": 431.12813069293503,
+          "missed_deficits": 109,
+          "rmse": 856.4653306354668,
+          "sign_errors": 176,
+          "tight_closes": 0
+        },
+        "overall": {
+          "count": 2880,
+          "deficit_miss_rate": 0.36174242424242425,
+          "deficit_recall": 0.6382575757575758,
+          "deficits": 1056,
+          "mae": 561.160147338534,
+          "median_absolute_error": 389.55350597657423,
+          "missed_deficits": 382,
+          "rmse": 803.295991623069,
+          "sign_errors": 665,
+          "tight_closes": 0
+        }
+      },
+      "run_id": "a40ff16043534cbc953592a62cea7847"
+    },
+    "historical_baseline": {
+      "folds": [
+        {
+          "count": 960,
+          "deficit_miss_rate": 0.32142857142857145,
+          "deficit_recall": 0.6785714285714286,
+          "deficits": 364,
+          "mae": 570.0414131944445,
+          "median_absolute_error": 320.34666666666664,
+          "missed_deficits": 117,
+          "rmse": 884.3298039817134,
+          "sign_errors": 218,
+          "tight_closes": 0,
+          "train_through": "2025-01-01",
+          "validation_months": [
+            "2025-03-01",
+            "2025-04-01",
+            "2025-05-01"
+          ]
+        },
+        {
+          "count": 960,
+          "deficit_miss_rate": 0.3713235294117647,
+          "deficit_recall": 0.6286764705882353,
+          "deficits": 272,
+          "mae": 893.3713402777778,
+          "median_absolute_error": 437.0183333333333,
+          "missed_deficits": 101,
+          "rmse": 1452.334950662607,
+          "sign_errors": 208,
+          "tight_closes": 0,
+          "train_through": "2025-04-01",
+          "validation_months": [
+            "2025-06-01",
+            "2025-07-01",
+            "2025-08-01"
+          ]
+        },
+        {
+          "count": 960,
+          "deficit_miss_rate": 0.42142857142857143,
+          "deficit_recall": 0.5785714285714286,
+          "deficits": 420,
+          "mae": 697.9720833333333,
+          "median_absolute_error": 415.5899999999999,
+          "missed_deficits": 177,
+          "rmse": 1095.1758111236827,
+          "sign_errors": 257,
+          "tight_closes": 0,
+          "train_through": "2025-07-01",
+          "validation_months": [
+            "2025-09-01",
+            "2025-10-01",
+            "2025-11-01"
+          ]
+        }
+      ],
+      "metrics": {
+        "early": {
+          "count": 720,
+          "deficit_miss_rate": 0.5568181818181818,
+          "deficit_recall": 0.4431818181818182,
+          "deficits": 264,
+          "mae": 1035.5397962962963,
+          "median_absolute_error": 731.3833333333334,
+          "missed_deficits": 147,
+          "rmse": 1457.1450678518065,
+          "sign_errors": 250,
+          "tight_closes": 0
+        },
+        "late": {
+          "count": 1440,
+          "deficit_miss_rate": 0.2178030303030303,
+          "deficit_recall": 0.7821969696969697,
+          "deficits": 528,
+          "mae": 488.90610648148146,
+          "median_absolute_error": 195.46666666666653,
+          "missed_deficits": 115,
+          "rmse": 920.7836989958591,
+          "sign_errors": 230,
+          "tight_closes": 0
+        },
+        "middle": {
+          "count": 720,
+          "deficit_miss_rate": 0.5037878787878788,
+          "deficit_recall": 0.4962121212121212,
+          "deficits": 264,
+          "mae": 868.4944398148149,
+          "median_absolute_error": 596.4316666666668,
+          "missed_deficits": 133,
+          "rmse": 1278.805862940647,
+          "sign_errors": 203,
+          "tight_closes": 0
+        },
+        "overall": {
+          "count": 2880,
+          "deficit_miss_rate": 0.3740530303030303,
+          "deficit_recall": 0.6259469696969697,
+          "deficits": 1056,
+          "mae": 720.4616122685185,
+          "median_absolute_error": 383.8299999999999,
+          "missed_deficits": 395,
+          "rmse": 1167.7222940974893,
+          "sign_errors": 683,
+          "tight_closes": 0
+        }
+      },
+      "run_id": "2099cd4c3c3645ffbac28f450515d44d"
+    },
+    "linear": {
+      "folds": [
+        {
+          "count": 960,
+          "deficit_miss_rate": 0.29120879120879123,
+          "deficit_recall": 0.7087912087912088,
+          "deficits": 364,
+          "mae": 449.6514928668226,
+          "median_absolute_error": 311.5394229890418,
+          "missed_deficits": 106,
+          "rmse": 631.3073044039699,
+          "sign_errors": 222,
+          "tight_closes": 0,
+          "train_through": "2025-01-01",
+          "validation_months": [
+            "2025-03-01",
+            "2025-04-01",
+            "2025-05-01"
+          ]
+        },
+        {
+          "count": 960,
+          "deficit_miss_rate": 0.39338235294117646,
+          "deficit_recall": 0.6066176470588235,
+          "deficits": 272,
+          "mae": 777.3513319640894,
+          "median_absolute_error": 472.1949379003263,
+          "missed_deficits": 107,
+          "rmse": 1151.9438749794012,
+          "sign_errors": 187,
+          "tight_closes": 0,
+          "train_through": "2025-04-01",
+          "validation_months": [
+            "2025-06-01",
+            "2025-07-01",
+            "2025-08-01"
+          ]
+        },
+        {
+          "count": 960,
+          "deficit_miss_rate": 0.29285714285714287,
+          "deficit_recall": 0.7071428571428572,
+          "deficits": 420,
+          "mae": 490.56149340353136,
+          "median_absolute_error": 332.31916539587206,
+          "missed_deficits": 123,
+          "rmse": 724.2699132529316,
+          "sign_errors": 237,
+          "tight_closes": 0,
+          "train_through": "2025-07-01",
+          "validation_months": [
+            "2025-09-01",
+            "2025-10-01",
+            "2025-11-01"
+          ]
+        }
+      ],
+      "metrics": {
+        "early": {
+          "count": 720,
+          "deficit_miss_rate": 0.4166666666666667,
+          "deficit_recall": 0.5833333333333334,
+          "deficits": 264,
+          "mae": 685.4458757792817,
+          "median_absolute_error": 455.0033856540023,
+          "missed_deficits": 110,
+          "rmse": 1014.7943521078151,
+          "sign_errors": 208,
+          "tight_closes": 0
+        },
+        "late": {
+          "count": 1440,
+          "deficit_miss_rate": 0.24621212121212122,
+          "deficit_recall": 0.7537878787878788,
+          "deficits": 528,
+          "mae": 502.47702840210604,
+          "median_absolute_error": 322.5383656701875,
+          "missed_deficits": 130,
+          "rmse": 750.1529973758674,
+          "sign_errors": 274,
+          "tight_closes": 0
+        },
+        "middle": {
+          "count": 720,
+          "deficit_miss_rate": 0.36363636363636365,
+          "deficit_recall": 0.6363636363636364,
+          "deficits": 264,
+          "mae": 599.6858250624306,
+          "median_absolute_error": 351.76422798422436,
+          "missed_deficits": 96,
+          "rmse": 919.1594340695829,
+          "sign_errors": 164,
+          "tight_closes": 0
+        },
+        "overall": {
+          "count": 2880,
+          "deficit_miss_rate": 0.3181818181818182,
+          "deficit_recall": 0.6818181818181818,
+          "deficits": 1056,
+          "mae": 572.5214394114811,
+          "median_absolute_error": 354.6322027328655,
+          "missed_deficits": 336,
+          "rmse": 866.042822447746,
+          "sign_errors": 646,
+          "tight_closes": 0
+        }
+      },
+      "run_id": "bdc051c20e3946858df6f64ce124db52"
+    },
+    "random_forest": {
+      "folds": [
+        {
+          "count": 960,
+          "deficit_miss_rate": 0.25274725274725274,
+          "deficit_recall": 0.7472527472527473,
+          "deficits": 364,
+          "mae": 485.72735563361255,
+          "median_absolute_error": 358.36608642906367,
+          "missed_deficits": 92,
+          "rmse": 655.8270064599105,
+          "sign_errors": 275,
+          "tight_closes": 0,
+          "train_through": "2025-01-01",
+          "validation_months": [
+            "2025-03-01",
+            "2025-04-01",
+            "2025-05-01"
+          ]
+        },
+        {
+          "count": 960,
+          "deficit_miss_rate": 0.35294117647058826,
+          "deficit_recall": 0.6470588235294118,
+          "deficits": 272,
+          "mae": 626.4331228197293,
+          "median_absolute_error": 416.9089488320674,
+          "missed_deficits": 96,
+          "rmse": 908.238663766279,
+          "sign_errors": 189,
+          "tight_closes": 0,
+          "train_through": "2025-04-01",
+          "validation_months": [
+            "2025-06-01",
+            "2025-07-01",
+            "2025-08-01"
+          ]
+        },
+        {
+          "count": 960,
+          "deficit_miss_rate": 0.4238095238095238,
+          "deficit_recall": 0.5761904761904761,
+          "deficits": 420,
+          "mae": 495.17837954160393,
+          "median_absolute_error": 347.3043739025095,
+          "missed_deficits": 178,
+          "rmse": 681.6160881366733,
+          "sign_errors": 261,
+          "tight_closes": 0,
+          "train_through": "2025-07-01",
+          "validation_months": [
+            "2025-09-01",
+            "2025-10-01",
+            "2025-11-01"
+          ]
+        }
+      ],
+      "metrics": {
+        "early": {
+          "count": 720,
+          "deficit_miss_rate": 0.4734848484848485,
+          "deficit_recall": 0.5265151515151515,
+          "deficits": 264,
+          "mae": 602.4447799766873,
+          "median_absolute_error": 439.8796360588065,
+          "missed_deficits": 125,
+          "rmse": 832.3870633528463,
+          "sign_errors": 215,
+          "tight_closes": 0
+        },
+        "late": {
+          "count": 1440,
+          "deficit_miss_rate": 0.26325757575757575,
+          "deficit_recall": 0.7367424242424242,
+          "deficits": 528,
+          "mae": 485.6484416319814,
+          "median_absolute_error": 332.6770567243235,
+          "missed_deficits": 139,
+          "rmse": 706.6720309497418,
+          "sign_errors": 304,
+          "tight_closes": 0
+        },
+        "middle": {
+          "count": 720,
+          "deficit_miss_rate": 0.38636363636363635,
+          "deficit_recall": 0.6136363636363636,
+          "deficits": 264,
+          "mae": 569.3768140859441,
+          "median_absolute_error": 417.2836541685762,
+          "missed_deficits": 102,
+          "rmse": 775.3518065592623,
+          "sign_errors": 206,
+          "tight_closes": 0
+        },
+        "overall": {
+          "count": 2880,
+          "deficit_miss_rate": 0.3465909090909091,
+          "deficit_recall": 0.6534090909090909,
+          "deficits": 1056,
+          "mae": 535.7796193316485,
+          "median_absolute_error": 373.2436046757356,
+          "missed_deficits": 366,
+          "rmse": 757.1012755611288,
+          "sign_errors": 725,
+          "tight_closes": 0
+        }
+      },
+      "run_id": "6d82b68bcd9745f5856fa6e3386c6206"
+    },
+    "ridge": {
+      "folds": [
+        {
+          "count": 960,
+          "deficit_miss_rate": 0.29120879120879123,
+          "deficit_recall": 0.7087912087912088,
+          "deficits": 364,
+          "mae": 449.38600168707137,
+          "median_absolute_error": 312.55946860553604,
+          "missed_deficits": 106,
+          "rmse": 629.6395285622901,
+          "sign_errors": 221,
+          "tight_closes": 0,
+          "train_through": "2025-01-01",
+          "validation_months": [
+            "2025-03-01",
+            "2025-04-01",
+            "2025-05-01"
+          ]
+        },
+        {
+          "count": 960,
+          "deficit_miss_rate": 0.39338235294117646,
+          "deficit_recall": 0.6066176470588235,
+          "deficits": 272,
+          "mae": 777.6992558916664,
+          "median_absolute_error": 470.31541195553774,
+          "missed_deficits": 107,
+          "rmse": 1152.936174849588,
+          "sign_errors": 191,
+          "tight_closes": 0,
+          "train_through": "2025-04-01",
+          "validation_months": [
+            "2025-06-01",
+            "2025-07-01",
+            "2025-08-01"
+          ]
+        },
+        {
+          "count": 960,
+          "deficit_miss_rate": 0.29285714285714287,
+          "deficit_recall": 0.7071428571428572,
+          "deficits": 420,
+          "mae": 489.80924794913324,
+          "median_absolute_error": 331.15658008058097,
+          "missed_deficits": 123,
+          "rmse": 722.1745636463029,
+          "sign_errors": 232,
+          "tight_closes": 0,
+          "train_through": "2025-07-01",
+          "validation_months": [
+            "2025-09-01",
+            "2025-10-01",
+            "2025-11-01"
+          ]
+        }
+      ],
+      "metrics": {
+        "early": {
+          "count": 720,
+          "deficit_miss_rate": 0.4166666666666667,
+          "deficit_recall": 0.5833333333333334,
+          "deficits": 264,
+          "mae": 683.3006105354942,
+          "median_absolute_error": 454.18109919481924,
+          "missed_deficits": 110,
+          "rmse": 1012.6590226195171,
+          "sign_errors": 206,
+          "tight_closes": 0
+        },
+        "late": {
+          "count": 1440,
+          "deficit_miss_rate": 0.2481060606060606,
+          "deficit_recall": 0.7518939393939394,
+          "deficits": 528,
+          "mae": 503.34747683853186,
+          "median_absolute_error": 324.9403898404446,
+          "missed_deficits": 131,
+          "rmse": 750.5994676353915,
+          "sign_errors": 278,
+          "tight_closes": 0
+        },
+        "middle": {
+          "count": 720,
+          "deficit_miss_rate": 0.35984848484848486,
+          "deficit_recall": 0.6401515151515151,
+          "deficits": 264,
+          "mae": 599.1971098246033,
+          "median_absolute_error": 353.335718955229,
+          "missed_deficits": 95,
+          "rmse": 918.7207020571844,
+          "sign_errors": 160,
+          "tight_closes": 0
+        },
+        "overall": {
+          "count": 2880,
+          "deficit_miss_rate": 0.3181818181818182,
+          "deficit_recall": 0.6818181818181818,
+          "deficits": 1056,
+          "mae": 572.2981685092903,
+          "median_absolute_error": 357.89447168084155,
+          "missed_deficits": 336,
+          "rmse": 865.4948217797476,
+          "sign_errors": 644,
+          "tight_closes": 0
+        }
+      },
+      "run_id": "890e2f8e185542848751df1a11ff0f70"
+    }
+  }
+}

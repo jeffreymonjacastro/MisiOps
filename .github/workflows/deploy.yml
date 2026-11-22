@@ -1,19 +1,15 @@
 name: deploy
 
-# Deploys the images scanned by the devsecops run that triggered this workflow (specs/012-aws-deployment).
+# Deploys the images scanned by the calling DevSecOps push run.
 # develop -> dev (automatic, after the pipeline completes; gates are report-only, EX-001)
 # main    -> prod (waits for the required reviewer of the GitHub Environment "prod")
 # Contract: specs/012-aws-deployment/contracts/deploy-workflow.md
 
 on:
-  workflow_run:
-    workflows: [devsecops]
-    types: [completed]
-    branches: [develop, main]
+  workflow_call:
 
 permissions:
   contents: read
-  actions: read
   id-token: write
 
 env:
@@ -25,14 +21,11 @@ jobs:
     outputs:
       env: ${{ steps.map.outputs.env }}
       deploy: ${{ steps.map.outputs.deploy }}
-      sha: ${{ github.event.workflow_run.head_sha }}
-      run_id: ${{ github.event.workflow_run.id }}
     steps:
       - id: map
         env:
-          BRANCH: ${{ github.event.workflow_run.head_branch }}
-          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
-          EVENT: ${{ github.event.workflow_run.event }}
+          BRANCH: ${{ github.ref_name }}
+          EVENT: ${{ github.event_name }}
         run: |
           case "$BRANCH" in
             develop) env=dev ;;
@@ -40,10 +33,10 @@ jobs:
             *) env= ;;
           esac
           deploy=false
-          if [ -n "$env" ] && [ "$CONCLUSION" = success ] && [ "$EVENT" = push ]; then deploy=true; fi
+          if [ -n "$env" ] && [ "$EVENT" = push ]; then deploy=true; fi
           echo "env=$env" >> "$GITHUB_OUTPUT"
           echo "deploy=$deploy" >> "$GITHUB_OUTPUT"
-          echo "branch=$BRANCH conclusion=$CONCLUSION event=$EVENT -> env=${env:-none} deploy=$deploy" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "branch=$BRANCH event=$EVENT -> env=${env:-none} deploy=$deploy" | tee -a "$GITHUB_STEP_SUMMARY"
 
   deploy:
     needs: resolve
@@ -56,21 +49,19 @@ jobs:
       cancel-in-progress: false
     env:
       ENV_NAME: ${{ needs.resolve.outputs.env }}
-      SHA: ${{ needs.resolve.outputs.sha }}
+      SHA: ${{ github.sha }}
     steps:
       - name: Start timer
         run: echo "START=$(date +%s)" >> "$GITHUB_ENV"
 
       - uses: actions/checkout@v4
         with:
-          ref: ${{ needs.resolve.outputs.sha }}
+          ref: ${{ github.sha }}
 
-      - name: Download the scanned images of the triggering devsecops run (FR-009)
+      - name: Download the scanned images of this DevSecOps run
         uses: actions/download-artifact@v8
         with:
           name: images
-          run-id: ${{ needs.resolve.outputs.run_id }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           path: images
 
       - name: Assume the deploy role through OIDC (FR-011)
@@ -117,7 +108,26 @@ jobs:
 
       - name: Smoke test (FR-017, NFR-009)
         id: smoke
-        run: bash infra/scripts/smoke.sh "$PUBLIC_URL" | tee smoke.log
+        run: |
+          set -euo pipefail
+          bash infra/scripts/smoke.sh "$PUBLIC_URL" | tee smoke.log
+          version=$(jq -er .version backend/forecast_release/manifest.json)
+          model_hash=$(jq -er .model_sha256 backend/forecast_release/manifest.json)
+          manifest_hash=$(sha256sum backend/forecast_release/manifest.json | cut -d' ' -f1)
+          served=$(curl -fsS --retry 3 --max-time 10 "$PUBLIC_URL/api/v1/predictions/health" | jq -er .model_version)
+          test "$served" = "$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          jq -n --arg version "$version" --arg model "$model_hash" --arg sha "$SHA" \
+            --arg manifest "$manifest_hash" --arg image "${{ steps.push.outputs.backend_digest }}" --arg env "$ENV_NAME" \
+            '{version:$version,model_sha256:$model,manifest_sha256:$manifest,commit:$sha,image_digest:$image,environment:$env}' > forecast-release.json
+
+      - name: Publish staging verification receipt
+        if: needs.resolve.outputs.env == 'dev'
+        uses: actions/upload-artifact@v4
+        with:
+          name: forecast-staging-${{ steps.smoke.outputs.version }}
+          path: forecast-release.json
+          retention-days: 90
 
       - name: Summary
         if: always()
@@ -129,7 +139,7 @@ jobs:
           minutes=$(( ($(date +%s) - START) / 60 ))
           {
             echo "## Deployment to \`$ENV_NAME\`"
-            echo "- commit: \`$SHA\` (devsecops run ${{ needs.resolve.outputs.run_id }})"
+            echo "- commit: $SHA (DevSecOps run $GITHUB_RUN_ID)"
             echo "- backend digest: \`${BACKEND_DIGEST:-n/a}\`"
             echo "- frontend digest: \`${FRONTEND_DIGEST:-n/a}\`"
             echo "- public URL: ${PUBLIC_URL:-n/a}"

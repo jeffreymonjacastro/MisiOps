@@ -21,12 +21,13 @@ COPY core core/
 COPY models models/
 COPY schemas schemas/
 COPY main.py .
+COPY forecast_release forecast_release/
+ENV FORECAST_RELEASE_DIR=/app/forecast_release
 
 # Install the project itself (without dev dependencies)
 RUN uv sync --frozen --no-dev
 
-# Set permissions for the non-root user
-RUN chown -R appuser:appuser /app
+# The application and its dependencies only need to be readable at runtime.
 USER appuser
 
 # Put the virtual environment in the PATH

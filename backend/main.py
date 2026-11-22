@@ -1,7 +1,8 @@
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 import models.category  # noqa: F401
@@ -9,16 +10,28 @@ import models.transaction  # noqa: F401
 import models.user  # noqa: F401  (register models before create_all)
 from api.v1.router import api_router
 from core.config import settings
-from core.database import Base, engine
+from core.database import engine
+from core.forecast_model import load_release
+from core.schema import configure_monitor_access, initialize_schema
 
 logging.basicConfig(level=logging.INFO)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # ponytail: create_all until a shared environment needs Alembic migrations
+    app.state.forecast_model = None
+    app.state.forecast_release_required = bool(settings.FORECAST_RELEASE_DIR)
+    if settings.FORECAST_RELEASE_DIR:
+        try:
+            app.state.forecast_model = load_release(Path(settings.FORECAST_RELEASE_DIR))
+        except Exception:
+            logging.getLogger(__name__).exception("Forecast release failed startup validation")
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+        await initialize_schema(conn)
+        if settings.FORECAST_MONITOR_PASSWORD:
+            await configure_monitor_access(
+                conn, settings.FORECAST_MONITOR_PASSWORD.get_secret_value()
+            )
     yield
     await engine.dispose()
 
@@ -51,5 +64,8 @@ async def security_headers(request: Request, call_next):
 
 
 @app.get("/")
-async def health():
+async def health(response: Response):
+    if getattr(app.state, "forecast_release_required", False) and app.state.forecast_model is None:
+        response.status_code = 503
+        return {"status": "forecast_unavailable"}
     return {"status": "ok"}

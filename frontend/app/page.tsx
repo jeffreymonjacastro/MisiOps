@@ -4,9 +4,10 @@ import Link from "next/link";
 
 import { ErrorState, Loading } from "./components/async-state";
 import { AuthGuard } from "./components/auth-guard";
+import { ForecastCard } from "./components/forecast-card";
 import { useToken } from "./lib/auth";
 import { formatMoney } from "./lib/money";
-import { getSummary } from "./lib/resources";
+import { getMonthEndForecast, getSummary } from "./lib/resources";
 import { useAsync } from "./lib/use-async";
 import type { CategoryTotal, Summary } from "./lib/types";
 
@@ -22,6 +23,10 @@ function DashboardScreen() {
   const token = useToken();
   const { data, error, loading, reload } = useAsync(
     async () => (token ? getSummary(token) : null),
+    [token],
+  );
+  const { data: forecast, loading: forecastLoading } = useAsync(
+    async () => (token ? getMonthEndForecast(token) : null),
     [token],
   );
 
@@ -40,6 +45,7 @@ function DashboardScreen() {
       {error ? <ErrorState error={error} onRetry={reload} /> : null}
 
       {data ? <SummaryView summary={data} /> : null}
+      {forecastLoading ? <Loading label="Calculando tu pronóstico…" /> : <ForecastCard forecast={forecast ?? null} />}
     </div>
   );
 }

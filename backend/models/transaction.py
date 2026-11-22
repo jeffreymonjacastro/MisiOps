@@ -11,7 +11,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 
-from core.database import Base
+from core.orm import Base
 from models.category import Category
 
 
@@ -28,6 +28,7 @@ class Transaction(Base):
     source = Column(String(10), nullable=False, server_default="manual")
     description = Column(String(255), nullable=True)
     transaction_date = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    created_at = Column(DateTime(timezone=True), nullable=True, server_default=func.now())
 
     category = relationship(Category, lazy="joined")
 

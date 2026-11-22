@@ -1,0 +1,22 @@
+services:
+  mlflow:
+    build: .
+    ports:
+      - "127.0.0.1:5000:5000"
+    volumes:
+      - tracking:/tracking
+    command:
+      - mlflow
+      - server
+      - --host
+      - 0.0.0.0
+      - --allowed-hosts
+      - "localhost,localhost:*,127.0.0.1,127.0.0.1:*"
+      - --workers
+      - "1"
+      - --backend-store-uri
+      - sqlite:////tracking/mlflow.db
+      - --artifacts-destination
+      - /tracking/artifacts
+volumes:
+  tracking:

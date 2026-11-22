@@ -1,0 +1,119 @@
+name: MLOps candidate training
+
+on:
+  pull_request:
+    branches: [develop, main]
+    paths: ['mlops/**', 'backend/core/forecast_*.py', '.github/workflows/mlops.yml']
+  push:
+    branches: [develop]
+    paths:
+      - 'mlops/configs/**'
+      - 'mlops/simulation/generate.py'
+      - 'mlops/src/**'
+      - 'mlops/uv.lock'
+      - 'backend/core/forecast_features.py'
+      - '.github/workflows/mlops.yml'
+  workflow_dispatch:
+    inputs:
+      months:
+        description: 'Synthetic months (48+ to compare against the initial champion)'
+        type: number
+        default: 48
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    name: Synthetic PR and staging contracts
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mlops
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv run --locked pytest -q
+
+  validate:
+    name: Staging · Generate and validate snapshot
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/develop'
+    needs: contracts
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mlops
+    env:
+      PYTHONPATH: ../backend
+      SYNTHETIC_MONTHS: ${{ inputs.months || 48 }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: |
+          uv run --locked python -m simulation.generate --months "$SYNTHETIC_MONTHS"
+          uv run --locked python -m src.validate_data
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: data-validation
+          path: mlops/reports/data-validation.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: synthetic-snapshot
+          path: mlops/data/transactions.*
+
+  prepare:
+    name: Staging · Prepare chronological features
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - uses: actions/download-artifact@v4
+        with:
+          name: synthetic-snapshot
+          path: mlops/data
+      - uses: actions/download-artifact@v4
+        with:
+          name: data-validation
+          path: mlops/reports
+      - working-directory: mlops
+        run: PYTHONPATH=../backend uv run --locked python -m src.data_prep
+      - uses: actions/upload-artifact@v4
+        with:
+          name: prepared-synthetic-data
+          path: mlops/data/features.*
+
+  qualify:
+    name: Staging · Train with MLflow and evaluate independently
+    needs: prepare
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mlops
+    env:
+      PYTHONPATH: ../backend
+      MLFLOW_DISABLE_AGENT_HINT: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - uses: actions/download-artifact@v4
+        with:
+          name: prepared-synthetic-data
+          path: mlops/data
+      - name: Train and record experimental runs
+        run: uv run --locked python -m src.train
+      - name: Evaluate the frozen candidate and compare against the current approval
+        run: uv run --locked python -m src.evaluate_and_register --champion ../backend/forecast_release
+      - name: Add the model card to the workflow summary
+        if: always()
+        run: if [ -f reports/evaluation/model-card.md ]; then cat reports/evaluation/model-card.md >> "$GITHUB_STEP_SUMMARY"; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: model-evaluation-and-tracking
+          path: |
+            mlops/reports/evaluation/
+            mlops/.tracking/
+          include-hidden-files: true
+          retention-days: 30
