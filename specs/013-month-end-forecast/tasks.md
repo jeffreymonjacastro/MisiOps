@@ -40,7 +40,9 @@ Task IDs are sequential within the feature and use the 13 prefix to distinguish 
 ## Phase 6: Cross-Cutting
 
 - [X] T1313 Write mlops/README.md and mlops/docs/crisp-mlq.md covering all decisions, local Docker execution, credential and environment setup, reproducibility, optional observability tooling and rollback. (FR-011, FR-012)
-- [ ] T1314 Run the full local and CI validation paths, record forecast timing and drift evidence, audit remaining work, then prepare the pull request evidence using .github/pull_request_template.md. (SC-001–SC-005, NFR-001–NFR-004)
+- [X] T1314 Run the full local and CI validation paths, record forecast timing and drift evidence, audit remaining work, then prepare the pull request evidence using .github/pull_request_template.md. (SC-001–SC-005, NFR-001–NFR-004)
+
+Verification evidence is recorded in [the implementation checkpoint](../../mlops/README.md#implementation-checkpoint). Its AWS smoke and rollback follow-up applies after the reviewed staging merge. The existing DefectDojo upload is pending endpoint recovery.
 
 ## Dependencies and execution order
 
