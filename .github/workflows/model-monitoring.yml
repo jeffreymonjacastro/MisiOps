@@ -24,7 +24,7 @@ permissions:
 
 jobs:
   synthetic:
-    name: Synthetic · Replay monitoring scenarios
+    name: Synthetic Â· Replay monitoring scenarios
     if: github.event_name == 'schedule' || inputs.target == 'synthetic'
     runs-on: ubuntu-latest
     env:
@@ -91,4 +91,4 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       CANDIDATE_MONTHS: ${{ inputs.candidate_months }}
     steps:
-      - run: gh workflow run mlops.yml --repo "$GITHUB_REPOSITORY" --ref develop -f "months=$CANDIDATE_MONTHS"
+      - run: gh workflow run mlops.yml --repo "$GITHUB_REPOSITORY" --ref develop -f "months=$CANDIDATE_MONTHS" -f deploy_candidate=false

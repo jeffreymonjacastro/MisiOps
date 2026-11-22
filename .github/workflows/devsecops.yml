@@ -31,42 +31,13 @@ jobs:
     runs-on: ubuntu-24.04-arm  # linux/arm64 images for Fargate Graviton (specs/012-aws-deployment R2)
     steps:
       - uses: actions/checkout@v4
-      - name: Verify approved forecast artifact checksums
-        run: |
-          cd backend/forecast_release
-          echo "$(jq -er .model_sha256 manifest.json)  model.skops" | sha256sum -c -
-          echo "$(jq -er .evaluation_sha256 manifest.json)  evaluation.json" | sha256sum -c -
-          jq -e '.gate.decision == "accepted"' evaluation.json > /dev/null
-      - name: Build images once (scanned, attacked and delivered as the same bytes)
-        run: |
-          docker build -t misiops-backend:latest backend
-          docker build -t misiops-frontend:latest frontend
-          docker save misiops-backend:latest -o backend.tar
-          docker save misiops-frontend:latest -o frontend.tar
-      - uses: actions/upload-artifact@v4
-        with:
-          name: images
-          path: "*.tar"
-          retention-days: 1
+      - uses: ./.github/actions/ci-build
 
   sast:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Semgrep (backend + frontend source)
-        run: |
-          mkdir -p reports
-          docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD:/src" -w /src "$SEMGREP_IMAGE" \
-            semgrep scan --config p/default --config p/python --config p/typescript --metrics=off \
-            --json-output reports/semgrep.json --text-output reports/semgrep.txt backend frontend
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: report-sast
-          path: reports/
-          retention-days: 7
-      - name: Gate (Semgrep ERROR)
-        run: security/scripts/gate.sh Semgrep "$(jq '[.results[] | select(.extra.severity == "ERROR")] | length' reports/semgrep.json)"
+      - uses: ./.github/actions/ci-sast
 
   secrets:
     runs-on: ubuntu-latest
@@ -74,55 +45,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Gitleaks (full history)
-        run: |
-          mkdir -p reports
-          docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/repo" -w /repo "$GITLEAKS_IMAGE" \
-            git --config .gitleaks.toml --redact --exit-code 0 \
-            --report-format json --report-path reports/gitleaks.json .
-      - name: TruffleHog (full history)
-        run: |
-          docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD:/repo" "$TRUFFLEHOG_IMAGE" \
-            git file:///repo --json --no-update --exclude-paths=/repo/security/trufflehog-exclude.txt > reports/trufflehog.json
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: report-secrets
-          path: reports/
-          retention-days: 7
-      - name: Gate (any secret)
-        run: |
-          security/scripts/gate.sh Gitleaks "$(jq length reports/gitleaks.json)"
-          security/scripts/gate.sh TruffleHog "$(grep -c '"SourceMetadata"' reports/trufflehog.json || true)"
+      - uses: ./.github/actions/ci-secrets
 
   sca:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Trivy DB cache key
-        id: day
-        run: echo "date=$(date -u +%F)" >> "$GITHUB_OUTPUT"
-      - uses: actions/cache@v4
-        with:
-          path: ~/.cache/trivy
-          key: trivy-db-${{ steps.day.outputs.date }}
-          restore-keys: trivy-db-
-      - name: Trivy dependencies (uv.lock, pnpm-lock.yaml) + SBOM
-        run: |
-          mkdir -p reports ~/.cache/trivy
-          trivy() { docker run --rm -u "$(id -u):$(id -g)" -e TRIVY_CACHE_DIR=/cache -v "$HOME/.cache/trivy:/cache" -v "$PWD:/src" -w /src "$TRIVY_IMAGE" "$@"; }
-          # docs/ holds archived reports (incl. an SBOM), not project dependencies.
-          trivy fs --scanners vuln --skip-dirs docs --ignorefile .trivyignore.yaml --format json --output reports/trivy-deps.json .
-          trivy fs --scanners vuln --skip-dirs docs --ignorefile .trivyignore.yaml --skip-db-update --format table --output reports/trivy-deps.txt .
-          trivy fs --skip-dirs docs --skip-db-update --format cyclonedx --output reports/sbom.cdx.json .
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: report-sca
-          path: reports/
-          retention-days: 7
-      - name: Gate (fixable HIGH/CRITICAL)
-        run: security/scripts/gate.sh "Trivy dependencies" "$(jq -f security/scripts/trivy-blocking.jq reports/trivy-deps.json)"
+      - uses: ./.github/actions/ci-sca
 
   container:
     needs: build
@@ -132,60 +61,13 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: images
-      - name: Trivy DB cache key
-        id: day
-        run: echo "date=$(date -u +%F)" >> "$GITHUB_OUTPUT"
-      - uses: actions/cache@v4
-        with:
-          path: ~/.cache/trivy
-          key: trivy-db-${{ steps.day.outputs.date }}
-          restore-keys: trivy-db-
-      - name: Trivy images (backend, frontend, postgres)
-        run: |
-          mkdir -p reports ~/.cache/trivy
-          trivy() { docker run --rm -u "$(id -u):$(id -g)" -e TRIVY_CACHE_DIR=/cache -v "$HOME/.cache/trivy:/cache" -v "$PWD:/src" -w /src "$TRIVY_IMAGE" "$@"; }
-          postgres=$(grep -oE 'image: postgres[^[:space:]]*' docker/docker-compose.yaml | cut -d' ' -f2)
-          trivy image --ignorefile .trivyignore.yaml --input backend.tar --format json --output reports/trivy-image-backend.json
-          trivy image --ignorefile .trivyignore.yaml --skip-db-update --input frontend.tar --format json --output reports/trivy-image-frontend.json
-          trivy image --ignorefile .trivyignore.yaml --skip-db-update --format json --output reports/trivy-image-postgres.json "$postgres"
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: report-container
-          path: reports/
-          retention-days: 7
-      - name: Gate (fixable HIGH/CRITICAL, secrets)
-        run: |
-          rc=0
-          for image in backend frontend postgres; do
-            security/scripts/gate.sh "Trivy image $image" "$(jq -f security/scripts/trivy-blocking.jq "reports/trivy-image-$image.json")" || rc=1
-          done
-          exit $rc
+      - uses: ./.github/actions/ci-container
 
   iac:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Trivy config (Dockerfiles) + Semgrep (docker-compose)
-        run: |
-          mkdir -p reports
-          docker run --rm -u "$(id -u):$(id -g)" -e TRIVY_CACHE_DIR=/tmp/trivy -v "$PWD:/src" -w /src "$TRIVY_IMAGE" \
-            config --skip-dirs docs --format json --output reports/trivy-config.json .
-          # Trivy has no Compose scanner, so the orchestration file goes through Semgrep's compose rules.
-          docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD:/src" -w /src "$SEMGREP_IMAGE" \
-            semgrep scan --config p/docker-compose --metrics=off --json-output reports/semgrep-compose.json docker
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: report-iac
-          path: reports/
-          retention-days: 7
-      - name: Gate (HIGH/CRITICAL misconfigurations)
-        run: |
-          rc=0
-          security/scripts/gate.sh "Trivy config" "$(jq -f security/scripts/trivy-blocking.jq reports/trivy-config.json)" || rc=1
-          security/scripts/gate.sh "Semgrep compose" "$(jq '[.results[] | select(.extra.severity == "ERROR")] | length' reports/semgrep-compose.json)" || rc=1
-          exit $rc
+      - uses: ./.github/actions/ci-iac
 
   dast:
     needs: build
@@ -195,62 +77,13 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: images
-      - name: Start the stack from the scanned images
-        run: |
-          docker load -i backend.tar && docker load -i frontend.tar
-          # Throwaway credentials generated per run; never committed (FR-018).
-          pw=$(openssl rand -hex 24)
-          printf 'POSTGRES_PASSWORD=%s\nSECRET_KEY=%s\n' "$pw" "$(openssl rand -hex 32)" > docker/.env.dev
-          printf '%s' "$pw" > docker/pg_password.txt
-          docker compose -f docker/docker-compose.yaml up -d --no-build
-          curl -fsS --retry 30 --retry-all-errors --retry-delay 2 -o /dev/null http://localhost:8000/
-          curl -fsS --retry 30 --retry-all-errors --retry-delay 2 -o /dev/null http://localhost:3000/
-      - name: Verify real forecast parity in the built image
-        run: |
-          docker compose -f docker/docker-compose.yaml exec -T backend python - < mlops/scripts/check_legacy_schema.py
-          docker compose -f docker/docker-compose.yaml exec -T backend python - < mlops/simulation/demo.py
-      - name: Get a bearer token for the authenticated API scan
-        run: |
-          email="zap-${GITHUB_RUN_ID}@example.com" pass=$(openssl rand -hex 16)
-          body=$(jq -nc --arg e "$email" --arg p "$pass" '{name: "ZAP scanner", email: $e, password: $p}')
-          curl -fsS -X POST http://localhost:8000/api/v1/auth/register -H 'Content-Type: application/json' -d "$body" -o /dev/null
-          token=$(curl -fsS -X POST http://localhost:8000/api/v1/auth/login -H 'Content-Type: application/json' -d "$body" | jq -r .access_token)
-          echo "::add-mask::$token"
-          echo "ZAP_TOKEN=$token" >> "$GITHUB_ENV"
-      - name: ZAP baseline (frontend) and API scan (OpenAPI, authenticated)
-        run: |
-          mkdir -p reports && chmod 777 reports
-          cp security/zap/rules.conf reports/zap-rules.conf
-          zap() { docker run --rm --network host -v "$PWD/reports:/zap/wrk:rw" "$@"; }
-          zap "$ZAP_IMAGE" zap-baseline.py -t http://localhost:3000 -c zap-rules.conf -I \
-            -x zap-frontend.xml -r zap-frontend.html -J zap-frontend.json || true
-          zap -e ZAP_AUTH_HEADER_VALUE="Bearer $ZAP_TOKEN" -e ZAP_AUTH_HEADER_SITE=localhost:8000 "$ZAP_IMAGE" \
-            zap-api-scan.py -t http://localhost:8000/openapi.json -f openapi -c zap-rules.conf -I \
-            -x zap-api.xml -r zap-api.html -J zap-api.json -z "-config scanner.maxScanDurationInMins=10" || true
-          # A missing report means ZAP never reached the app: fail instead of reporting "no findings".
-          test -s reports/zap-frontend.json && test -s reports/zap-api.json
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: report-dast
-          path: reports/
-          retention-days: 7
-      - name: Gate (High-risk alerts)
-        run: |
-          rc=0
-          for scan in frontend api; do
-            security/scripts/gate.sh "ZAP $scan" "$(jq '[.site[]?.alerts[]? | select(.riskcode == "3")] | length' "reports/zap-$scan.json")" || rc=1
-          done
-          exit $rc
-      - name: Stop the stack
-        if: always()
-        run: docker compose -f docker/docker-compose.yaml down -v
+      - uses: ./.github/actions/ci-dast
 
   scripts-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: bash security/tests/test_upload_to_defectdojo.sh
+      - uses: ./.github/actions/ci-scripts-test
 
   summary:
     needs: [sast, secrets, sca, container, iac, dast]
@@ -299,59 +132,3 @@ jobs:
             exit 0
           fi
           security/scripts/import_run.sh reports
-
-  deliver:
-    needs: [sast, secrets, sca, container, iac, dast, scripts-test]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: images
-      - name: Publish the scanned images to GHCR
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "$GH_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-          for app in backend frontend; do
-            docker load -i "$app.tar"
-            for tag in "$GITHUB_SHA" latest; do
-              docker tag "misiops-$app:latest" "ghcr.io/jeffreymonjacastro/misiops-$app:$tag"
-              docker push "ghcr.io/jeffreymonjacastro/misiops-$app:$tag"
-            done
-          done
-
-  production-model:
-    name: Production · Verify staging approval evidence
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [build, container, dast]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      actions: read
-    env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    steps:
-      - uses: actions/checkout@v4
-      - run: bash mlops/scripts/verify_staging.sh
-
-  deploy:
-    name: Deploy the scanned images
-    if: |
-      always() && !cancelled() && github.event_name == 'push' &&
-      needs.build.result == 'success' && needs.sast.result == 'success' &&
-      needs.secrets.result == 'success' && needs.sca.result == 'success' &&
-      needs.container.result == 'success' && needs.iac.result == 'success' &&
-      needs.dast.result == 'success' && needs.scripts-test.result == 'success' &&
-      needs.summary.result == 'success' &&
-      (github.ref == 'refs/heads/develop' ||
-       (github.ref == 'refs/heads/main' && needs.production-model.result == 'success' &&
-        needs.deliver.result == 'success'))
-    needs: [build, sast, secrets, sca, container, iac, dast, scripts-test, summary, production-model, deliver]
-    permissions:
-      contents: read
-      id-token: write
-    uses: ./.github/workflows/deploy.yml

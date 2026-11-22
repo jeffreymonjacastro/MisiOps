@@ -100,3 +100,6 @@ No critical gaps. The atomicity findings are tracked by mapping the constituent 
 ## 9. Recommendation
 
 Advance to planning. Verify data custody, validation independence, inference parity and release safeguards during implementation.
+# Guide 12 Alignment Addendum
+
+The revision preserves the reviewed release contract and adds a directly verifiable requirement (FR-013). The nine exact display names and dependency graph are specified in the release contract. The plan distinguishes PR verification, pinned push releases, manual candidate evaluation, and protected production promotion. Security gates and same-run image identity remain mandatory. Runtime staging evidence is pending the reviewed merge.

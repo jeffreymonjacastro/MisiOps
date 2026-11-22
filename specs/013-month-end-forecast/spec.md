@@ -47,7 +47,7 @@ MisiOps users can see their net movements recorded so far, but cannot estimate h
 2. **Given** a deployment that fails readiness, **When** replacement fails, **Then** the preceding healthy release is restored. **Given** a healthy release with poor forecast quality, **When** a reviewer rolls back, **Then** the previous approved model is served.
 3. **Given** open and closed months, **When** monitoring runs, **Then** it reports drift separately from error and computes error only for closed months whose outcomes are available.
 4. **Given** a reproducible degradation scenario, **When** a quality threshold is breached, **Then** the operator sees a report and a retraining recommendation or candidate. Production promotion still needs review.
-5. **Given** a staging run and a production release, **When** their workflow summaries are inspected, **Then** staging shows candidate training and verification, while production shows approval and verification of the already evaluated version.
+5. **Given** a staging run and a production release, **When** their workflow summaries are inspected, **Then** staging trains and verifies a candidate or verifies the pinned release, while production shows approval and verification of the already evaluated version.
 
 ### Edge Cases
 
@@ -73,6 +73,7 @@ MisiOps users can see their net movements recorded so far, but cannot estimate h
 - **FR-010**: Prediction observations MUST survive application replacement and identify forecast version, user, period and cutoff so that an observed close can be matched later. Monitoring MUST report operation and shifts in data and forecasts separately from delayed quality metrics, and provide a supported path to retraining a candidate without bypassing release gates.
 - **FR-011**: The PoC MUST include a runnable, documented workspace organized around the six CRISP-ML(Q) phases, with setup, data assumptions, gates, deployment, monitoring, rollback and required manual configuration.
 - **FR-012**: The MLOps pipeline MUST distinguish staging and production runs. Staging MUST train and verify candidates with synthetic data. Production MUST verify and serve the approved version without retraining it. Monitoring evidence and access MUST identify the environment.
+- **FR-013**: One `mlops.yml` run MUST expose exactly the nine Guide 12 jobs, with the guide's names and order. The seven common jobs lead to the two named deployment jobs. A qualifying `develop` release runs all seven common jobs and staging. Production is skipped in that run. MLOps MUST orchestrate its own artifacts and shared security controls without waiting for another workflow.
 
 ### Non-Functional Requirements
 

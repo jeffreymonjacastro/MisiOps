@@ -12,13 +12,13 @@ The approval manifest pins a reviewed synthetic model artifact, metadata, featur
 
 The forecasting runtime can be disabled independently of the ledger outside release validation. A candidate image with an expected model must fail the AWS deployment readiness probe if the bundle is invalid. The probe exposes health and model version only. Post-deploy probes verify the expected release version.
 
-Call the deployment from the gated DevSecOps push run. The reusable job must inherit its caller's ref and consume the scanned image artifact from the same run. Reject PR and manual CI triggers for deployment. The environment must independently enforce its branch rule.
+Use exactly these visible jobs in `mlops.yml`: Tests → Data Validation → Data Preparation → Modeling → Evaluation → Smoke Test → Build and Publish, followed by Deploy · Staging and Deploy · Production. Reuse same-run image artifacts and shared DevSecOps security steps. PRs run Tests. Staging can run on a `develop` push or an explicit manual training release. Production requires a `main` push. Each environment independently enforces its branch rule.
 
 | Workflow path | Allowed trigger | Outcome |
 | --- | --- | --- |
 | PR checks | Pull request | Synthetic tests and no cloud deployment |
 | MLOps staging (`dev`) | `develop` | Candidate training and gate, plus version and parity verification of an accepted release in dev |
-| MLOps production (`prod`) | `main` with protected environment approval | Verify the staged artifact and evidence, deploy via DevSecOps, and verify the served version. Production never fits a candidate. |
+| MLOps production (`prod`) | `main` with protected environment approval | Verify the staging receipt, reuse shared security gates and verify the deployed model version. Production never fits a candidate. |
 
 ## Monitor contract
 

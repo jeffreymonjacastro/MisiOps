@@ -12,3 +12,7 @@
 - [x] Scope, assumptions and domain entities are documented.
 - [x] Data availability, legacy records, privacy and failed promotion have explicit behavior.
 - [x] No unresolved clarification markers remain.
+# Guide 12 Addendum
+
+- [X] The contract enumerates the exact visible jobs and their ordering.
+- [X] Candidate-only, staging, and approved production paths are explicit.

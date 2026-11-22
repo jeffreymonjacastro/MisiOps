@@ -1,0 +1,37 @@
+name: ci-container
+description: Shared ci-container steps
+runs:
+  using: composite
+  steps:
+    - name: Trivy DB cache key
+      id: day
+      shell: bash
+      run: echo "date=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+    - uses: actions/cache@v4
+      with:
+        path: ~/.cache/trivy
+        key: trivy-db-${{ steps.day.outputs.date }}
+        restore-keys: trivy-db-
+    - name: Trivy images (backend, frontend, postgres)
+      shell: bash
+      run: |
+        mkdir -p reports ~/.cache/trivy
+        trivy() { docker run --rm -u "$(id -u):$(id -g)" -e TRIVY_CACHE_DIR=/cache -v "$HOME/.cache/trivy:/cache" -v "$PWD:/src" -w /src "$TRIVY_IMAGE" "$@"; }
+        postgres=$(grep -oE 'image: postgres[^[:space:]]*' docker/docker-compose.yaml | cut -d' ' -f2)
+        trivy image --ignorefile .trivyignore.yaml --input backend.tar --format json --output reports/trivy-image-backend.json
+        trivy image --ignorefile .trivyignore.yaml --skip-db-update --input frontend.tar --format json --output reports/trivy-image-frontend.json
+        trivy image --ignorefile .trivyignore.yaml --skip-db-update --format json --output reports/trivy-image-postgres.json "$postgres"
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: report-container
+        path: reports/
+        retention-days: 7
+    - name: Gate (fixable HIGH/CRITICAL, secrets)
+      shell: bash
+      run: |
+        rc=0
+        for image in backend frontend postgres; do
+          security/scripts/gate.sh "Trivy image $image" "$(jq -f security/scripts/trivy-blocking.jq "reports/trivy-image-$image.json")" || rc=1
+        done
+        exit $rc

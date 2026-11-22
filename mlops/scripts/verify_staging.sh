@@ -7,8 +7,8 @@ manifest_hash=$(sha256sum "$manifest" | cut -d' ' -f1)
 root=$(mktemp -d)
 trap 'rm -rf "$root"' EXIT
 name="forecast-staging-$version"
-# Only accept successful push runs of the repository's DevSecOps workflow on develop.
-ids=$(gh run list --workflow devsecops.yml --branch develop --event push --status success \
+# Only accept successful release runs of the repository's MLOps workflow on develop.
+ids=$(gh run list --workflow mlops.yml --branch develop --status success \
   --limit 30 --json databaseId --jq '.[].databaseId')
 for id in $ids; do
   artifact=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$id/artifacts?name=$name" \

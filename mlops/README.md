@@ -45,14 +45,16 @@ Subsequent promotions must compare against the approved release on fresh months.
 
 | Path | Trigger | Evidence |
 | --- | --- | --- |
-| PR | To `develop` or `main` | Contract tests, synthetic fixtures, release artifact validation, real API parity and security checks without AWS credentials |
-| Staging training | Push training changes to `develop`, or run `MLOps candidate training` manually on `develop` | Synthetic snapshot, chronological folds, MLflow runs and gate report. Accepted candidates are available for review and are never deployed directly by training. |
-| Staging deployment | Push to `develop`, using environment `dev` | DevSecOps scans the image containing the approved bundle and calls the reusable deployment. A successful API smoke test uploads a staging receipt. |
-| Production | Push to `main`, using environment `prod` | Verify the exact model and manifest against the staging receipt. Run security checks and wait for the production reviewer. Deploy that run's scanned image without retraining. |
+| PR | To `develop` or `main` | MLOps Tests plus the regular DevSecOps PR checks, without AWS credentials |
+| Staging training | Manually run `MLOps Pipeline - Month-End Forecast` on `develop` | Train and evaluate a synthetic candidate. The `deploy_candidate` input controls whether an accepted candidate is deployed to staging. Monitoring requests training only. |
+| Staging deployment | Push to `develop` or manually qualify a candidate with staging enabled | The pipeline checks and deploys the exact images built in Smoke Test to `dev`. A successful API smoke test uploads a staging receipt. |
+| Production | Push to `main`, using environment `prod` | Verify the pinned model against a matching staging receipt, enforce shared security gates, and wait for the production reviewer. Production performs no training. |
 
 To promote an accepted candidate, review its report and commit the three files from `reports/evaluation/accepted/` to `backend/forecast_release/` through a PR to `develop`. Only this small synthetic model and its aggregate evidence are versioned. The application checks the manifest, evaluation checksum, model checksum, feature contract and allowed estimator types before serving. MLflow remains independent of serving.
 
-For the first rollout, the `develop` push can start training as soon as this workflow is merged into that branch. GitHub enables manual dispatch after the workflow exists on the default branch. A rejected candidate leaves the staged release unchanged.
+The first `develop` push can deploy the pinned model. GitHub enables manual dispatch after the workflow exists on the default branch. A rejected candidate stops its run before packaging.
+
+The nine job names match Guide 12. The graph is Tests → Data Validation → Data Preparation → Modeling → Evaluation → Smoke Test → Build and Publish, followed by Deploy · Staging and Deploy · Production. The workflow runs its own checks using the same security actions as DevSecOps. Only MLOps deploys to AWS.
 
 The existing CDK, ECR, CloudFront, ALB, ECS and Aurora stacks are reused. The deployment job inherits the push ref, which lets GitHub apply the existing staging and production branch rules. A failed startup with a bad bundle trips ECS readiness. For a quality rollback, restore the three files from a prior accepted version via the normal PR and release flow. If the prior staging receipt expired, verify that version again in staging before promoting it.
 

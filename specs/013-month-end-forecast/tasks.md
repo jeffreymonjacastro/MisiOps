@@ -33,7 +33,7 @@ Task IDs are sequential within the feature and use the 13 prefix to distinguish 
 **Independent verification**: Deploy a known approved version in staging, inspect its health and version, and verify monitoring with both unlabeled and labeled scenarios.
 
 - [X] T1309 [US3] Add the staging training workflow in .github/workflows/mlops.yml and the production verification lane in .github/workflows/devsecops.yml. Pass model and evidence through appropriate jobs. Use `develop` for staging and `main` for protected pinned promotion. Prove production fits no candidate. (FR-008, FR-009, FR-012, NFR-003)
-- [X] T1310 [US3] Package and verify the approved bundle in backend/Dockerfile and the existing DevSecOps build before scans. In .github/workflows/deploy.yml and .github/workflows/devsecops.yml, call the reusable deployment from the gated push run so the environment sees the correct caller ref and the existing scanned artifact. Add fixture parity, readiness, deployed-version smoke and staging evidence in backend/tests/, infra/lib/environment-stack.ts, and infra/scripts/smoke.sh. Verify dev and prod protection rules and prior release recovery in the designated test environment. (FR-009, FR-012, NFR-001, NFR-003)
+- [X] T1310 [US3] Package and verify the approved bundle in backend/Dockerfile and the existing DevSecOps build before scans. Use the gated deployment path with the correct caller ref and the scanned image artifact. T1315 specifies its current orchestration. Add fixture parity, readiness, deployed-version smoke and staging evidence in backend/tests/, infra/lib/environment-stack.ts, and infra/scripts/smoke.sh. Verify dev and prod protection rules and prior release recovery in the designated test environment. (FR-009, FR-012, NFR-001, NFR-003)
 - [X] T1311 [US3] Implement reproducible drift and matured-label evaluation in mlops/src/monitor.py, backend/core/, mlops/tests/ and mlops/monitoring/. Finalize eligible observations once after the grace period. Emit aggregate reports, thresholds for degradation or insufficient evidence and candidate retraining decision. (FR-010, NFR-002)
 - [X] T1312 [US3] Add the authorized AWS monitor task, scoped OIDC role, per-environment scheduling, CloudWatch metrics and environment-aware workflow in infra/lib/, infra/test/, and .github/workflows/model-monitoring.yml. Ensure synthetic scenario runs require no AWS credentials and manual cloud runs use the protected ref for the selected environment. (FR-010, FR-012, NFR-002, NFR-003)
 
@@ -43,6 +43,11 @@ Task IDs are sequential within the feature and use the 13 prefix to distinguish 
 - [X] T1314 Run the full local and CI validation paths, record forecast timing and drift evidence, audit remaining work, then prepare the pull request evidence using .github/pull_request_template.md. (SC-001–SC-005, NFR-001–NFR-004)
 
 Verification evidence is recorded in [the implementation checkpoint](../../mlops/README.md#implementation-checkpoint). Its AWS smoke and rollback follow-up applies after the reviewed staging merge. The existing DefectDojo upload is pending endpoint recovery.
+
+## Phase 7: Guide 12 workflow alignment
+
+- [X] T1315 [US3] Implement the nine exact jobs and same-run artifacts in .github/workflows/mlops.yml, share DevSecOps checks and AWS deployment, and route the staging receipt to production. (FR-009, FR-012, FR-013, NFR-003)
+- [X] T1316 [US3] Check the job graph, branch behavior and action syntax locally, and publish to the existing PR. Live Actions evidence follows separately. (FR-013)
 
 ## Dependencies and execution order
 
