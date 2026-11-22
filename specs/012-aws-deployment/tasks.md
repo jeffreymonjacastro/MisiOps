@@ -260,3 +260,7 @@ Phase 9:   T042 ‖ T043
 
 - [X] T046 Force request-time rendering of `frontend/app/layout.tsx` (`export const dynamic = "force-dynamic"`) so `generateMetadata` and `EnvBanner` read `APP_ENV` per request instead of being prerendered at `next build` with the variable unset; verify by running the built image with `APP_ENV=dev` and checking the HTML for the banner text and the ` · dev` title, and with no `APP_ENV` for their absence per FR-020 / US2 (partial)
 - [X] T047 Record in `specs/012-aws-deployment/research.md` R12 and `docs/deployment/README.md` that `ec2.Vpc` performs an availability-zone context lookup when the account is resolved (deploy job, through the CDK lookup role), that `infra/cdk.context.json` is git-ignored, and that CI synth stays offline because no account is resolved per plan: R12 offline synth (partial)
+
+## Phase 11: Convergence
+
+- [X] T048 Accept GitHub's immutable OIDC subject (`repo:<owner>@<ownerId>/<repo>@<repoId>:...`) in the deploy role trust policy of `infra/lib/foundation-stack.ts`, alongside the plain `repo:<owner>/<repo>:...` form, because the repository has `use_immutable_subject` enabled and the first `prod` run failed with `Not authorized to perform sts:AssumeRoleWithWebIdentity`; update `infra/test/foundation-stack.test.ts`, research R9 and the runbook, and redeploy `MisiOps-Foundation` per FR-011, FR-012 (partial)
