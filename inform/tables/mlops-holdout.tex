@@ -1,0 +1,21 @@
+\begin{table}[H]
+    \centering
+    \small
+    \caption{Evaluación independiente en los meses reservados (enero a junio de 2026, 1\,920 observaciones). MAE y RMSE en PEN; la banda es el error absoluto mediano de validación del tramo}
+    \label{tab:mlops-holdout}
+    \begin{tabular}{@{}llrrrrr@{}}
+        \toprule
+        \textbf{Tramo del corte} & \textbf{Modelo} & \textbf{n} & \textbf{MAE} & \textbf{RMSE} & \textbf{Banda} & \textbf{Déf. omitidos} \\
+        \midrule
+        Inicio (día 7)        & Random Forest & 480 & 557.83 & 748.43 & 439.88 & 157 / 193 \\
+                              & Baseline      & 480 & 799.76 & 1\,100.91 & -- & 95 / 193 \\
+        Medio (día 14)        & Random Forest & 480 & 553.68 & 736.82 & 417.28 & 137 / 193 \\
+                              & Baseline      & 480 & 688.98 & 950.71 & -- & 88 / 193 \\
+        Final (días 21 y 27)  & Random Forest & 960 & 462.48 & 642.83 & 332.68 & 173 / 386 \\
+                              & Baseline      & 960 & 499.40 & 958.10 & -- & 82 / 386 \\
+        \midrule
+        \textbf{Global}       & \textbf{Random Forest} & 1\,920 & \textbf{509.12} & \textbf{694.53} & -- & 467 / 772 (60.5\,\%) \\
+                              & Baseline      & 1\,920 & 621.89 & 993.95 & -- & 265 / 772 (34.3\,\%) \\
+        \bottomrule
+    \end{tabular}
+\end{table}

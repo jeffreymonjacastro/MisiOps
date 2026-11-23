@@ -1,0 +1,18 @@
+\begin{table}[H]
+    \centering
+    \small
+    \caption{Riesgos y controles por fase de CRISP-ML(Q) en MisiOps (\texttt{mlops/docs/crisp-mlq.md})}
+    \label{tab:mlops-crisp}
+    \begin{tabularx}{\textwidth}{@{}L{2.3cm} L{4.2cm} Y@{}}
+        \toprule
+        \textbf{Fase} & \textbf{Riesgo principal} & \textbf{Control y evidencia} \\
+        \midrule
+        Negocio y datos & Un dataset irreal o mal formado infla la confianza & Perfiles sintéticos con registro tardío y gastos excepcionales. Se validan IDs únicos, monto, moneda, ambos relojes, checksum y cobertura antes de preparar \\
+        Preparación & Un registro tardío filtra información futura o las features online difieren de las offline & Reloj de ocurrencia y reloj de registro; el mismo código de features offline y online. Cada mes queda entero en una partición, hay un mes de embargo y se verifica que la etiqueta exista antes de cada ventana de validación \\
+        Modelado & Algoritmos flexibles sobreajustan o no aportan valor & Regla histórica, regresión lineal múltiple, Ridge, Random Forest y Gradient Boosting con folds temporales expansivos, todos registrados en MLflow \\
+        Evaluación & El test guía el ajuste o las abstenciones cerca de cero ocultan déficits & Selección por MAE de validación; modelo congelado antes de abrir los meses reservados; un ``cierre ajustado'' sobre un déficit real cuenta como omitido; gate con umbrales fijos \\
+        Despliegue & La API empaquetada se comporta distinto o una versión evita la revisión & Checksums aprobados y solo tipos de modelo permitidos; paridad autenticada sobre la imagen escaneada; versión servida verificada en staging; producción exige recibo de staging y revisor humano \\
+        Monitoreo & Se confunde deriva de entrada con pérdida de precisión o la etiqueta llega tarde & PSI por tramo del mes con al menos 30 observaciones; alerta con PSI $\geq 0.25$; etiqueta asentada 7 días después del cierre; candidato recomendado si el MAE observado supera el 130\,\% del de referencia \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
