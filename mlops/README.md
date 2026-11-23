@@ -72,7 +72,40 @@ ECS runs a daily task per environment at 07:25 Lima time. It uses a restricted d
 
 The first monitoring run after settlement freezes available outcomes. A deletion or edit before that run can change the observed outcome. An owner-month with unknown creation timestamps is excluded from maturity metrics. Full replay of earlier real edits requires a historical event log, which is outside this synthetic PoC.
 
-View the reports under `/misiops/<environment>/forecast-monitor` in CloudWatch Logs and the drift and retraining alarms under the matching forecast namespace. Prometheus and Grafana are optional local tools. The cloud monitors and alarms use CloudWatch. The GitHub workflow also offers scheduled synthetic verification, and its manual mode can request a new synthetic candidate from a qualifying staging run with newly matured outcomes. It never promotes directly.
+View the reports under `/misiops/<environment>/forecast-monitor` in CloudWatch Logs and the drift and retraining alarms under the matching forecast namespace. The cloud monitors and alarms use CloudWatch. [Local Grafana](#local-grafana) shows the same data in one dashboard; Prometheus is not used. The GitHub workflow also offers scheduled synthetic verification, and its manual mode can request a new synthetic candidate from a qualifying staging run with newly matured outcomes. It never promotes directly.
+
+## Local Grafana
+
+`monitoring/` runs Grafana locally and reads the same CloudWatch metrics and monitor reports, so the console is not needed. It shows four things:
+
+- The drift and retraining alarm state for the last hour.
+- The latest run's flags.
+- MAE by cutoff.
+- The last 20 reports with their per-cutoff decisions and feature PSI.
+
+Grafana assumes each stack's read-only `ForecastDashboardRoleArn`, using your local AWS CLI credentials. It never uses your own permissions for queries. The role exists after `MisiOps-dev` is deployed from `develop`. See [the spec](../specs/014-grafana-cloudwatch/spec.md).
+
+From the repository root, in PowerShell:
+
+```powershell
+Copy-Item mlops/monitoring/.env.example mlops/monitoring/.env
+$role = aws cloudformation describe-stacks --stack-name MisiOps-dev --query "Stacks[0].Outputs[?OutputKey=='ForecastDashboardRoleArn'].OutputValue" --output text
+(Get-Content mlops/monitoring/.env) -replace '^GRAFANA_DEV_ROLE_ARN=.*', "GRAFANA_DEV_ROLE_ARN=$role" -replace '^GRAFANA_ADMIN_PASSWORD=.*', "GRAFANA_ADMIN_PASSWORD=$([guid]::NewGuid().ToString('N'))" | Set-Content mlops/monitoring/.env
+docker compose -f mlops/monitoring/docker-compose.yml up -d
+```
+
+Open [127.0.0.1:3001](http://127.0.0.1:3001). The dashboard opens read-only without signing in. The admin password is in your local `.env`, which Git ignores.
+
+To stop Grafana, run `docker compose -f mlops/monitoring/docker-compose.yml down`. Add `-v` to also delete its local state.
+
+Troubleshooting:
+
+- **Panels show "No data" or "No run in range".** The monitor has not reported in the selected range. It runs daily at 07:25 Lima.
+- **Save & test fails on `MisiOps prod`.** This stays the case until you set `GRAFANA_PROD_ROLE_ARN` from the `MisiOps-prod` output. There is no fallback to your own credentials.
+- **`AccessDenied` on `sts:AssumeRole`.** Your CLI identity needs permission to assume roles in the account. If you use another profile, set `AWS_PROFILE` in `.env`.
+- **Port 3001 is in use.** Change `GRAFANA_PORT` in `.env`.
+
+`mlops/tests/test_grafana_contract.py` checks that the dashboard matches the metric filters, the log group and the report fields.
 
 ## Manual setup
 
@@ -85,14 +118,31 @@ View the reports under `/misiops/<environment>/forecast-monitor` in CloudWatch L
 
 ### Implemented and verified locally
 
-- The approved plan is in [the feature specification](../specs/013-month-end-forecast/spec.md). The implementation is on `feature/mlops`. All synthetic history, demo seeding and monitoring scenario code lives in [simulation/](simulation/).
+- The approved plan is in [the feature specification](../specs/013-month-end-forecast/spec.md). The implementation is merged into `develop`. All synthetic history, demo seeding and monitoring scenario code lives in [simulation/](simulation/).
 - The initial synthetic release, `41eb6ef57dc015eb`, is pinned in [backend/forecast_release/](../backend/forecast_release/). The manifest and evaluation record the dataset checksum, the model checksum, comparison with the historical rule and the held-out results. Training artifacts remain in the ignored local data, reports and tracking directories.
 - Backend, frontend, MLOps and CDK tests passed locally. Docker and PostgreSQL verified the additive migration, restricted monitor privileges and authenticated parity within PEN 0.01. Warm API p95 was 161 ms in the seeded run. A test container with a missing bundle returned HTTP 503 while the healthy release stayed available. MLflow stored and returned a completed run, its metric and its artifact over HTTP. Playwright verified the forecast card with a synthetic account.
 - Synthetic monitoring reproduced steady behavior, drift without settled outcomes and degradation after settlement. The monitor also ran against the local PostgreSQL instance and returned insufficient sample size after the disposable demo account was removed.
-- [PR #199](https://github.com/jeffreymonjacastro/MisiOps/pull/199) targets `develop`. Its [implementation CI run](https://github.com/jeffreymonjacastro/MisiOps/actions/runs/45080768549) passed the image build, artifact checks, forecast parity and security scans. The existing [DefectDojo report upload](https://github.com/jeffreymonjacastro/MisiOps/actions/runs/45080768549/job/137389420323) failed because its ngrok endpoint was offline (`ERR_NGROK_3200`). The same upload job also failed on the preceding `develop` push.
+- MLflow lists five finished runs for the `MisiOps month-end net` experiment on the local server. Compare the regressors under Model training → Experiments → MisiOps month-end net → Runs → Compare using `validation_mae`. The Random Forest run also records `test_mae` and `test_rmse`. The GenAI → Dashboard view stays empty because it shows traces and tokens.
+
+### Merged into `develop`
+
+- [PR #199](https://github.com/jeffreymonjacastro/MisiOps/pull/199) added the PoC and the Guide 12 job graph. Its `develop` push failed in Modeling, which looked for `recipe` in `manifest.json`.
+- [PR #200](https://github.com/jeffreymonjacastro/MisiOps/pull/200) reads `recipe` from `evaluation.json`. Its [`develop` push run](https://github.com/jeffreymonjacastro/MisiOps/actions/runs/45092862391) passed the seven common jobs and Deploy · Staging. Deploy · Production was skipped by design. The run uploaded the staging receipt `forecast-staging-41eb6ef57dc015eb`.
+- An earlier staging attempt failed because the `dev` environment's `ALERT_EMAIL` differed from the recipient of the existing `misiops-dev` budget. CloudFormation replaces the budget when its recipient changes, and AWS returned `AlreadyExists` for the same budget name. Aligning the `dev` value with the existing budget fixed the deployment.
+
+### Verified in staging (`dev`, `us-east-1`)
+
+Checked on 2026-11-23:
+
+- ECS ran the backend and frontend services in `MisiOps-dev` with 1 of 1 tasks each.
+- The [front end](https://d2n2ap8z1x33no.cloudfront.net/movimientos), the [API docs](https://d2n2ap8z1x33no.cloudfront.net/docs#/predictions/month_end_api_v1_predictions_month_end_get) and the [prediction health endpoint](https://d2n2ap8z1x33no.cloudfront.net/api/v1/predictions/health) returned HTTP 200. Health returned `{"model_version":"41eb6ef57dc015eb"}`.
+- The stack exposes `PublicUrl`, `ClusterName`, `ForecastMonitorRoleArn`, `ForecastMonitorTaskArn` and `ForecastMonitorNetwork`. The `dev` GitHub environment holds `AWS_MLOPS_MONITOR_ROLE_ARN`.
+- The EventBridge rule for the daily monitor is enabled with `cron(25 12 * * ? *)`, which is 07:25 in Lima. The drift and retraining alarms exist and were `OK`.
 
 ### Remaining verification
 
-- Review PR #199. To restore report imports, bring the configured DefectDojo endpoint back online and re-run the upload job. MLOps test reports and scan artifacts are available in GitHub Actions.
-- After the approved merge to `develop`, verify that the staged API serves the pinned version, the staging receipt is available and the ECS forecast monitor logs an aggregate run. ECS rollback has a local readiness test and CDK configuration coverage. Its behavior in AWS remains to be verified.
-- Production uses the separate protected `prod` environment on `main`. Promotion requires the matching staging receipt and a production reviewer. Follow the staging and production instructions above before promotion.
+- **Cloud monitor run.** At 07:34 UTC on 2026-11-23, `/misiops/dev/forecast-monitor` had no log streams. The stack was deployed after the previous scheduled time, so the first daily run is due at 12:25 UTC. Check the log group for a stream before claiming that the monitor ran. An `insufficient_sample` report shows that the task ran and found too few settled observations. For an earlier demo, start the ECS task manually or schedule a one-time EventBridge Scheduler run. Either way leaves the daily schedule unchanged.
+- **DefectDojo.** The report upload still fails on `develop` pushes, most recently in the [PR #200 merge run](https://github.com/jeffreymonjacastro/MisiOps/actions/runs/45092862388). Its ngrok endpoint returned an offline error page. Bring the endpoint back online and re-run the job. The other DevSecOps jobs passed, and the scan reports are available as Actions artifacts.
+- **Manual monitor workflow.** `.github/workflows/model-monitoring.yml` is not on `main` yet, so GitHub does not show Run workflow for it. Monitoring `dev` in AWS does not require promotion to `main`.
+- **ECS rollback.** Rollback has a local readiness test and CDK configuration coverage. Its behavior in AWS remains unverified.
+- **Production.** Nothing has been verified in production. `mlops.yml` is not on `main`. Promotion goes through a PR from `develop` to `main` and runs in the protected `prod` environment. It requires the matching staging receipt and a production reviewer, and it reuses the approved model without retraining.

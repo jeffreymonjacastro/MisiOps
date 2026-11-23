@@ -235,3 +235,5 @@ infra/cdk.context.json
 infra/node_modules/
 infra/outputs.json
 infra/foundation.json
+
+guides/laboratorio_mlops/mlops-churn-lab/*

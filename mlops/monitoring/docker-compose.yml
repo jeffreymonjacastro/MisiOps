@@ -1,0 +1,33 @@
+# Local Grafana for the forecast monitoring data in CloudWatch (specs/014-grafana-cloudwatch).
+# Values come from mlops/monitoring/.env (git-ignored); see .env.example.
+services:
+  grafana:
+    image: grafana/grafana:13.2.6
+    ports:
+      - "127.0.0.1:${GRAFANA_PORT:-3001}:3000"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD in mlops/monitoring/.env}
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: "false"
+      GF_NEWS_NEWS_FEED_ENABLED: "false"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /etc/grafana/dashboards/forecast-monitoring.json
+      GRAFANA_DEV_ROLE_ARN: ${GRAFANA_DEV_ROLE_ARN:?Set GRAFANA_DEV_ROLE_ARN to the MisiOps-dev ForecastDashboardRoleArn output}
+      GRAFANA_PROD_ROLE_ARN: ${GRAFANA_PROD_ROLE_ARN:-arn:aws:iam::000000000000:role/misiops-prod-dashboard-not-configured}
+      AWS_PROFILE: ${AWS_PROFILE:-default}
+      AWS_SHARED_CREDENTIALS_FILE: /aws/credentials
+      AWS_CONFIG_FILE: /aws/config
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/etc/grafana/dashboards:ro
+      - ${AWS_DIR:-~/.aws}:/aws:ro
+volumes:
+  grafana-data:
