@@ -2,20 +2,20 @@ name: MLOps model monitoring
 
 on:
   schedule:
-    - cron: '25 13 * * 1'
+    - cron: "25 13 * * 1"
   workflow_dispatch:
     inputs:
       target:
-        description: 'Use develop for dev (staging), main for prod'
+        description: "Use develop for dev (staging), main for prod"
         type: choice
         options: [synthetic, dev, prod]
         default: synthetic
       request_candidate:
-        description: 'On a qualifying dev run, launch a new synthetic staging candidate'
+        description: "On a qualifying dev run, launch a new synthetic staging candidate"
         type: boolean
         default: false
       candidate_months:
-        description: 'Synthetic months for the requested candidate'
+        description: "Synthetic months for the requested candidate"
         type: number
         default: 48
 
@@ -24,7 +24,7 @@ permissions:
 
 jobs:
   synthetic:
-    name: Synthetic Â· Replay monitoring scenarios
+    name: Synthetic Replay monitoring scenarios
     if: github.event_name == 'schedule' || inputs.target == 'synthetic'
     runs-on: ubuntu-latest
     env:
