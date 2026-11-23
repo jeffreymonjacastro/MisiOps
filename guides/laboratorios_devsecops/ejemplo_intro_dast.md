@@ -50,28 +50,24 @@ mkdir -p demo-dast/reports && cd demo-dast
 **`app.js`**
 
 ```js
-const express = require("express");
-const app = express();
+const express = require('express')
+const app = express()
 
-app.get("/", (req, res) => {
-  res.send(
-    '<h1>Demo DAST</h1><a href="/hello?name=UTEC">Saludar</a> · <a href="/login">Login</a>',
-  );
-});
+app.get('/', (req, res) => {
+  res.send('<h1>Demo DAST</h1><a href="/hello?name=UTEC">Saludar</a> · <a href="/login">Login</a>')
+})
 
 // Refleja el parámetro sin sanitizar -> XSS reflejado
-app.get("/hello", (req, res) => {
-  res.send(`<h1>Hola ${req.query.name}</h1>`);
-});
+app.get('/hello', (req, res) => {
+  res.send(`<h1>Hola ${req.query.name}</h1>`)
+})
 
-app.get("/login", (req, res) => {
-  res.cookie("session", "abc123"); // sin HttpOnly, sin Secure, sin SameSite
-  res.send(
-    '<form method="post"><input name="user"><input name="pass" type="password"><button>Entrar</button></form>',
-  );
-});
+app.get('/login', (req, res) => {
+  res.cookie('session', 'abc123')          // sin HttpOnly, sin Secure, sin SameSite
+  res.send('<form method="post"><input name="user"><input name="pass" type="password"><button>Entrar</button></form>')
+})
 
-app.listen(3000, () => console.log("demo-app en http://localhost:3000"));
+app.listen(3000, () => console.log('demo-app en http://localhost:3000'))
 ```
 
 **`package.json`**
@@ -130,11 +126,11 @@ Set-Cookie: session=abc123; Path=/
 
 Tres observaciones, que son exactamente lo que ZAP va a reportar:
 
-| Qué ves                              | Problema                                                                                                                                                              |
-| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Qué ves | Problema |
+|---|---|
 | Solo `X-Powered-By` y `Content-Type` | Faltan **todas** las cabeceras de seguridad (CSP, X-Frame-Options, X-Content-Type-Options, HSTS, Referrer-Policy, Permissions-Policy) y además se revela el framework |
-| `Set-Cookie: session=abc123; Path=/` | Cookie sin `HttpOnly`, `Secure` ni `SameSite`                                                                                                                         |
-| `<b>UTEC</b>` se renderiza como HTML | El parámetro `name` se refleja sin codificar → XSS reflejado                                                                                                          |
+| `Set-Cookie: session=abc123; Path=/` | Cookie sin `HttpOnly`, `Secure` ni `SameSite` |
+| `<b>UTEC</b>` se renderiza como HTML | El parámetro `name` se refleja sin codificar → XSS reflejado |
 
 ---
 
@@ -150,12 +146,12 @@ docker run --rm --network dast-net \
   -r baseline.html -J baseline.json
 ```
 
-| Flag                             | Propósito                                                                                               |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `--network dast-net`             | ZAP alcanza la app por su nombre de contenedor (`demo-app`)                                             |
+| Flag | Propósito |
+|---|---|
+| `--network dast-net` | ZAP alcanza la app por su nombre de contenedor (`demo-app`) |
 | `-v $(pwd)/reports:/zap/wrk/:rw` | Los scripts de ZAP leen y escriben archivos **solo** en `/zap/wrk`; sin el volumen el reporte se pierde |
-| `-t http://demo-app:3000`        | Target **con protocolo**                                                                                |
-| `-r` / `-J`                      | Reporte HTML (para leer) y JSON (para procesar o importar)                                              |
+| `-t http://demo-app:3000` | Target **con protocolo** |
+| `-r` / `-J` | Reporte HTML (para leer) y JSON (para procesar o importar) |
 
 > La imagen `zaproxy/zap-stable` (Docker Hub) y `ghcr.io/zaproxy/zaproxy:stable` (GitHub) son la misma. Si `ghcr.io` responde `denied` en tu red, usa la de Docker Hub.
 
@@ -182,15 +178,15 @@ FAIL-NEW: 0  FAIL-INPROG: 0  WARN-NEW: 11  WARN-INPROG: 0  INFO: 0  IGNORE: 0  P
 
 Cada línea es una **regla pasiva** (ID entre corchetes) que falló en N URLs. Las que importan para esta app:
 
-| ID    | Alerta                                    | Cabecera / causa                                     | Riesgo                          |
-| ----- | ----------------------------------------- | ---------------------------------------------------- | ------------------------------- |
-| 10020 | Missing Anti-clickjacking Header          | falta `X-Frame-Options` (o `frame-ancestors` en CSP) | clickjacking                    |
-| 10021 | X-Content-Type-Options Header Missing     | falta `X-Content-Type-Options: nosniff`              | MIME sniffing                   |
-| 10037 | Server Leaks Information via X-Powered-By | `X-Powered-By: Express`                              | revela stack                    |
-| 10038 | CSP Header Not Set                        | falta `Content-Security-Policy`                      | XSS sin mitigación en navegador |
-| 10054 | Cookie without SameSite                   | `Set-Cookie` sin `SameSite`                          | CSRF                            |
-| 10063 | Permissions Policy Header Not Set         | falta `Permissions-Policy`                           | abuso de APIs del navegador     |
-| 90004 | COEP Header Missing                       | falta `Cross-Origin-Embedder-Policy`                 | aislamiento de origen           |
+| ID | Alerta | Cabecera / causa | Riesgo |
+|---|---|---|---|
+| 10020 | Missing Anti-clickjacking Header | falta `X-Frame-Options` (o `frame-ancestors` en CSP) | clickjacking |
+| 10021 | X-Content-Type-Options Header Missing | falta `X-Content-Type-Options: nosniff` | MIME sniffing |
+| 10037 | Server Leaks Information via X-Powered-By | `X-Powered-By: Express` | revela stack |
+| 10038 | CSP Header Not Set | falta `Content-Security-Policy` | XSS sin mitigación en navegador |
+| 10054 | Cookie without SameSite | `Set-Cookie` sin `SameSite` | CSRF |
+| 10063 | Permissions Policy Header Not Set | falta `Permissions-Policy` | abuso de APIs del navegador |
+| 90004 | COEP Header Missing | falta `Cross-Origin-Embedder-Policy` | aislamiento de origen |
 
 Fíjate en lo que **no** aparece: el XSS reflejado en `/hello`. El escaneo pasivo solo mira respuestas normales; para encontrar el XSS hay que enviar un payload (Parte 4).
 
@@ -200,12 +196,12 @@ Fíjate en lo que **no** aparece: el XSS reflejado en `/hello`. El escaneo pasiv
 echo $?    # 2
 ```
 
-| Exit code | Significado                                      |
-| --------- | ------------------------------------------------ |
-| 0         | Sin FAIL ni WARN                                 |
-| 1         | Al menos un FAIL                                 |
-| 2         | Al menos un WARN, ningún FAIL                    |
-| 3         | Error del escáner (target inalcanzable, timeout) |
+| Exit code | Significado |
+|---|---|
+| 0 | Sin FAIL ni WARN |
+| 1 | Al menos un FAIL |
+| 2 | Al menos un WARN, ningún FAIL |
+| 3 | Error del escáner (target inalcanzable, timeout) |
 
 Por defecto todas las alertas son WARN → exit 2. Un pipeline que solo mira "distinto de 0" fallaría siempre; el gate real se define en la Parte 3.
 
@@ -313,7 +309,7 @@ En el JSON la alerta 40012 trae el ataque exacto y la evidencia:
 
 ZAP envió `</h1><scrIpt>alert(1);</scRipt><h1>` en `name`, vio que la respuesta lo devolvía intacto y lo marcó como XSS reflejado con riesgo **High**. Nota `PASS: 130` frente a `57` del baseline: el full scan ejecuta reglas activas (SQLi, path traversal, inyección de comandos…) además de las pasivas.
 
-> **Pasivo vs activo en una línea:** el baseline te dice _cómo está configurada_ la app; el full scan te dice _qué se puede explotar_. El primero es seguro y rápido (gate de PR); el segundo altera estado y tarda (nightly en QA).
+> **Pasivo vs activo en una línea:** el baseline te dice *cómo está configurada* la app; el full scan te dice *qué se puede explotar*. El primero es seguro y rápido (gate de PR); el segundo altera estado y tarda (nightly en QA).
 
 ---
 
@@ -332,70 +328,45 @@ Reemplaza `app.js` y agrega `helmet` a `package.json`:
 **`app.js`**
 
 ```js
-const express = require("express");
-const helmet = require("helmet");
-const app = express();
+const express = require('express')
+const helmet = require('helmet')
+const app = express()
 
-app.disable("x-powered-by"); // no revelar el framework
-app.use(
-  helmet({
-    // CSP, X-Frame-Options, nosniff, Referrer-Policy, HSTS, COOP/CORP...
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        frameAncestors: ["'none'"],
-        objectSrc: ["'none'"],
-      },
-    },
-  }),
-);
-app.use((req, res, next) => {
-  // helmet no emite Permissions-Policy ni Cache-Control
-  res.set("Permissions-Policy", "camera=(), geolocation=(), microphone=()");
-  res.set("Cache-Control", "no-store, max-age=0");
-  next();
-});
+app.disable('x-powered-by')                 // no revelar el framework
+app.use(helmet({                            // CSP, X-Frame-Options, nosniff, Referrer-Policy, HSTS, COOP/CORP...
+  contentSecurityPolicy: { directives: { defaultSrc: ["'self'"], frameAncestors: ["'none'"], objectSrc: ["'none'"] } }
+}))
+app.use((req, res, next) => {               // helmet no emite Permissions-Policy ni Cache-Control
+  res.set('Permissions-Policy', 'camera=(), geolocation=(), microphone=()')
+  res.set('Cache-Control', 'no-store, max-age=0')
+  next()
+})
 
-const escape = (s = "") =>
-  String(s).replace(
-    /[&<>"']/g,
-    (c) =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
-        c
-      ],
-  );
+const escape = (s = '') => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
 
-app.get("/", (req, res) => {
-  res.send(
-    '<h1>Demo DAST</h1><a href="/hello?name=UTEC">Saludar</a> · <a href="/login">Login</a>',
-  );
-});
+app.get('/', (req, res) => {
+  res.send('<h1>Demo DAST</h1><a href="/hello?name=UTEC">Saludar</a> · <a href="/login">Login</a>')
+})
 
-app.get("/hello", (req, res) => {
-  res.send(`<h1>Hola ${escape(req.query.name)}</h1>`); // salida codificada -> sin XSS reflejado
-});
+app.get('/hello', (req, res) => {
+  res.send(`<h1>Hola ${escape(req.query.name)}</h1>`)   // salida codificada -> sin XSS reflejado
+})
 
-app.get("/login", (req, res) => {
-  res.cookie("session", "abc123", {
-    httpOnly: true,
-    secure: true,
-    sameSite: "strict",
-  });
-  res.send(
-    '<form method="post"><input name="user"><input name="pass" type="password"><button>Entrar</button></form>',
-  );
-});
+app.get('/login', (req, res) => {
+  res.cookie('session', 'abc123', { httpOnly: true, secure: true, sameSite: 'strict' })
+  res.send('<form method="post"><input name="user"><input name="pass" type="password"><button>Entrar</button></form>')
+})
 
-app.listen(3000, () => console.log("demo-app en http://localhost:3000"));
+app.listen(3000, () => console.log('demo-app en http://localhost:3000'))
 ```
 
-| Cambio                                          | Alertas que cierra                                                                                        |
-| ----------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `app.disable('x-powered-by')`                   | 10037                                                                                                     |
-| `helmet()` con CSP                              | 10020 (vía `frame-ancestors` y `X-Frame-Options`), 10021, 10038, 90004 (COOP/CORP), HSTS, Referrer-Policy |
-| `Permissions-Policy` y `Cache-Control` manuales | 10063, 10049                                                                                              |
-| Cookie con `httpOnly`, `secure`, `sameSite`     | 10010, 10011, 10054                                                                                       |
-| `escape()` en la salida                         | 40012 (XSS reflejado)                                                                                     |
+| Cambio | Alertas que cierra |
+|---|---|
+| `app.disable('x-powered-by')` | 10037 |
+| `helmet()` con CSP | 10020 (vía `frame-ancestors` y `X-Frame-Options`), 10021, 10038, 90004 (COOP/CORP), HSTS, Referrer-Policy |
+| `Permissions-Policy` y `Cache-Control` manuales | 10063, 10049 |
+| Cookie con `httpOnly`, `secure`, `sameSite` | 10010, 10011, 10054 |
+| `escape()` en la salida | 40012 (XSS reflejado) |
 
 ### 5.2 Reconstruir y volver a escanear
 
@@ -425,12 +396,12 @@ exit=2
 
 De 11 alertas a 4 (3 WARN + 1 IGNORE), y **ninguna FAIL**: el gate pasa. Las 4 restantes son informativas o de ajuste fino:
 
-| ID                                   | Por qué sigue                                                                                                     | Qué harías                                            |
-| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| 10049 Non-Storable                   | ZAP avisa que `no-store` impide cachear (es lo que pedimos); ya sale como IGNORE porque `rules.conf` lo marca así | nada                                                  |
-| 10055 CSP directive without fallback | helmet no define `frame-src`/`worker-src` explícitos                                                              | agregar directivas o IGNORE                           |
-| 10111 Authentication Request         | ZAP detectó un formulario de login (informativo)                                                                  | nada                                                  |
-| 90004 COEP                           | helmet 8 no emite `Cross-Origin-Embedder-Policy` por defecto                                                      | `crossOriginEmbedderPolicy: true` si la app lo tolera |
+| ID | Por qué sigue | Qué harías |
+|---|---|---|
+| 10049 Non-Storable | ZAP avisa que `no-store` impide cachear (es lo que pedimos); ya sale como IGNORE porque `rules.conf` lo marca así | nada |
+| 10055 CSP directive without fallback | helmet no define `frame-src`/`worker-src` explícitos | agregar directivas o IGNORE |
+| 10111 Authentication Request | ZAP detectó un formulario de login (informativo) | nada |
+| 90004 COEP | helmet 8 no emite `Cross-Origin-Embedder-Policy` por defecto | `crossOriginEmbedderPolicy: true` si la app lo tolera |
 
 Si repites el full scan (Parte 4) contra la v2, la alerta 40012 desaparece: el payload vuelve codificado como texto.
 
@@ -458,14 +429,14 @@ docker network rm dast-net
 
 ## 🔧 Troubleshooting
 
-| Error                                                                | Causa                                                        | Solución                                                        |
-| -------------------------------------------------------------------- | ------------------------------------------------------------ | --------------------------------------------------------------- |
-| `error from registry: denied` al descargar `ghcr.io/zaproxy/zaproxy` | tu red o proxy bloquea GitHub Container Registry             | usa `zaproxy/zap-stable` (Docker Hub, misma imagen)             |
-| `Target Unreachable` / exit 3                                        | ZAP no está en la misma red que la app, o usaste `localhost` | `--network dast-net` y target `http://demo-app:3000`            |
-| El reporte no aparece en `reports/`                                  | el volumen no está montado en `/zap/wrk`                     | `-v "$(pwd)/reports:/zap/wrk/:rw"`                              |
-| `Permission denied` al escribir el reporte                           | ZAP corre como uid 1000 y la carpeta es de otro usuario      | `chmod 777 reports` o `-u $(id -u)` en el `docker run`          |
-| Reglas de `rules.conf` ignoradas                                     | columnas separadas con espacios                              | separa con tabulador (`\t`)                                     |
-| Exit 2 aunque "todo está bien"                                       | WARN sin FAIL devuelve 2                                     | usa `-I` para no fallar por WARN, o define FAIL en `rules.conf` |
+| Error | Causa | Solución |
+|---|---|---|
+| `error from registry: denied` al descargar `ghcr.io/zaproxy/zaproxy` | tu red o proxy bloquea GitHub Container Registry | usa `zaproxy/zap-stable` (Docker Hub, misma imagen) |
+| `Target Unreachable` / exit 3 | ZAP no está en la misma red que la app, o usaste `localhost` | `--network dast-net` y target `http://demo-app:3000` |
+| El reporte no aparece en `reports/` | el volumen no está montado en `/zap/wrk` | `-v "$(pwd)/reports:/zap/wrk/:rw"` |
+| `Permission denied` al escribir el reporte | ZAP corre como uid 1000 y la carpeta es de otro usuario | `chmod 777 reports` o `-u $(id -u)` en el `docker run` |
+| Reglas de `rules.conf` ignoradas | columnas separadas con espacios | separa con tabulador (`\t`) |
+| Exit 2 aunque "todo está bien" | WARN sin FAIL devuelve 2 | usa `-I` para no fallar por WARN, o define FAIL en `rules.conf` |
 
 ---
 
@@ -473,15 +444,15 @@ docker network rm dast-net
 
 Este ejemplo usa una app de juguete. En `guia_dast_zap.md` aplicarás lo mismo a **Juice Shop** (SPA Angular + API REST) y lo integrarás al pipeline de GitLab del laboratorio de SCA/SAST, con gate, escaneo de API por OpenAPI y carga de hallazgos a DefectDojo.
 
-| Capa                  | Qué resuelve                                        | Dónde                              |
-| --------------------- | --------------------------------------------------- | ---------------------------------- |
-| SAST / SCA / secretos | código y dependencias, sin app corriendo            | `guia_secret_scanning_sca_sast.md` |
-| DAST pasivo           | configuración HTTP de la app desplegada, gate de PR | `guia_dast_zap.md` Partes 2–3, 6   |
-| DAST activo           | vulnerabilidades explotables (XSS, inyección)       | `guia_dast_zap.md` Partes 4–5      |
-| Gestión centralizada  | un backlog para todos los hallazgos                 | `guia_defect_dojo.md`              |
+| Capa | Qué resuelve | Dónde |
+|---|---|---|
+| SAST / SCA / secretos | código y dependencias, sin app corriendo | `guia_secret_scanning_sca_sast.md` |
+| DAST pasivo | configuración HTTP de la app desplegada, gate de PR | `guia_dast_zap.md` Partes 2–3, 6 |
+| DAST activo | vulnerabilidades explotables (XSS, inyección) | `guia_dast_zap.md` Partes 4–5 |
+| Gestión centralizada | un backlog para todos los hallazgos | `guia_defect_dojo.md` |
 
 ---
 
 **Autor:** Wilson Julca Mejía  
-Curso: _DevSecOps y Seguridad en CI/CD – UTEC_  
+Curso: *DevSecOps y Seguridad en CI/CD – UTEC*  
 Universidad de Ingeniería y Tecnología (UTEC)

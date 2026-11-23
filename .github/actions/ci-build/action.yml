@@ -1,0 +1,24 @@
+name: ci-build
+description: Shared ci-build steps
+runs:
+  using: composite
+  steps:
+    - name: Verify approved forecast artifact checksums
+      shell: bash
+      run: |
+        cd backend/forecast_release
+        echo "$(jq -er .model_sha256 manifest.json)  model.skops" | sha256sum -c -
+        echo "$(jq -er .evaluation_sha256 manifest.json)  evaluation.json" | sha256sum -c -
+        jq -e '.gate.decision == "accepted"' evaluation.json > /dev/null
+    - name: Build images once (scanned, attacked and delivered as the same bytes)
+      shell: bash
+      run: |
+        docker build -t misiops-backend:latest backend
+        docker build -t misiops-frontend:latest frontend
+        docker save misiops-backend:latest -o backend.tar
+        docker save misiops-frontend:latest -o frontend.tar
+    - uses: actions/upload-artifact@v4
+      with:
+        name: images
+        path: "*.tar"
+        retention-days: 1

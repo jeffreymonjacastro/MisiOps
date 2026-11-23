@@ -67,3 +67,16 @@ export type User = {
   budget_start_day: number;
   created_at: string;
 };
+export type ForecastStatus = "expected_surplus" | "expected_deficit" | "tight_close";
+
+export type MonthEndForecast = {
+  period_start: string;
+  period_end: string;
+  cutoff: string;
+  currency: "PEN";
+} & (
+  | { status: "unavailable"; reason: "insufficient_history" | "model_unavailable";
+      projected_net: null; error_band: null; model_version: null }
+  | { status: ForecastStatus; reason: null;
+      projected_net: number; error_band: number; model_version: string }
+);

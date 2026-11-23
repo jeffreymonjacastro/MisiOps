@@ -1,0 +1,269 @@
+name: MLOps Pipeline - Month-End Forecast
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+  workflow_dispatch:
+    inputs:
+      months:
+        description: Synthetic months (48+ for the initial champion)
+        type: number
+        default: 48
+      deploy_candidate:
+        description: Deploy the accepted candidate to staging
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+env:
+  ENFORCE: ${{ github.ref == 'refs/heads/main' }}
+  SEMGREP_IMAGE: semgrep/semgrep:1.183.0
+  GITLEAKS_IMAGE: zricethezav/gitleaks:v8.30.1
+  TRUFFLEHOG_IMAGE: trufflesecurity/trufflehog:3.99.8
+  TRIVY_IMAGE: aquasec/trivy:0.76.1
+  ZAP_IMAGE: ghcr.io/zaproxy/zaproxy:2.17.0
+
+jobs:
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv run --locked --project mlops pytest -q mlops/tests
+      - run: uv run --locked --project backend pytest -q backend/tests
+        env:
+          SECRET_KEY: ci-only-secret-key-with-at-least-32-bytes
+
+  data-validation:
+    name: Data Validation
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/develop')
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - working-directory: mlops
+        env:
+          PYTHONPATH: ../backend
+          SYNTHETIC_MONTHS: ${{ inputs.months || 48 }}
+        run: |
+          uv run --locked python -m simulation.generate --months "$SYNTHETIC_MONTHS"
+          uv run --locked python -m src.validate_data
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: data-validation
+          path: mlops/reports/data-validation.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: synthetic-snapshot
+          path: mlops/data/transactions.*
+          if-no-files-found: error
+
+  data-preparation:
+    name: Data Preparation
+    needs: data-validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - uses: actions/download-artifact@v4
+        with:
+          name: synthetic-snapshot
+          path: mlops/data
+      - uses: actions/download-artifact@v4
+        with:
+          name: data-validation
+          path: mlops/reports
+      - working-directory: mlops
+        run: PYTHONPATH=../backend uv run --locked python -m src.data_prep
+      - uses: actions/upload-artifact@v4
+        with:
+          name: prepared-synthetic-data
+          path: mlops/data/features.*
+          if-no-files-found: error
+
+  modeling:
+    name: Modeling
+    needs: data-preparation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        if: github.event_name == 'workflow_dispatch'
+      - uses: actions/download-artifact@v4
+        if: github.event_name == 'workflow_dispatch'
+        with:
+          name: prepared-synthetic-data
+          path: mlops/data
+      - if: github.event_name == 'workflow_dispatch'
+        working-directory: mlops
+        run: PYTHONPATH=../backend uv run --locked python -m src.train
+      - if: github.event_name == 'push'
+        run: jq -e '.model and .dataset_sha256 and .recipe' backend/forecast_release/manifest.json
+      - uses: actions/upload-artifact@v4
+        if: github.event_name == 'workflow_dispatch'
+        with:
+          name: frozen-candidate-and-tracking
+          path: |
+            mlops/reports/training/
+            mlops/.tracking/
+          include-hidden-files: true
+          if-no-files-found: error
+
+  evaluation:
+    name: Evaluation
+    needs: modeling
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        if: github.event_name == 'workflow_dispatch'
+      - uses: actions/download-artifact@v4
+        if: github.event_name == 'workflow_dispatch'
+        with:
+          name: prepared-synthetic-data
+          path: mlops/data
+      - uses: actions/download-artifact@v4
+        if: github.event_name == 'workflow_dispatch'
+        with:
+          name: frozen-candidate-and-tracking
+          path: mlops
+      - if: github.event_name == 'workflow_dispatch'
+        working-directory: mlops
+        run: PYTHONPATH=../backend uv run --locked python -m src.evaluate_and_register --champion ../backend/forecast_release
+      - if: always() && github.event_name == 'workflow_dispatch'
+        run: |
+          card=mlops/reports/evaluation/model-card.md
+          if [ -f "$card" ]; then cat "$card" >> "$GITHUB_STEP_SUMMARY"; fi
+      - uses: actions/upload-artifact@v4
+        if: always() && github.event_name == 'workflow_dispatch'
+        with:
+          name: model-evaluation-and-tracking
+          path: |
+            mlops/reports/evaluation/
+            mlops/.tracking/
+          include-hidden-files: true
+      - if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash mlops/scripts/verify_staging.sh
+      - name: Select the release evaluated by this run
+        env:
+          RELEASE_DIR: ${{ github.event_name == 'workflow_dispatch' && 'mlops/reports/evaluation/accepted' || 'backend/forecast_release' }}
+        run: |
+          mkdir workflow-release
+          cp "$RELEASE_DIR"/{manifest.json,model.skops,evaluation.json} workflow-release/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: workflow-release
+          path: workflow-release/
+          if-no-files-found: error
+          overwrite: true
+
+  smoke-test:
+    name: Smoke Test
+    needs: evaluation
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: workflow-release
+          path: backend/forecast_release
+      - uses: ./.github/actions/ci-build
+      - uses: ./.github/actions/ci-dast
+
+  build-and-publish:
+    name: Build and Publish
+    needs: smoke-test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: images
+      - uses: ./.github/actions/ci-sast
+      - uses: ./.github/actions/ci-secrets
+      - uses: ./.github/actions/ci-sca
+      - uses: ./.github/actions/ci-container
+      - uses: ./.github/actions/ci-iac
+      - uses: ./.github/actions/ci-scripts-test
+      - name: Publish the checked images to GHCR
+        if: github.event_name == 'push' || inputs.deploy_candidate
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IMAGE_TAG: ${{ github.event_name == 'workflow_dispatch' && format('{0}-{1}', github.sha, github.run_id) || github.sha }}
+        run: |
+          echo "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          for app in backend frontend; do
+            docker load -i "$app.tar"
+            destination="ghcr.io/${{ github.repository_owner }}/misiops-$app"
+            docker tag "misiops-$app:latest" "$destination:$IMAGE_TAG"
+            docker push "$destination:$IMAGE_TAG"
+            if [ "$GITHUB_REF" = refs/heads/main ]; then
+              docker tag "misiops-$app:latest" "$destination:latest"
+              docker push "$destination:latest"
+            fi
+          done
+
+  deploy-staging:
+    name: Deploy · Staging
+    needs: build-and-publish
+    if: github.ref == 'refs/heads/develop' && (github.event_name == 'push' || inputs.deploy_candidate)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: dev
+    concurrency:
+      group: deploy-dev
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      ENV_NAME: dev
+      AWS_REGION: us-east-1
+      AWS_DEPLOY_ROLE_ARN: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+      ALERT_EMAIL: ${{ vars.ALERT_EMAIL }}
+      SHA: ${{ github.sha }}
+      IMAGE_TAG: ${{ github.event_name == 'workflow_dispatch' && format('{0}-{1}', github.sha, github.run_id) || github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/forecast-deploy
+
+  deploy-production:
+    name: Deploy · Production
+    needs: build-and-publish
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: prod
+    concurrency:
+      group: deploy-prod
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      ENV_NAME: prod
+      AWS_REGION: us-east-1
+      AWS_DEPLOY_ROLE_ARN: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+      ALERT_EMAIL: ${{ vars.ALERT_EMAIL }}
+      SHA: ${{ github.sha }}
+      IMAGE_TAG: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/forecast-deploy

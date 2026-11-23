@@ -1,0 +1,109 @@
+name: forecast-deploy
+description: Shared forecast-deploy steps
+runs:
+  using: composite
+  steps:
+    - name: Start deployment timer
+      shell: bash
+      run: echo "START=$(date +%s)" >> "$GITHUB_ENV"
+
+    - name: Download the scanned images of this run
+      uses: actions/download-artifact@v4
+      with:
+        name: images
+        path: images
+
+    - uses: actions/download-artifact@v4
+      with:
+        name: workflow-release
+        path: workflow-release
+
+    - name: Assume the deploy role through OIDC (FR-011)
+      uses: aws-actions/configure-aws-credentials@v6.3.0
+      with:
+        role-to-assume: ${{ env.AWS_DEPLOY_ROLE_ARN }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - id: ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Push the checked images to ECR
+      id: push
+      env:
+        REGISTRY: ${{ steps.ecr.outputs.registry }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        for app in backend frontend; do
+          docker load -i "images/$app.tar"
+          docker tag "misiops-$app:latest" "$REGISTRY/misiops-$app:$IMAGE_TAG"
+          docker push "$REGISTRY/misiops-$app:$IMAGE_TAG"
+          digest=$(docker inspect --format '{{index .RepoDigests 0}}' "$REGISTRY/misiops-$app:$IMAGE_TAG" | cut -d@ -f2)
+          echo "${app}_digest=$digest" >> "$GITHUB_OUTPUT"
+        done
+
+    - uses: pnpm/action-setup@v4
+      with:
+        version: 9.6.0
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: pnpm
+        cache-dependency-path: infra/pnpm-lock.yaml
+    - run: pnpm install --frozen-lockfile
+      shell: bash
+      working-directory: infra
+
+    - name: cdk deploy MisiOps-${{ env.ENV_NAME }}
+      working-directory: infra
+      shell: bash
+      run: |
+        pnpm cdk deploy "MisiOps-$ENV_NAME" \
+          -c "env=$ENV_NAME" -c "imageTag=$IMAGE_TAG" -c "alertEmail=$ALERT_EMAIL" \
+          --require-approval never --outputs-file outputs.json
+        echo "PUBLIC_URL=$(jq -r ".\"MisiOps-$ENV_NAME\".PublicUrl" outputs.json)" >> "$GITHUB_ENV"
+
+    - name: Smoke test (FR-017, NFR-009)
+      id: smoke
+      shell: bash
+      run: |
+        set -euo pipefail
+        bash infra/scripts/smoke.sh "$PUBLIC_URL" | tee smoke.log
+        version=$(jq -er .version workflow-release/manifest.json)
+        model_hash=$(jq -er .model_sha256 workflow-release/manifest.json)
+        manifest_hash=$(sha256sum workflow-release/manifest.json | cut -d' ' -f1)
+        served=$(curl -fsS --retry 3 --max-time 10 "$PUBLIC_URL/api/v1/predictions/health" | jq -er .model_version)
+        test "$served" = "$version"
+        echo "version=$version" >> "$GITHUB_OUTPUT"
+        jq -n --arg version "$version" --arg model "$model_hash" --arg sha "$SHA" \
+          --arg manifest "$manifest_hash" --arg image "${{ steps.push.outputs.backend_digest }}" --arg env "$ENV_NAME" \
+          '{version:$version,model_sha256:$model,manifest_sha256:$manifest,commit:$sha,image_digest:$image,environment:$env}' > forecast-release.json
+
+    - name: Publish staging verification receipt
+      if: env.ENV_NAME == 'dev'
+      uses: actions/upload-artifact@v4
+      with:
+        name: forecast-staging-${{ steps.smoke.outputs.version }}
+        path: forecast-release.json
+        retention-days: 90
+        overwrite: true
+        if-no-files-found: error
+
+    - name: Summary
+      if: always()
+      env:
+        BACKEND_DIGEST: ${{ steps.push.outputs.backend_digest }}
+        FRONTEND_DIGEST: ${{ steps.push.outputs.frontend_digest }}
+        SMOKE: ${{ steps.smoke.outcome }}
+      shell: bash
+      run: |
+        minutes=$(( ($(date +%s) - START) / 60 ))
+        {
+          echo "## Deployment to \`$ENV_NAME\`"
+          echo "- commit: $SHA (MLOps run $GITHUB_RUN_ID)"
+          echo "- backend digest: \`${BACKEND_DIGEST:-n/a}\`"
+          echo "- frontend digest: \`${FRONTEND_DIGEST:-n/a}\`"
+          echo "- public URL: ${PUBLIC_URL:-n/a}"
+          echo "- smoke test: $SMOKE"
+          echo "- duration: ${minutes} min (target: 15 min for updates, 30 min for the first creation)"
+        } >> "$GITHUB_STEP_SUMMARY"

@@ -42,15 +42,18 @@ test('ALB security group has exactly one ingress rule: TCP 80', () => {
   assert.equal(ingressRulesFor(dev, albSg).length, 0);
 });
 
-test('database security group accepts only the backend security group (FR-005)', () => {
+test('database security group accepts only the backend and monitor security groups', () => {
   const dbSg = securityGroupId(dev, 'MisiOps database');
   const backendSg = securityGroupId(dev, 'MisiOps backend tasks');
   assert.equal(devJson.Resources[dbSg].Properties.SecurityGroupIngress, undefined);
   const rules = ingressRulesFor(dev, dbSg);
-  assert.equal(rules.length, 1);
-  assert.equal(rules[0].Properties.SourceSecurityGroupId['Fn::GetAtt'][0], backendSg);
-  assert.equal(rules[0].Properties.CidrIp, undefined);
-  assert.equal(rules[0].Properties.FromPort, 5432);
+  const monitorSg = securityGroupId(dev, 'MisiOps forecast monitor tasks');
+  assert.deepEqual(new Set(rules.map((rule) => rule.Properties.SourceSecurityGroupId['Fn::GetAtt'][0])),
+    new Set([backendSg, monitorSg]));
+  for (const rule of rules) {
+    assert.equal(rule.Properties.CidrIp, undefined);
+    assert.equal(rule.Properties.FromPort, 5432);
+  }
 });
 
 test('service security groups accept traffic only from the ALB', () => {
@@ -81,8 +84,8 @@ test('Aurora Serverless v2 PostgreSQL 16: 0-1 ACU, auto-pause, encrypted, 7-day 
   }
 });
 
-test('both task definitions run on Linux/ARM64 Fargate', () => {
-  dev.resourceCountIs('AWS::ECS::TaskDefinition', 2);
+test('all task definitions run on Linux/ARM64 Fargate', () => {
+  dev.resourceCountIs('AWS::ECS::TaskDefinition', 3);
   dev.allResourcesProperties('AWS::ECS::TaskDefinition', {
     RuntimePlatform: { CpuArchitecture: 'ARM64', OperatingSystemFamily: 'LINUX' },
     Cpu: '256',
@@ -92,7 +95,7 @@ test('both task definitions run on Linux/ARM64 Fargate', () => {
 
 test('backend secrets come from Secrets Manager only; no secret in plain environment (FR-006)', () => {
   const backend = taskDefinition(dev, 'backend').ContainerDefinitions[0];
-  assert.deepEqual(backend.Secrets.map((s: any) => s.Name).sort(), ['POSTGRES_DB', 'POSTGRES_PASSWORD', 'POSTGRES_SERVER', 'POSTGRES_USER', 'SECRET_KEY']);
+  assert.deepEqual(backend.Secrets.map((s: any) => s.Name).sort(), ['FORECAST_MONITOR_PASSWORD', 'POSTGRES_DB', 'POSTGRES_PASSWORD', 'POSTGRES_SERVER', 'POSTGRES_USER', 'SECRET_KEY']);
   const envNames = backend.Environment.map((e: any) => e.Name);
   assert.deepEqual(envNames, ['ACCESS_TOKEN_EXPIRE_MINUTES']);
   const serialized = JSON.stringify(devJson);
@@ -100,11 +103,28 @@ test('backend secrets come from Secrets Manager only; no secret in plain environ
   assert.ok(!/\.SecretString/.test(serialized), 'no Fn::GetAtt of SecretString');
 });
 
-test('task execution role may read exactly the two secrets', () => {
+test('task execution roles may read exactly the three scoped secrets', () => {
   const statements = Object.values(dev.findResources('AWS::IAM::Policy')).flatMap((p) => p.Properties.PolicyDocument.Statement as any[]);
   const secretStatements = statements.filter((s) => [s.Action].flat().includes('secretsmanager:GetSecretValue'));
   const resources = new Set(secretStatements.flatMap((s) => [s.Resource].flat()).map((r) => JSON.stringify(r)));
-  assert.equal(resources.size, 2);
+  assert.equal(resources.size, 3);
+});
+
+test('monitor uses a restricted database login, runs daily and exposes alarms per environment', () => {
+  for (const [env, template] of [['dev', dev], ['prod', prod]] as const) {
+    const monitor = taskDefinition(template, 'forecast-monitor').ContainerDefinitions[0];
+    assert.deepEqual(monitor.Command, ['python', '-m', 'core.monitor_job']);
+    assert.deepEqual(monitor.Secrets.map((secret: { Name: string }) => secret.Name), ['POSTGRES_PASSWORD']);
+    assert.ok(monitor.Environment.some((item: { Name: string, Value: string }) =>
+      item.Name === 'POSTGRES_USER' && item.Value === 'misiops_forecast_monitor'));
+    template.hasResourceProperties('AWS::Events::Rule', { ScheduleExpression: 'cron(25 12 * * ? *)' });
+    template.hasResourceProperties('AWS::Logs::MetricFilter', {
+      MetricTransformations: Match.arrayWith([
+        Match.objectLike({ MetricNamespace: `MisiOps/Forecast/${env}` }),
+      ]),
+    });
+    template.resourceCountIs('AWS::CloudWatch::Alarm', 2);
+  }
 });
 
 test('frontend task is configured by APP_ENV at runtime', () => {
