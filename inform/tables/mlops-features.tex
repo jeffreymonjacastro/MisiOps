@@ -1,0 +1,21 @@
+\begin{table}[H]
+    \centering
+    \small
+    \caption{Contrato de features v2 (\texttt{backend/core/forecast\_features.py}). Montos en PEN, calculados en la zona \texttt{America/Lima} con los movimientos ya registrados al momento del corte}
+    \label{tab:mlops-features}
+    \begin{tabularx}{\textwidth}{@{}L{4.2cm} Y@{}}
+        \toprule
+        \textbf{Feature} & \textbf{Definición} \\
+        \midrule
+        \texttt{income\_mtd}, \texttt{expense\_mtd} & Ingresos y gastos del mes en curso hasta el corte \\
+        \texttt{derived\_net} & \texttt{income\_mtd} $-$ \texttt{expense\_mtd}: neto acumulado del mes \\
+        \texttt{expense\_last\_7d} & Gasto de los últimos 7 días (ritmo reciente) \\
+        \texttt{days\_remaining} & Días que faltan para cerrar el mes \\
+        \texttt{prior\_net\_mean}, \texttt{prior\_net\_std} & Media y desviación del neto de los meses previos (hasta 3, mínimo 2) \\
+        \texttt{prior\_income\_mean}, \texttt{prior\_expense\_mean} & Ingreso y gasto medio de esos meses \\
+        \texttt{historical\_remaining} & Neto que, en los meses previos, ocurrió \emph{después} del mismo día y hora del corte \\
+        \texttt{month\_day\_fraction} & Día del mes dividido entre los días del mes \\
+        \texttt{bonus\_month} & 1 en julio y diciembre (gratificaciones), 0 en otro caso \\
+        \bottomrule
+    \end{tabularx}
+\end{table}

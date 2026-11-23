@@ -1,0 +1,723 @@
+\appendix
+\section{Anexos: scripts y configuración}
+\label{anx:devsecops-config}
+
+Copia de los archivos del repositorio \url{https://github.com/jeffreymonjacastro/MisiOps} (rama \texttt{develop}) citados en el informe.
+
+\subsection{Workflow \texttt{.github/workflows/devsecops.yml}}
+\label{anx:devsecops}
+
+\begin{lstlisting}
+name: devsecops
+
+# Security pipeline (specs/011-devsecops). Gates block pull requests into main and pushes to main;
+# into develop they only report (constitution exemption EX-001). Jobs and gates:
+# specs/011-devsecops/contracts/pipeline-jobs.md
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: devsecops-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ENFORCE: ${{ github.base_ref == 'main' || github.ref == 'refs/heads/main' }}
+  SEMGREP_IMAGE: semgrep/semgrep:1.183.0
+  GITLEAKS_IMAGE: zricethezav/gitleaks:v8.30.1
+  TRUFFLEHOG_IMAGE: trufflesecurity/trufflehog:3.99.8
+  TRIVY_IMAGE: aquasec/trivy:0.76.1
+  ZAP_IMAGE: ghcr.io/zaproxy/zaproxy:2.17.0
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm  # linux/arm64 images for Fargate Graviton (specs/012-aws-deployment R2)
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build images once (scanned, attacked and delivered as the same bytes)
+        run: |
+          docker build -t misiops-backend:latest backend
+          docker build -t misiops-frontend:latest frontend
+          docker save misiops-backend:latest -o backend.tar
+          docker save misiops-frontend:latest -o frontend.tar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: images
+          path: "*.tar"
+          retention-days: 1
+
+  sast:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Semgrep (backend + frontend source)
+        run: |
+          mkdir -p reports
+          docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD:/src" -w /src "$SEMGREP_IMAGE" \
+            semgrep scan --config p/default --config p/python --config p/typescript --metrics=off \
+            --json-output reports/semgrep.json --text-output reports/semgrep.txt backend frontend
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: report-sast
+          path: reports/
+          retention-days: 7
+      - name: Gate (Semgrep ERROR)
+        run: security/scripts/gate.sh Semgrep "$(jq '[.results[] | select(.extra.severity == "ERROR")] | length' reports/semgrep.json)"
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Gitleaks (full history)
+        run: |
+          mkdir -p reports
+          docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/repo" -w /repo "$GITLEAKS_IMAGE" \
+            git --config .gitleaks.toml --redact --exit-code 0 \
+            --report-format json --report-path reports/gitleaks.json .
+      - name: TruffleHog (full history)
+        run: |
+          docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD:/repo" "$TRUFFLEHOG_IMAGE" \
+            git file:///repo --json --no-update --exclude-paths=/repo/security/trufflehog-exclude.txt > reports/trufflehog.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: report-secrets
+          path: reports/
+          retention-days: 7
+      - name: Gate (any secret)
+        run: |
+          security/scripts/gate.sh Gitleaks "$(jq length reports/gitleaks.json)"
+          security/scripts/gate.sh TruffleHog "$(grep -c '"SourceMetadata"' reports/trufflehog.json || true)"
+
+  sca:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Trivy DB cache key
+        id: day
+        run: echo "date=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/trivy
+          key: trivy-db-${{ steps.day.outputs.date }}
+          restore-keys: trivy-db-
+      - name: Trivy dependencies (uv.lock, pnpm-lock.yaml) + SBOM
+        run: |
+          mkdir -p reports ~/.cache/trivy
+          trivy() { docker run --rm -u "$(id -u):$(id -g)" -e TRIVY_CACHE_DIR=/cache -v "$HOME/.cache/trivy:/cache" -v "$PWD:/src" -w /src "$TRIVY_IMAGE" "$@"; }
+          # docs/ holds archived reports (incl. an SBOM), not project dependencies.
+          trivy fs --scanners vuln --skip-dirs docs --ignorefile .trivyignore.yaml --format json --output reports/trivy-deps.json .
+          trivy fs --scanners vuln --skip-dirs docs --ignorefile .trivyignore.yaml --skip-db-update --format table --output reports/trivy-deps.txt .
+          trivy fs --skip-dirs docs --skip-db-update --format cyclonedx --output reports/sbom.cdx.json .
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: report-sca
+          path: reports/
+          retention-days: 7
+      - name: Gate (fixable HIGH/CRITICAL)
+        run: security/scripts/gate.sh "Trivy dependencies" "$(jq -f security/scripts/trivy-blocking.jq reports/trivy-deps.json)"
+
+  container:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: images
+      - name: Trivy DB cache key
+        id: day
+        run: echo "date=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/trivy
+          key: trivy-db-${{ steps.day.outputs.date }}
+          restore-keys: trivy-db-
+      - name: Trivy images (backend, frontend, postgres)
+        run: |
+          mkdir -p reports ~/.cache/trivy
+          trivy() { docker run --rm -u "$(id -u):$(id -g)" -e TRIVY_CACHE_DIR=/cache -v "$HOME/.cache/trivy:/cache" -v "$PWD:/src" -w /src "$TRIVY_IMAGE" "$@"; }
+          postgres=$(grep -oE 'image: postgres[^[:space:]]*' docker/docker-compose.yaml | cut -d' ' -f2)
+          trivy image --ignorefile .trivyignore.yaml --input backend.tar --format json --output reports/trivy-image-backend.json
+          trivy image --ignorefile .trivyignore.yaml --skip-db-update --input frontend.tar --format json --output reports/trivy-image-frontend.json
+          trivy image --ignorefile .trivyignore.yaml --skip-db-update --format json --output reports/trivy-image-postgres.json "$postgres"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: report-container
+          path: reports/
+          retention-days: 7
+      - name: Gate (fixable HIGH/CRITICAL, secrets)
+        run: |
+          rc=0
+          for image in backend frontend postgres; do
+            security/scripts/gate.sh "Trivy image $image" "$(jq -f security/scripts/trivy-blocking.jq "reports/trivy-image-$image.json")" || rc=1
+          done
+          exit $rc
+
+  iac:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Trivy config (Dockerfiles) + Semgrep (docker-compose)
+        run: |
+          mkdir -p reports
+          docker run --rm -u "$(id -u):$(id -g)" -e TRIVY_CACHE_DIR=/tmp/trivy -v "$PWD:/src" -w /src "$TRIVY_IMAGE" \
+            config --skip-dirs docs --format json --output reports/trivy-config.json .
+          # Trivy has no Compose scanner, so the orchestration file goes through Semgrep's compose rules.
+          docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD:/src" -w /src "$SEMGREP_IMAGE" \
+            semgrep scan --config p/docker-compose --metrics=off --json-output reports/semgrep-compose.json docker
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: report-iac
+          path: reports/
+          retention-days: 7
+      - name: Gate (HIGH/CRITICAL misconfigurations)
+        run: |
+          rc=0
+          security/scripts/gate.sh "Trivy config" "$(jq -f security/scripts/trivy-blocking.jq reports/trivy-config.json)" || rc=1
+          security/scripts/gate.sh "Semgrep compose" "$(jq '[.results[] | select(.extra.severity == "ERROR")] | length' reports/semgrep-compose.json)" || rc=1
+          exit $rc
+
+  dast:
+    needs: build
+    runs-on: ubuntu-24.04-arm  # linux/arm64 images for Fargate Graviton (specs/012-aws-deployment R2)
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: images
+      - name: Start the stack from the scanned images
+        run: |
+          docker load -i backend.tar && docker load -i frontend.tar
+          # Throwaway credentials generated per run; never committed (FR-018).
+          pw=$(openssl rand -hex 24)
+          printf 'POSTGRES_PASSWORD=%s\nSECRET_KEY=%s\n' "$pw" "$(openssl rand -hex 32)" > docker/.env.dev
+          printf '%s' "$pw" > docker/pg_password.txt
+          docker compose -f docker/docker-compose.yaml up -d --no-build
+          curl -fsS --retry 30 --retry-all-errors --retry-delay 2 -o /dev/null http://localhost:8000/
+          curl -fsS --retry 30 --retry-all-errors --retry-delay 2 -o /dev/null http://localhost:3000/
+      - name: Get a bearer token for the authenticated API scan
+        run: |
+          email="zap-${GITHUB_RUN_ID}@example.com" pass=$(openssl rand -hex 16)
+          body=$(jq -nc --arg e "$email" --arg p "$pass" '{name: "ZAP scanner", email: $e, password: $p}')
+          curl -fsS -X POST http://localhost:8000/api/v1/auth/register -H 'Content-Type: application/json' -d "$body" -o /dev/null
+          token=$(curl -fsS -X POST http://localhost:8000/api/v1/auth/login -H 'Content-Type: application/json' -d "$body" | jq -r .access_token)
+          echo "::add-mask::$token"
+          echo "ZAP_TOKEN=$token" >> "$GITHUB_ENV"
+      - name: ZAP baseline (frontend) and API scan (OpenAPI, authenticated)
+        run: |
+          mkdir -p reports && chmod 777 reports
+          cp security/zap/rules.conf reports/zap-rules.conf
+          zap() { docker run --rm --network host -v "$PWD/reports:/zap/wrk:rw" "$@"; }
+          zap "$ZAP_IMAGE" zap-baseline.py -t http://localhost:3000 -c zap-rules.conf -I \
+            -x zap-frontend.xml -r zap-frontend.html -J zap-frontend.json || true
+          zap -e ZAP_AUTH_HEADER_VALUE="Bearer $ZAP_TOKEN" -e ZAP_AUTH_HEADER_SITE=localhost:8000 "$ZAP_IMAGE" \
+            zap-api-scan.py -t http://localhost:8000/openapi.json -f openapi -c zap-rules.conf -I \
+            -x zap-api.xml -r zap-api.html -J zap-api.json -z "-config scanner.maxScanDurationInMins=10" || true
+          # A missing report means ZAP never reached the app: fail instead of reporting "no findings".
+          test -s reports/zap-frontend.json && test -s reports/zap-api.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: report-dast
+          path: reports/
+          retention-days: 7
+      - name: Gate (High-risk alerts)
+        run: |
+          rc=0
+          for scan in frontend api; do
+            security/scripts/gate.sh "ZAP $scan" "$(jq '[.site[]?.alerts[]? | select(.riskcode == "3")] | length' "reports/zap-$scan.json")" || rc=1
+          done
+          exit $rc
+      - name: Stop the stack
+        if: always()
+        run: docker compose -f docker/docker-compose.yaml down -v
+
+  scripts-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash security/tests/test_upload_to_defectdojo.sh
+
+  summary:
+    needs: [sast, secrets, sca, container, iac, dast]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: report-*
+          path: reports
+          merge-multiple: true
+      - name: Findings by tool and severity
+        run: |
+          cd reports
+          sev() { jq -r "$1" "$2" 2>/dev/null | sort | uniq -c | awk '{printf "%s %s, ", $1, $2}'; }
+          trivy='.Results[]? | (.Vulnerabilities[]?, .Misconfigurations[]?) | .Severity'
+          {
+            echo "## Security findings (mode: $([ "$ENFORCE" = true ] && echo blocking || echo report-only))"
+            echo "| Report | Findings by severity |"
+            echo "| --- | --- |"
+            for f in semgrep.json semgrep-compose.json; do echo "| $f | $(sev '.results[].extra.severity' "$f") |"; done
+            echo "| gitleaks.json | $(jq length gitleaks.json 2>/dev/null) secrets |"
+            echo "| trufflehog.json | $(grep -c '"SourceMetadata"' trufflehog.json 2>/dev/null) secrets |"
+            for f in trivy-*.json; do echo "| $f | $(sev "$trivy" "$f") |"; done
+            for f in zap-frontend.json zap-api.json; do echo "| $f | $(sev '.site[]?.alerts[]? | .riskdesc | split(" ")[0]' "$f") |"; done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  defectdojo:
+    needs: [sast, secrets, sca, container, iac, dast]
+    if: always()
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    env:
+      DEFECTDOJO_URL: ${{ secrets.DEFECTDOJO_URL }}
+      DEFECTDOJO_TOKEN: ${{ secrets.DEFECTDOJO_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: report-*
+          path: reports
+      - name: Import every report (reimport-scan)
+        run: |
+          if [ -z "$DEFECTDOJO_URL" ]; then
+            echo "skipped: no DefectDojo configured (use security/scripts/import_run.sh ${GITHUB_RUN_ID})"
+            exit 0
+          fi
+          security/scripts/import_run.sh reports
+
+  deliver:
+    needs: [sast, secrets, sca, container, iac, dast, scripts-test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: images
+      - name: Publish the scanned images to GHCR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "$GH_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          for app in backend frontend; do
+            docker load -i "$app.tar"
+            for tag in "$GITHUB_SHA" latest; do
+              docker tag "misiops-$app:latest" "ghcr.io/jeffreymonjacastro/misiops-$app:$tag"
+              docker push "ghcr.io/jeffreymonjacastro/misiops-$app:$tag"
+            done
+          done
+\end{lstlisting}
+
+\subsection{Gate por herramienta: \texttt{security/scripts/gate.sh}}
+\label{anx:gate}
+
+\begin{lstlisting}
+#!/usr/bin/env bash
+# Security gate (FR-012). Blocks only when ENFORCE=true (pull requests into main, pushes to main);
+# otherwise warns, because merges into develop are report-only under constitution exemption EX-001.
+# Usage: gate.sh <tool> <blocking-finding-count>
+set -euo pipefail
+
+if [ $# -ne 2 ]; then
+  echo "usage: $0 <tool> <count>" >&2
+  exit 2
+fi
+tool=$1 count=$2
+mode=report-only
+[ "${ENFORCE:-false}" = true ] && mode=blocking
+[ -n "${GITHUB_STEP_SUMMARY:-}" ] && echo "- **$tool**: $count blocking findings ($mode)" >> "$GITHUB_STEP_SUMMARY"
+
+if [ "$count" -eq 0 ]; then
+  echo "$tool: no blocking findings"
+elif [ "$mode" = blocking ]; then
+  echo "::error::$tool: $count blocking findings"
+  exit 1
+else
+  echo "::warning::$tool: $count findings would block a merge into main (report-only, constitution EX-001)"
+fi
+\end{lstlisting}
+
+\subsection{Filtro de Trivy: \texttt{security/scripts/trivy-blocking.jq}}
+\label{anx:jq}
+
+\begin{lstlisting}
+# Blocking findings in a Trivy JSON report (FR-012): fixable HIGH/CRITICAL vulnerabilities,
+# HIGH/CRITICAL misconfigurations and any secret. Unfixed vulnerabilities are reported only.
+[
+  .Results[]?
+  | (.Vulnerabilities[]? | select((.Severity == "HIGH" or .Severity == "CRITICAL") and ((.FixedVersion // "") != ""))),
+    (.Misconfigurations[]? | select(.Severity == "HIGH" or .Severity == "CRITICAL")),
+    (.Secrets[]?)
+] | length
+\end{lstlisting}
+
+\subsection{Subida a DefectDojo: \texttt{security/scripts/upload\_to\_defectdojo.sh}}
+\label{anx:upload}
+
+\begin{lstlisting}
+#!/usr/bin/env bash
+# Upload one scan report to DefectDojo through /api/v2/reimport-scan/.
+# Contract: specs/011-devsecops/contracts/upload-script.md
+# Usage: upload_to_defectdojo.sh <scan_type> <test_title> <report_file>
+set -euo pipefail
+
+if [ $# -lt 3 ]; then
+  echo "usage: $0 <scan_type> <test_title> <report_file>" >&2
+  exit 2
+fi
+scan_type=$1 test_title=$2 report=$3
+
+# A missing file means the scanner did not run; a zero-finding report is still uploaded
+# so close_old_findings can close what an earlier run found.
+if [ ! -f "$report" ]; then
+  echo "skip: $report not found"
+  exit 0
+fi
+for var in DEFECTDOJO_URL DEFECTDOJO_TOKEN; do
+  if [ -z "${!var:-}" ]; then
+    echo "missing variable: $var" >&2
+    exit 1
+  fi
+done
+
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+
+# TruffleHog writes log lines next to findings; DefectDojo only parses the findings.
+if [ "$scan_type" = "Trufflehog Scan" ]; then
+  grep '"SourceMetadata"' "$report" > "$tmp/trufflehog.json" || true
+  report=$tmp/trufflehog.json
+fi
+
+# Header from a file keeps the token off the process list and out of logs.
+printf 'Authorization: Token %s\n' "$DEFECTDOJO_TOKEN" > "$tmp/auth"
+
+form=(
+  -F "scan_type=$scan_type"
+  -F "test_title=$test_title"
+  -F "file=@$report"
+  -F "product_name=${DEFECTDOJO_PRODUCT:-MisiOps}"
+  -F "product_type_name=${DEFECTDOJO_PRODUCT_TYPE:-Aplicaciones Web}"
+  -F "engagement_name=${DEFECTDOJO_ENGAGEMENT:-CI - ${GITHUB_HEAD_REF:-${GITHUB_REF_NAME:-local}}}"
+  -F "auto_create_context=true"
+  -F "close_old_findings=true"
+  -F "active=true"
+  -F "verified=false"
+)
+[ -n "${GITHUB_RUN_ID:-}" ] && form+=(-F "build_id=$GITHUB_RUN_ID")
+[ -n "${GITHUB_SHA:-}" ] && form+=(-F "commit_hash=$GITHUB_SHA")
+[ -n "${GITHUB_REF_NAME:-}" ] && form+=(-F "branch_tag=${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}")
+
+status=$(curl -sS -o "$tmp/body" -w '%{http_code}' -X POST \
+  "${DEFECTDOJO_URL%/}/api/v2/reimport-scan/" -H "@$tmp/auth" "${form[@]}")
+
+if [ "$status" = "201" ]; then
+  echo "ok: $test_title"
+else
+  echo "error $status: $(cat "$tmp/body")" >&2
+  exit 1
+fi
+\end{lstlisting}
+
+\subsection{Mapa de reportes y parsers: \texttt{security/scripts/reports.tsv}}
+\label{anx:reports}
+
+\begin{lstlisting}
+# scan_type    test_title    report file (FR-010, distinct titles: research R7)
+Semgrep JSON Report    Semgrep - source    semgrep.json
+Gitleaks Scan    Gitleaks - history    gitleaks.json
+Trufflehog Scan    TruffleHog - history    trufflehog.json
+Trivy Scan    Trivy - dependencies    trivy-deps.json
+Trivy Scan    Trivy - image backend    trivy-image-backend.json
+Trivy Scan    Trivy - image frontend    trivy-image-frontend.json
+Trivy Scan    Trivy - image postgres    trivy-image-postgres.json
+Trivy Scan    Trivy - config    trivy-config.json
+ZAP Scan    ZAP - frontend baseline    zap-frontend.xml
+ZAP Scan    ZAP - API    zap-api.xml
+Semgrep JSON Report    Semgrep - compose    semgrep-compose.json
+\end{lstlisting}
+
+\subsection{Hooks locales: \texttt{.pre-commit-config.yaml}}
+\label{anx:precommit}
+
+\begin{lstlisting}
+# Local secret blocking (FR-009). Run by .githooks/pre-commit (core.hooksPath); needs pre-commit 4.7.0 or uv.
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: detect-private-key
+\end{lstlisting}
+
+\subsection{Reglas de ZAP: \texttt{security/zap/rules.conf}}
+\label{anx:zap}
+
+\begin{lstlisting}
+# ZAP rule overrides: <rule id><TAB><IGNORE|WARN|FAIL><TAB><name>
+# The pipeline gate counts High-risk alerts from the JSON report (FR-012), so this file
+# only holds suppressions. Every IGNORE line needs a comment above it:
+# id: <rule> | justification: <why> | review: <YYYY-MM-DD>   (FR-012b)
+\end{lstlisting}
+
+\subsection{Workflow \texttt{.github/workflows/infra-ci.yml}}
+\label{anx:infraci}
+
+\begin{lstlisting}
+name: infra-ci
+
+# Infrastructure gate (specs/012-aws-deployment, FR-007, NFR-007): tests and an offline synth of the CDK app.
+# No AWS credentials: the stacks have no context lookups and the region is fixed in infra/bin/misiops.ts.
+
+on:
+  pull_request:
+    branches: [develop]
+    paths: ["infra/**", ".github/workflows/infra-ci.yml"]
+  push:
+    branches: [develop]
+    paths: ["infra/**", ".github/workflows/infra-ci.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  infra-ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: infra
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.6.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: infra/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - name: Unit tests (stack assertions + smoke script)
+        run: pnpm test
+      - name: Synth dev and prod without credentials
+        run: |
+          pnpm synth -c env=dev -c imageTag=ci -c alertEmail=ci@example.com --quiet
+          pnpm synth -c env=prod -c imageTag=ci -c alertEmail=ci@example.com --quiet
+          test "$(grep -c '"SecretString"' cdk.out/MisiOps-dev.template.json)" = 0
+\end{lstlisting}
+
+\subsection{Workflow \texttt{.github/workflows/deploy.yml}}
+\label{anx:deploy}
+
+\begin{lstlisting}
+name: deploy
+
+# Deploys the images scanned by the devsecops run that triggered this workflow (specs/012-aws-deployment).
+# develop -> dev (automatic, after the pipeline completes; gates are report-only, EX-001)
+# main    -> prod (waits for the required reviewer of the GitHub Environment "prod")
+# Contract: specs/012-aws-deployment/contracts/deploy-workflow.md
+
+on:
+  workflow_run:
+    workflows: [devsecops]
+    types: [completed]
+    branches: [develop, main]
+
+permissions:
+  contents: read
+  actions: read
+  id-token: write
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    outputs:
+      env: ${{ steps.map.outputs.env }}
+      deploy: ${{ steps.map.outputs.deploy }}
+      sha: ${{ github.event.workflow_run.head_sha }}
+      run_id: ${{ github.event.workflow_run.id }}
+    steps:
+      - id: map
+        env:
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          EVENT: ${{ github.event.workflow_run.event }}
+        run: |
+          case "$BRANCH" in
+            develop) env=dev ;;
+            main) env=prod ;;
+            *) env= ;;
+          esac
+          deploy=false
+          if [ -n "$env" ] && [ "$CONCLUSION" = success ] && [ "$EVENT" = push ]; then deploy=true; fi
+          echo "env=$env" >> "$GITHUB_OUTPUT"
+          echo "deploy=$deploy" >> "$GITHUB_OUTPUT"
+          echo "branch=$BRANCH conclusion=$CONCLUSION event=$EVENT -> env=${env:-none} deploy=$deploy" | tee -a "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    needs: resolve
+    if: needs.resolve.outputs.deploy == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: ${{ needs.resolve.outputs.env }}
+    concurrency:
+      group: deploy-${{ needs.resolve.outputs.env }}
+      cancel-in-progress: false
+    env:
+      ENV_NAME: ${{ needs.resolve.outputs.env }}
+      SHA: ${{ needs.resolve.outputs.sha }}
+    steps:
+      - name: Start timer
+        run: echo "START=$(date +%s)" >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve.outputs.sha }}
+
+      - name: Download the scanned images of the triggering devsecops run (FR-009)
+        uses: actions/download-artifact@v8
+        with:
+          name: images
+          run-id: ${{ needs.resolve.outputs.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: images
+
+      - name: Assume the deploy role through OIDC (FR-011)
+        uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Push the images to ECR tagged with the commit SHA
+        id: push
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+        run: |
+          set -euo pipefail
+          for app in backend frontend; do
+            docker load -i "images/$app.tar"
+            docker tag "misiops-$app:latest" "$REGISTRY/misiops-$app:$SHA"
+            docker push "$REGISTRY/misiops-$app:$SHA"
+            digest=$(docker inspect --format '{{index .RepoDigests 0}}' "$REGISTRY/misiops-$app:$SHA" | cut -d@ -f2)
+            echo "${app}_digest=$digest" >> "$GITHUB_OUTPUT"
+          done
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.6.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: infra/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: infra
+
+      - name: cdk deploy MisiOps-${{ needs.resolve.outputs.env }}
+        working-directory: infra
+        run: |
+          pnpm cdk deploy "MisiOps-$ENV_NAME" \
+            -c "env=$ENV_NAME" -c "imageTag=$SHA" -c "alertEmail=${{ vars.ALERT_EMAIL }}" \
+            --require-approval never --outputs-file outputs.json
+          echo "PUBLIC_URL=$(jq -r ".\"MisiOps-$ENV_NAME\".PublicUrl" outputs.json)" >> "$GITHUB_ENV"
+
+      - name: Smoke test (FR-017, NFR-009)
+        id: smoke
+        run: bash infra/scripts/smoke.sh "$PUBLIC_URL" | tee smoke.log
+
+      - name: Summary
+        if: always()
+        env:
+          BACKEND_DIGEST: ${{ steps.push.outputs.backend_digest }}
+          FRONTEND_DIGEST: ${{ steps.push.outputs.frontend_digest }}
+          SMOKE: ${{ steps.smoke.outcome }}
+        run: |
+          minutes=$(( ($(date +%s) - START) / 60 ))
+          {
+            echo "## Deployment to \`$ENV_NAME\`"
+            echo "- commit: \`$SHA\` (devsecops run ${{ needs.resolve.outputs.run_id }})"
+            echo "- backend digest: \`${BACKEND_DIGEST:-n/a}\`"
+            echo "- frontend digest: \`${FRONTEND_DIGEST:-n/a}\`"
+            echo "- public URL: ${PUBLIC_URL:-n/a}"
+            echo "- smoke test: $SMOKE"
+            echo "- duration: ${minutes} min (target: 15 min for updates, 30 min for the first creation)"
+          } >> "$GITHUB_STEP_SUMMARY"
+\end{lstlisting}
+
+\subsection{Smoke test del despliegue: \texttt{infra/scripts/smoke.sh}}
+\label{anx:smoke}
+
+\begin{lstlisting}
+#!/usr/bin/env bash
+# Post-deployment verification (FR-017, NFR-009, SC-009): the public address serves the web app and the API,
+# and both answer within 2 s at p95 over 20 sequential requests. Exit 0 when every check passes, 1 otherwise.
+# usage: smoke.sh <public-url>
+set -euo pipefail
+
+url=${1:-}
+if [ -z "$url" ]; then echo "usage: $0 <public-url>" >&2; exit 2; fi
+url=${url%/}
+samples=20
+p95_limit=2.0
+body=$(mktemp); trap 'rm -f "$body"' EXIT
+
+fail() { echo "FAIL - $*"; exit 1; }
+# Prints "<status> <seconds>"; a transport error (DNS, TLS, timeout) counts as status 000.
+probe() { curl -s -o "$body" -w '%{http_code} %{time_total}' --max-time 10 "$1" || echo "000 10"; }
+
+content_check() { # path expected-substring
+  local result status
+  result=$(probe "$url$1"); status=${result%% *}
+  [ "$status" = "200" ] || fail "GET $1 returned HTTP $status (expected 200)"
+  grep -q -- "$2" "$body" || fail "GET $1 body does not contain $2"
+  echo "ok   - GET $1 is 200 and contains $2"
+}
+latency_check() { # path
+  local times=() result status
+  for _ in $(seq "$samples"); do
+    result=$(probe "$url$1"); status=${result%% *}
+    [ "$status" = "200" ] || fail "GET $1 returned HTTP $status during sampling"
+    times+=("${result#* }")
+  done
+  [ "${#times[@]}" -eq "$samples" ] || fail "collected ${#times[@]} samples for $1 (expected $samples)"
+  local p95
+  p95=$(printf '%s\n' "${times[@]}" | sort -g | sed -n "$((samples * 95 / 100))p")
+  if awk -v p="$p95" -v l="$p95_limit" 'BEGIN { exit !(p > l) }'; then
+    fail "GET $1 p95 ${p95}s over $samples requests exceeds ${p95_limit}s"
+  fi
+  echo "ok   - GET $1 p95 ${p95}s over $samples requests"
+}
+
+content_check / MisiOps
+content_check /openapi.json '"openapi"'
+latency_check /
+latency_check /openapi.json
+echo "smoke: all checks passed for $url"
+\end{lstlisting}

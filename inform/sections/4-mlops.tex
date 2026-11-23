@@ -1,0 +1,240 @@
+\section{MLOps}
+
+\subsection{Importancia de MLOps y CRISP-ML(Q)}
+
+Un modelo de machine learning no es un artefacto estático como un binario: su comportamiento depende de los datos con los que se entrenó, y esos datos cambian con el tiempo. MLOps aplica las prácticas de DevOps (versionado, automatización, pruebas, despliegue continuo y monitoreo) a todo el ciclo de vida del modelo: datos, entrenamiento, validación, despliegue y observación en producción. Sin MLOps, los modelos se entrenan a mano en notebooks, no se pueden reproducir, se despliegan sin validar y se degradan sin que nadie lo note (\textit{data drift} o \textit{concept drift}).
+
+CRISP-ML(Q) (\textit{Cross-Industry Standard Process for Machine Learning with Quality assurance}) extiende el clásico CRISP-DM con aseguramiento de calidad en cada fase. Define seis fases iterativas:
+\begin{enumerate}
+    \item Entendimiento del negocio y de los datos.
+    \item Preparación de datos.
+    \item Modelado.
+    \item Evaluación.
+    \item Despliegue.
+    \item Monitoreo y mantenimiento.
+\end{enumerate}
+En cada fase se identifican los riesgos que podrían afectar la calidad del modelo y se definen métodos para mitigarlos. Así cada etapa tiene criterios de salida verificables, lo que encaja con los gates del pipeline ya usados en DevSecOps.
+
+En MisiOps, la constitución del proyecto define como caso de uso de MLOps \textbf{entrenar modelos sobre el historial de transacciones del usuario para predecir su ahorro a fin de mes}. Esa predicción responde directamente al problema de negocio: que el usuario sepa con anticipación si llegará a fin de mes con ahorro o con deuda.
+
+La prueba de concepto se desarrolló con el flujo SDD en \texttt{specs/013-month-end-forecast/} (PR \#199 y \#200) y la vista de monitoreo en \texttt{specs/014-grafana-cloudwatch/} (PR \#211). El código vive en \texttt{mlops/} y en los módulos \texttt{backend/core/forecast\_*.py}. La Tabla~\ref{tab:mlops-crisp} resume, para cada fase, el riesgo principal que se identificó y el control que lo mitiga; las subsecciones de implementación detallan cada uno.
+
+\input{tables/mlops-crisp.tex}
+
+\subsection{Arquitectura de MLOps y componentes}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{figures/mlops/arquitectura.png}
+    \caption{Arquitectura de MLOps de MisiOps: entrenamiento offline en \texttt{mlops/}, servicio en el backend desplegado en ECS y monitoreo con CloudWatch y Grafana}
+    \label{fig:mlops-arch}
+\end{figure}
+
+La Figura~\ref{fig:mlops-arch} muestra dos mitades. Arriba, el entrenamiento offline, que corre igual en local y en GitHub Actions; abajo, los componentes que ya existían en AWS (sección de IaC) más lo que agrega MLOps.
+
+\begin{itemize}
+    \item \textbf{Origen de datos}: \texttt{mlops/simulation/generate.py} produce un historial sintético reproducible (semilla \texttt{20261122}): 80 usuarios, 42 meses desde enero de 2023 y 70\,829 transacciones en \texttt{transactions.jsonl}, con un manifiesto que registra origen, versión del generador y SHA-256. Cada usuario tiene su propio generador con semilla, de modo que se pueden agregar meses sin alterar los anteriores. No se usan datos reales de usuarios en desarrollo ni en CI.
+    \item \textbf{Pipeline de features}: \texttt{backend/core/forecast\_features.py} es \emph{un solo módulo} que usan tanto la preparación offline (\texttt{mlops/src/data\_prep.py}) como la API. Así se evita el \textit{training-serving skew}: la misma función \texttt{build\_features} calcula las 12 features para entrenar y para predecir. El contrato tiene número de versión (\texttt{FEATURE\_CONTRACT = 2}) y el backend rechaza un modelo con otro contrato.
+    \item \textbf{Registro de experimentos}: MLflow 3 (\texttt{mlops/docker-compose.yml}, puerto 5000, almacenamiento SQLite en un volumen). Cada candidato es una corrida con parámetros, \texttt{validation\_mae}, \texttt{validation\_rmse}, el detalle por fold, el SHA-256 del dataset y la revisión de Git. El ganador además guarda \texttt{model.skops}, \texttt{test\_mae}, \texttt{test\_rmse}, la etiqueta \texttt{quality\_gate}, el reporte de evaluación y la \textit{model card}.
+    \item \textbf{Registro de modelos}: el modelo aprobado no se sirve desde MLflow, sino desde un \textit{bundle} versionado en Git, \texttt{backend/forecast\_release/}, con tres archivos: \texttt{model.skops}, \texttt{evaluation.json} y \texttt{manifest.json}. El manifiesto enlaza la versión (primeros 16 caracteres del SHA-256 del modelo, \texttt{41eb6ef57dc015eb}), el checksum de la evaluación, el dataset, el contrato de features, el \texttt{run\_id} de MLflow, las bandas de error y las distribuciones de referencia para el monitoreo. Promover un modelo es un PR revisable de esos tres archivos.
+    \item \textbf{Servicio de inferencia}: el backend FastAPI carga el bundle al arrancar con \texttt{load\_release()} y expone \texttt{GET /api/v1/predictions/month-end} y \texttt{GET /api/v1/predictions/health}. El frontend muestra una tarjeta con el monto proyectado y un estado. Cada predicción se guarda en la tabla \texttt{prediction\_observations} de Aurora.
+    \item \textbf{Monitoreo}: una tarea programada de ECS (\texttt{core.monitor\_job}) asienta las etiquetas reales, calcula deriva y error, y publica el reporte en CloudWatch Logs. Filtros de métricas y dos alarmas lo convierten en señales; un Grafana local lo muestra en un solo tablero.
+\end{itemize}
+
+\subsection{Pipeline de CI/CD en GitHub Actions}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{figures/mlops/pipeline.png}
+    \caption{Los nueve jobs de \texttt{.github/workflows/mlops.yml}, con los nombres y el orden de la Guía 12}
+    \label{fig:mlops-pipeline}
+\end{figure}
+
+El workflow \texttt{MLOps Pipeline - Month-End Forecast} (\texttt{.github/workflows/mlops.yml}) tiene exactamente los nueve jobs de la Guía 12 (Figura~\ref{fig:mlops-pipeline}). Siete son comunes y los dos últimos son despliegues según la rama:
+
+\begin{enumerate}
+    \item \textbf{Tests}: \texttt{pytest} de \texttt{mlops/} y de \texttt{backend/}. En un PR a \texttt{develop} o \texttt{main} solo corre este job, sin credenciales de AWS.
+    \item \textbf{Data Validation}: genera un snapshot sintético (48 meses por defecto) y ejecuta \texttt{src.validate\_data}. Publica \texttt{data-validation.json} aunque falle.
+    \item \textbf{Data Preparation}: descarga el snapshot validado y construye \texttt{features.jsonl}.
+    \item \textbf{Modeling}: en una ejecución manual (\texttt{workflow\_dispatch} sobre \texttt{develop}) entrena los candidatos y sube el modelo congelado con la base de MLflow. En un push no reentrena: verifica que el bundle fijado tenga modelo, dataset y receta.
+    \item \textbf{Evaluation}: en ejecución manual corre el gate contra la regla histórica y contra el campeón actual (\texttt{--champion ../backend/forecast\_release}) y escribe la \textit{model card} en el resumen de la corrida. En \texttt{main} ejecuta \texttt{verify\_staging.sh}, que exige un recibo de staging cuyo modelo y manifiesto coincidan byte a byte.
+    \item \textbf{Smoke Test}: comprueba los checksums del bundle, construye una sola vez las imágenes, levanta el stack con Docker Compose y valida la paridad entre la API y la predicción offline (ver Smoke test). Después corre el DAST de ZAP.
+    \item \textbf{Build and Publish}: reutiliza las acciones compuestas de DevSecOps (SAST, secretos, SCA, Trivy, IaC y pruebas de scripts) sobre esas mismas imágenes y las publica en GHCR.
+    \item \textbf{Deploy · Staging}: en \texttt{develop}, dentro del entorno \texttt{dev}; asume el rol por OIDC, sube las imágenes a ECR, ejecuta \texttt{cdk deploy}, el smoke test y comprueba que \texttt{/predictions/health} devuelva la versión esperada. Deja el artefacto \texttt{forecast-staging-<versión>} como recibo.
+    \item \textbf{Deploy · Production}: solo en push a \texttt{main}, en el entorno protegido \texttt{prod} con revisor humano. Despliega el mismo modelo ya evaluado; producción nunca entrena.
+\end{enumerate}
+
+Un candidato rechazado detiene la corrida en Evaluation, antes de empaquetar, y el bundle desplegado no cambia. Aparte, \texttt{model-monitoring.yml} corre cada lunes los escenarios sintéticos del monitor y, a mano, puede lanzar el monitor en ECS de \texttt{dev} o \texttt{prod}; si el monitor de \texttt{dev} recomienda reentrenar, puede pedir un nuevo candidato a \texttt{mlops.yml}, pero nunca lo promueve.
+
+\subsection{Implementación}
+
+\subsubsection{Entendimiento del negocio}
+
+El objetivo es estimar, durante el mes, el \textbf{neto registrado del mes calendario}: ingresos menos gastos en soles (PEN), en la zona horaria \texttt{America/Lima}. Con esa estimación MisiOps avisa con anticipación cuando el ritmo de gasto lleva a cerrar el mes en negativo. La predicción se clasifica con una banda de error $b$ que depende del tramo del mes:
+
+\begin{itemize}
+    \item \textbf{Superávit esperado} si el monto proyectado es mayor que $b$.
+    \item \textbf{Déficit esperado} si es menor que $-b$.
+    \item \textbf{Cierre ajustado} si su valor absoluto es menor o igual a $b$ (incluye el cero).
+\end{itemize}
+
+La banda no es un intervalo de confianza: es el error absoluto mediano observado en validación para ese tramo (inicio, días 1--10; medio, 11--20; final, 21 en adelante).
+
+\textbf{Métrica técnica}: MAE en PEN, por ser interpretable en soles, acompañada de RMSE. \textbf{Métrica de negocio}: déficits omitidos, es decir, meses que cerraron en negativo para los que el sistema no mostró ``Déficit esperado''. Un ``Cierre ajustado'' sobre un déficit real cuenta como omitido. El \textbf{gate de aceptación} (\texttt{configs/forecast.yaml}) exige que el candidato:
+\begin{enumerate}
+    \item tenga menor MAE que la regla histórica en los meses reservados;
+    \item se evalúe con al menos 15 déficits reales;
+    \item omita como máximo el 65\,\% de los déficits;
+    \item en promociones posteriores, supere también al modelo aprobado en meses nuevos.
+\end{enumerate}
+
+\subsubsection{Feature engineering}
+
+\textbf{Origen y volumen.} El simulador modela usuarios asalariados (70\,\%) e independientes, con día de pago, suscripciones, gastos diarios, gratificaciones en julio y diciembre y un gasto excepcional con probabilidad del 20\,\% al mes. Cada movimiento tiene dos relojes: \texttt{occurred\_at} (cuándo ocurrió) y \texttt{recorded\_at} (cuándo se registró, con retrasos de 0, 1, 3 o 10 días). En la aplicación, la migración agrega \texttt{created\_at} controlado por el servidor; las filas antiguas lo dejan vacío y se excluyen de las métricas estrictas.
+
+\textbf{Validación de datos} (\texttt{src/validate\_data.py}). Antes de preparar, se rechaza el snapshot si el checksum o el origen no coinciden con el manifiesto, o si encuentra IDs duplicados, montos no enteros o fuera de rango, moneda distinta de PEN, tipo inválido, fechas sin zona horaria, registros anteriores a la ocurrencia o menos de 12 meses contiguos. El snapshot usado pasó: \texttt{decision: accepted}, 70\,829 filas, 80 usuarios, 42 meses. Un gasto atípico que cumple el contrato se conserva.
+
+\textbf{Preparación} (\texttt{src/data\_prep.py}). Para cada usuario y mes se toman cuatro cortes (días 7, 14, 21 y 27). En cada corte solo se usan movimientos ocurridos \emph{y registrados} antes de ese instante, de modo que un registro tardío no filtra información futura. La etiqueta es el neto del mes con los movimientos registrados hasta 7 días después del cierre (\texttt{LABEL\_GRACE}), igual que en producción. Se requieren al menos 2 meses de historia, así que resultan 12\,800 observaciones ($80 \times 40 \times 4$). La Tabla~\ref{tab:mlops-features} lista las features.
+
+\input{tables/mlops-features.tex}
+
+\textbf{Partición temporal} (\texttt{src/train.py}). Los últimos 6 meses (enero a junio de 2026) se reservan para la evaluación final y se separan del resto con un mes de embargo (diciembre de 2025) para que su etiqueta se asiente. Con lo anterior se usa \texttt{TimeSeriesSplit} con 3 folds expansivos de 3 meses de validación y \texttt{gap=1}. Los meses de un usuario nunca se parten entre conjuntos, y de cada fold de entrenamiento se descartan las filas cuya etiqueta todavía no estaría disponible al inicio de la validación.
+
+\subsubsection{Selección del modelo}
+
+Se compararon cinco opciones sobre los mismos folds:
+\begin{itemize}
+    \item \textbf{Regla histórica} (baseline): neto acumulado más el neto que, en meses previos, llegó después del mismo día.
+    \item \textbf{Regresión lineal múltiple}.
+    \item \textbf{Ridge} con estandarización y $\alpha = 10$.
+    \item \textbf{Random Forest}: 32 árboles, profundidad 6, 15 muestras por hoja.
+    \item \textbf{Gradient Boosting}: 75 árboles, profundidad 2.
+\end{itemize}
+
+Los hiperparámetros son conservadores a propósito para un dataset pequeño. El criterio de selección es el \textbf{menor MAE de validación}; el test no interviene en ninguna decisión. La Tabla~\ref{tab:mlops-validacion} muestra el resultado.
+
+\input{tables/mlops-validacion.tex}
+
+Random Forest tuvo el menor MAE y RMSE globales y fue el más estable entre folds: su peor fold, el que incluye la gratificación de julio, quedó en 626 PEN frente a 777 PEN de los modelos lineales. Se reentrenó con todos los meses hasta noviembre de 2025 y se congeló antes de abrir el test. Las cinco corridas quedan en el experimento \texttt{MisiOps month-end net} de MLflow, comparables por \texttt{validation\_mae}.
+
+\textbf{Evaluación independiente} (\texttt{src/evaluate\_and\_register.py}). Antes de evaluar, el script vuelve a comprobar los checksums del dataset preparado, de la configuración y del modelo, y que los meses de test sean los congelados. Los resultados están en la Tabla~\ref{tab:mlops-holdout}.
+
+\input{tables/mlops-holdout.tex}
+
+El gate aceptó al candidato:
+\begin{itemize}
+    \item MAE de 509.12 PEN frente a 621.89 PEN del baseline (18\,\% menos).
+    \item 772 déficits en el test (mínimo 15).
+    \item Tasa de omisión de 60.5\,\%, por debajo del límite de 65\,\%.
+\end{itemize}
+
+La tabla también muestra la limitación principal. El baseline omite menos déficits porque no tiene banda: nunca se abstiene. El modelo, en cambio, declaró ``Cierre ajustado'' en 933 casos, sobre todo a inicio de mes, cuando todavía hay poca información. Es una decisión explícita: preferir abstenerse a dar una alerta equivocada, y medir ese costo como déficit omitido en vez de ocultarlo. Un primer piloto de 36 meses que usaba el MAE como banda fue \textbf{rechazado} por omitir demasiados déficits. La versión aceptada usa la mediana del error y la feature \texttt{bonus\_month}, con los mismos umbrales. Todos estos resultados son sobre datos sintéticos; el rendimiento con usuarios reales debe medirse aparte.
+
+\subsubsection{Smoke test}
+
+El job \textbf{Smoke Test} valida el modelo empaquetado dentro de la imagen real que luego se escanea y despliega:
+
+\begin{itemize}
+    \item \textbf{Integridad del bundle}: \texttt{sha256sum -c} del modelo y de la evaluación contra el manifiesto, y \texttt{gate.decision == "accepted"}.
+    \item \textbf{Carga segura}: al arrancar, \texttt{load\_release()} rechaza el bundle si un checksum no coincide, si el contrato o la lista de features cambió, si el gate no lo aprobó, o si el archivo \texttt{.skops} contiene tipos fuera de una lista blanca. Solo acepta un \texttt{Pipeline} con \texttt{LinearRegression}, \texttt{Ridge}, \texttt{RandomForestRegressor} o \texttt{GradientBoostingRegressor}. Se usa \texttt{skops} en lugar de \texttt{pickle} para no ejecutar código arbitrario al cargar. Si el bundle falla, \texttt{/predictions/health} responde HTTP 503 y la tarea no pasa la verificación de ECS.
+    \item \textbf{Paridad y caso conocido}: \texttt{mlops/simulation/demo.py} corre dentro del contenedor del backend. Siembra un ledger sintético, pide el pronóstico por la API autenticada y lo compara con la predicción offline del mismo modelo sobre las mismas features. La diferencia debe ser menor a PEN 0.01 y la versión debe coincidir. Antes, \texttt{check\_legacy\_schema.py} verifica que la migración aditiva conserve las filas previas.
+    \item \textbf{Tiempo de respuesta}: el mismo script mide la latencia en caliente. En la corrida local sembrada el p95 fue de 161 ms, frente al límite de 2 s de la especificación (NFR-001).
+\end{itemize}
+
+En el despliegue, el smoke test se repite contra la URL pública y exige que \texttt{/api/v1/predictions/health} devuelva la versión del manifiesto evaluado.
+
+\subsubsection{Despliegue}
+
+El modelo se sirve \textbf{en línea, dentro del backend existente}, sin un servicio de inferencia aparte. El archivo \texttt{model.skops} pesa poco y la predicción es de un solo registro, así que un contenedor adicional solo sumaría costo. El bundle se copia en la imagen del backend, que se construye, escanea y despliega como cualquier otra versión. Reutiliza toda la infraestructura de la sección de IaC: ECR, ECS Fargate, ALB, CloudFront y Aurora.
+
+El endpoint \texttt{GET /api/v1/predictions/month-end} hace lo siguiente:
+\begin{enumerate}
+    \item Lee solo las transacciones del usuario autenticado de los últimos tres meses.
+    \item Calcula las features con el mismo módulo que el entrenamiento.
+    \item Predice y clasifica el resultado con la banda del tramo.
+    \item Guarda en \texttt{prediction\_observations} la versión, el contrato, el tramo, el pronóstico, la banda y las features.
+\end{enumerate}
+Si falta historia o el modelo no está disponible, responde un estado \texttt{unavailable} con su motivo y el resto del dashboard sigue funcionando. La respuesta lleva \texttt{Cache-Control: private, no-store}.
+
+CDK agrega en \texttt{infra/lib/forecast-monitor.ts}:
+\begin{itemize}
+    \item la tarea programada del monitor, con un usuario de base de datos restringido cuya contraseña está en Secrets Manager;
+    \item el grupo de logs \texttt{/misiops/<env>/forecast-monitor};
+    \item los filtros de métricas y las alarmas;
+    \item un rol OIDC para lanzar el monitor desde Actions;
+    \item el rol de solo lectura \texttt{ForecastDashboardRole} para Grafana.
+\end{itemize}
+
+\textbf{Rollback.} Si un bundle inválido impide arrancar, el \textit{circuit breaker} de ECS vuelve a la tarea anterior. Si el modelo arranca pero su calidad es mala, se restauran los tres archivos de una versión aprobada anterior mediante un PR normal y se vuelve a pasar por staging.
+
+\subsubsection{Monitoreo}
+
+EventBridge ejecuta \texttt{core.monitor\_job} todos los días a las 07:25 de Lima (\texttt{cron(25 12 * * ? *)}). El job:
+\begin{enumerate}
+    \item \textbf{Asienta etiquetas}: 7 días después del cierre de un mes, calcula el neto real de cada usuario con las transacciones registradas hasta ese plazo y lo guarda en la observación. Excluye a los usuarios con fechas de registro desconocidas.
+    \item \textbf{Mide deriva}: calcula el PSI (\textit{Population Stability Index}) de cada feature y de la predicción frente a la distribución de referencia guardada en el manifiesto, por tramo del mes. Solo cuenta una predicción por usuario, mes y tramo, y exige al menos 30 observaciones; con menos reporta \texttt{insufficient\_sample}. Un PSI $\geq 0.25$ da \texttt{investigate\_drift}.
+    \item \textbf{Mide error}: con al menos 30 observaciones asentadas calcula MAE, RMSE y déficits omitidos. Si el MAE supera el 130\,\% del MAE de referencia del tramo, la decisión es \texttt{retrain\_candidate}.
+\end{enumerate}
+
+La deriva y el error se reportan por separado: una deriva de entrada no prueba que el modelo haya empeorado, y el error solo existe para meses cerrados. El reporte se escribe en CloudWatch Logs con agregados, nunca datos personales. Desde ahí:
+\begin{itemize}
+    \item dos filtros publican \texttt{DriftDetected} y \texttt{RetrainingRecommended} en el namespace \texttt{MisiOps/Forecast/<env>}, cada uno con una alarma;
+    \item un tercero publica \texttt{MeanAbsoluteErrorPEN} con la dimensión \texttt{Cutoff}.
+\end{itemize}
+La Tabla~\ref{tab:mlops-monitor} muestra que los tres escenarios reproducibles producen la decisión esperada.
+
+\input{tables/mlops-monitor.tex}
+
+\textbf{Criterio para reentrenar.} \texttt{retrain\_candidate} solo \emph{recomienda}. El operador lanza \texttt{mlops.yml} (o \texttt{model-monitoring.yml} lo hace por él en \texttt{dev}). El nuevo candidato debe superar el gate y además al campeón en meses nuevos, y llega a producción por el mismo PR, recibo de staging y aprobación humana. \texttt{investigate\_drift} pide revisar los datos antes de decidir.
+
+\textbf{Grafana local} (\texttt{mlops/monitoring/}). Para no navegar varias páginas de la consola de AWS, un Grafana 13 en Docker (\texttt{127.0.0.1:3001}) lee las mismas métricas y reportes de CloudWatch. Muestra:
+\begin{itemize}
+    \item el estado de las dos alarmas en la última hora;
+    \item las banderas de la última corrida;
+    \item el MAE por tramo;
+    \item los últimos 20 reportes, con la decisión y el PSI por feature.
+\end{itemize}
+Asume el rol de solo lectura de cada stack con las credenciales locales del operador, así que nunca consulta con sus permisos completos. La vista es anónima y de solo lectura; administrarla exige una contraseña guardada en un \texttt{.env} ignorado por Git. \texttt{mlops/tests/test\_grafana\_contract.py} verifica que el tablero use los mismos filtros, grupo de logs y campos que publica el monitor.
+
+\subsection{Evidencias}
+
+\begin{itemize}
+    \item \textbf{Corrida de \texttt{mlops.yml} en \texttt{develop}} (\href{https://github.com/jeffreymonjacastro/MisiOps/actions/runs/45092862391}{45092862391}, merge del PR \#200). Pasaron los siete jobs comunes y Deploy · Staging; Deploy · Production se omitió por diseño. La corrida subió el recibo \texttt{forecast-staging-41eb6ef57dc015eb}. La corrida previa del PR \#199 había fallado en Modeling porque buscaba \texttt{recipe} en el manifiesto; el PR \#200 la lee de \texttt{evaluation.json}.
+    \item \textbf{Staging} (\texttt{MisiOps-dev}, \texttt{us-east-1}, verificado el 2026-11-23):
+          \begin{itemize}
+              \item Backend y frontend con 1/1 tareas en ECS.
+              \item \url{https://d2n2ap8z1x33no.cloudfront.net/api/v1/predictions/health} respondió HTTP 200 con \texttt{\{"model\_version":"41eb6ef57dc015eb"\}}.
+              \item La regla de EventBridge del monitor está habilitada.
+              \item Las alarmas de deriva y de reentrenamiento existen en estado \texttt{OK}.
+          \end{itemize}
+    \item \textbf{MLflow}: el experimento \texttt{MisiOps month-end net} tiene las cinco corridas terminadas de la Tabla~\ref{tab:mlops-validacion}. La de Random Forest (\texttt{798962589a5242f89fc269cb9d905b59}) también guarda \texttt{test\_mae}, \texttt{test\_rmse} y la etiqueta \texttt{quality\_gate=accepted}.
+    \item \textbf{Pruebas}: las de MLOps, backend, frontend y CDK pasaron en local. Se verificaron la migración y los privilegios del usuario del monitor con PostgreSQL. Un contenedor sin bundle respondió HTTP 503 mientras la versión sana seguía disponible. Playwright verificó la tarjeta del pronóstico con una cuenta sintética.
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \IfFileExists{figures/mlops/gh-actions-mlops.png}{\includegraphics[width=0.95\textwidth]{figures/mlops/gh-actions-mlops.png}}{\pendiente{captura de la corrida 45092862391 en \texttt{figures/mlops/gh-actions-mlops.png}}}
+    \caption{Corrida de \texttt{mlops.yml} en \texttt{develop}: siete jobs comunes y Deploy · Staging en verde}
+    \label{fig:mlops-run}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \IfFileExists{figures/mlops/mlflow-runs.png}{\includegraphics[width=0.95\textwidth]{figures/mlops/mlflow-runs.png}}{\pendiente{captura de MLflow comparando las cinco corridas por \texttt{validation\_mae} en \texttt{figures/mlops/mlflow-runs.png}}}
+    \caption{Comparación de los candidatos en MLflow}
+    \label{fig:mlops-mlflow}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \IfFileExists{figures/mlops/forecast-card.png}{\includegraphics[width=0.8\textwidth]{figures/mlops/forecast-card.png}}{\pendiente{captura de la tarjeta del pronóstico en el dashboard de \texttt{dev} en \texttt{figures/mlops/forecast-card.png}}}
+    \caption{Tarjeta del pronóstico de fin de mes servida por el modelo \texttt{41eb6ef57dc015eb}}
+    \label{fig:mlops-card}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \IfFileExists{figures/mlops/grafana.png}{\includegraphics[width=0.95\textwidth]{figures/mlops/grafana.png}}{\pendiente{captura del tablero de Grafana en \texttt{figures/mlops/grafana.png}}}
+    \caption{Tablero local de Grafana con el estado del monitoreo del pronóstico en \texttt{dev}}
+    \label{fig:mlops-grafana}
+\end{figure}
