@@ -114,7 +114,29 @@ export function addForecastMonitor(scope: Construct, props: MonitorProps) {
     actions: ['logs:FilterLogEvents'], resources: [logGroup.logGroupArn],
   }));
 
+  // Read-only identity for the local Grafana dashboard (specs/014-grafana-cloudwatch). Operators assume it
+  // with their own CLI credentials, so the dashboard never runs with their full permissions.
+  const dashboardRole = new iam.Role(scope, 'ForecastDashboardRole', {
+    assumedBy: new iam.AccountRootPrincipal(),
+    maxSessionDuration: Duration.hours(1),
+    description: `Read-only access to the ${environment} forecast monitoring metrics and logs`,
+  });
+  // Metric reads, log group listing (data source health check) and Logs Insights query results have no
+  // resource-level scope in IAM; the IAM policy simulator denies DescribeLogGroups on a log-group ARN.
+  dashboardRole.addToPolicy(new iam.PolicyStatement({
+    actions: [
+      'cloudwatch:GetMetricData', 'cloudwatch:ListMetrics',
+      'logs:DescribeLogGroups', 'logs:StopQuery', 'logs:GetQueryResults',
+    ],
+    resources: ['*'],
+  }));
+  dashboardRole.addToPolicy(new iam.PolicyStatement({
+    actions: ['logs:StartQuery', 'logs:GetLogGroupFields', 'logs:GetLogEvents'],
+    resources: [logGroup.logGroupArn],
+  }));
+
   const outputs = {
+    ForecastDashboardRoleArn: dashboardRole.roleArn,
     ForecastMonitorRoleArn: role.roleArn,
     ForecastMonitorTaskArn: task.taskDefinitionArn,
     ForecastMonitorNetwork: JSON.stringify({

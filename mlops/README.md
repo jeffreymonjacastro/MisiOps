@@ -72,7 +72,40 @@ ECS runs a daily task per environment at 07:25 Lima time. It uses a restricted d
 
 The first monitoring run after settlement freezes available outcomes. A deletion or edit before that run can change the observed outcome. An owner-month with unknown creation timestamps is excluded from maturity metrics. Full replay of earlier real edits requires a historical event log, which is outside this synthetic PoC.
 
-View the reports under `/misiops/<environment>/forecast-monitor` in CloudWatch Logs and the drift and retraining alarms under the matching forecast namespace. Prometheus and Grafana are optional local tools. The cloud monitors and alarms use CloudWatch. The GitHub workflow also offers scheduled synthetic verification, and its manual mode can request a new synthetic candidate from a qualifying staging run with newly matured outcomes. It never promotes directly.
+View the reports under `/misiops/<environment>/forecast-monitor` in CloudWatch Logs and the drift and retraining alarms under the matching forecast namespace. The cloud monitors and alarms use CloudWatch. [Local Grafana](#local-grafana) shows the same data in one dashboard; Prometheus is not used. The GitHub workflow also offers scheduled synthetic verification, and its manual mode can request a new synthetic candidate from a qualifying staging run with newly matured outcomes. It never promotes directly.
+
+## Local Grafana
+
+`monitoring/` runs Grafana locally and reads the same CloudWatch metrics and monitor reports, so the console is not needed. It shows four things:
+
+- The drift and retraining alarm state for the last hour.
+- The latest run's flags.
+- MAE by cutoff.
+- The last 20 reports with their per-cutoff decisions and feature PSI.
+
+Grafana assumes each stack's read-only `ForecastDashboardRoleArn`, using your local AWS CLI credentials. It never uses your own permissions for queries. The role exists after `MisiOps-dev` is deployed from `develop`. See [the spec](../specs/014-grafana-cloudwatch/spec.md).
+
+From the repository root, in PowerShell:
+
+```powershell
+Copy-Item mlops/monitoring/.env.example mlops/monitoring/.env
+$role = aws cloudformation describe-stacks --stack-name MisiOps-dev --query "Stacks[0].Outputs[?OutputKey=='ForecastDashboardRoleArn'].OutputValue" --output text
+(Get-Content mlops/monitoring/.env) -replace '^GRAFANA_DEV_ROLE_ARN=.*', "GRAFANA_DEV_ROLE_ARN=$role" -replace '^GRAFANA_ADMIN_PASSWORD=.*', "GRAFANA_ADMIN_PASSWORD=$([guid]::NewGuid().ToString('N'))" | Set-Content mlops/monitoring/.env
+docker compose -f mlops/monitoring/docker-compose.yml up -d
+```
+
+Open [127.0.0.1:3001](http://127.0.0.1:3001). The dashboard opens read-only without signing in. The admin password is in your local `.env`, which Git ignores.
+
+To stop Grafana, run `docker compose -f mlops/monitoring/docker-compose.yml down`. Add `-v` to also delete its local state.
+
+Troubleshooting:
+
+- **Panels show "No data" or "No run in range".** The monitor has not reported in the selected range. It runs daily at 07:25 Lima.
+- **Save & test fails on `MisiOps prod`.** This stays the case until you set `GRAFANA_PROD_ROLE_ARN` from the `MisiOps-prod` output. There is no fallback to your own credentials.
+- **`AccessDenied` on `sts:AssumeRole`.** Your CLI identity needs permission to assume roles in the account. If you use another profile, set `AWS_PROFILE` in `.env`.
+- **Port 3001 is in use.** Change `GRAFANA_PORT` in `.env`.
+
+`mlops/tests/test_grafana_contract.py` checks that the dashboard matches the metric filters, the log group and the report fields.
 
 ## Manual setup
 

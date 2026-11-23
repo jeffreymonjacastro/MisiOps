@@ -1,0 +1,20 @@
+# One CloudWatch data source per environment. Each assumes that stack's read-only ForecastDashboardRole
+# with the operator's local AWS CLI credentials (authType default). No keys are stored here.
+apiVersion: 1
+datasources:
+  - name: MisiOps dev
+    uid: misiops-dev
+    type: cloudwatch
+    editable: false
+    jsonData:
+      authType: default
+      assumeRoleArn: ${GRAFANA_DEV_ROLE_ARN}
+      defaultRegion: us-east-1
+  - name: MisiOps prod
+    uid: misiops-prod
+    type: cloudwatch
+    editable: false
+    jsonData:
+      authType: default
+      assumeRoleArn: ${GRAFANA_PROD_ROLE_ARN}
+      defaultRegion: us-east-1

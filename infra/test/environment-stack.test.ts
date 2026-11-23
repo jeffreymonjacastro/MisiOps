@@ -127,6 +127,30 @@ test('monitor uses a restricted database login, runs daily and exposes alarms pe
   }
 });
 
+test('Grafana dashboard role is read-only, scoped to the monitor logs and exported (spec 014)', () => {
+  for (const template of [dev, prod]) {
+    const json = template.toJSON();
+    const [roleId] = Object.entries(json.Resources).find(([, r]: [string, any]) =>
+      r.Type === 'AWS::IAM::Role' && /^Read-only access to the/.test(r.Properties.Description ?? ''))!;
+    const role = json.Resources[roleId].Properties;
+    assert.equal(role.MaxSessionDuration, 3600);
+    const [trust] = role.AssumeRolePolicyDocument.Statement;
+    assert.equal(trust.Action, 'sts:AssumeRole');
+    assert.ok(JSON.stringify(trust.Principal.AWS).includes(':root'), 'trusted by the account root principal');
+    const statements = Object.values(json.Resources)
+      .filter((r: any) => r.Type === 'AWS::IAM::Policy' && r.Properties.Roles.some((ref: any) => ref.Ref === roleId))
+      .flatMap((r: any) => r.Properties.PolicyDocument.Statement);
+    const actions = statements.flatMap((s: any) => [s.Action].flat()).sort();
+    assert.deepEqual(actions, [
+      'cloudwatch:GetMetricData', 'cloudwatch:ListMetrics', 'logs:DescribeLogGroups', 'logs:GetLogEvents',
+      'logs:GetLogGroupFields', 'logs:GetQueryResults', 'logs:StartQuery', 'logs:StopQuery',
+    ]);
+    const scoped = statements.find((s: any) => [s.Action].flat().includes('logs:StartQuery'));
+    assert.match(JSON.stringify(scoped.Resource), /ForecastMonitorLogs/);
+    assert.ok(json.Outputs.ForecastDashboardRoleArn, 'output ForecastDashboardRoleArn');
+  }
+});
+
 test('frontend task is configured by APP_ENV at runtime', () => {
   assert.deepEqual(taskDefinition(dev, 'frontend').ContainerDefinitions[0].Environment, [{ Name: 'APP_ENV', Value: 'dev' }]);
   assert.deepEqual(taskDefinition(prod, 'frontend').ContainerDefinitions[0].Environment, [{ Name: 'APP_ENV', Value: 'prod' }]);
