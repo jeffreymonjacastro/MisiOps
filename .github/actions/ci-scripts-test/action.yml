@@ -4,3 +4,4 @@ runs:
   using: composite
   steps:
     - run: bash security/tests/test_upload_to_defectdojo.sh
+      shell: bash

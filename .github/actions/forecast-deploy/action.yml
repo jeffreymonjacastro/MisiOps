@@ -51,6 +51,7 @@ runs:
         cache: pnpm
         cache-dependency-path: infra/pnpm-lock.yaml
     - run: pnpm install --frozen-lockfile
+      shell: bash
       working-directory: infra
 
     - name: cdk deploy MisiOps-${{ env.ENV_NAME }}
