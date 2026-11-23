@@ -104,8 +104,11 @@ jobs:
       - if: github.event_name == 'workflow_dispatch'
         working-directory: mlops
         run: PYTHONPATH=../backend uv run --locked python -m src.train
-      - if: github.event_name == 'push'
-        run: jq -e '.model and .dataset_sha256 and .recipe' backend/forecast_release/manifest.json
+      - name: Verify the pinned model metadata
+        if: github.event_name == 'push'
+        run: |
+          jq -e '.model and .dataset_sha256' backend/forecast_release/manifest.json
+          jq -e '.recipe' backend/forecast_release/evaluation.json > /dev/null
       - uses: actions/upload-artifact@v4
         if: github.event_name == 'workflow_dispatch'
         with:
