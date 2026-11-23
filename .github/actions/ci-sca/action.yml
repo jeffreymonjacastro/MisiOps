@@ -1,0 +1,32 @@
+name: ci-sca
+description: Shared ci-sca steps
+runs:
+  using: composite
+  steps:
+    - name: Trivy DB cache key
+      id: day
+      shell: bash
+      run: echo "date=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+    - uses: actions/cache@v4
+      with:
+        path: ~/.cache/trivy
+        key: trivy-db-${{ steps.day.outputs.date }}
+        restore-keys: trivy-db-
+    - name: Trivy dependencies (uv.lock, pnpm-lock.yaml) + SBOM
+      shell: bash
+      run: |
+        mkdir -p reports ~/.cache/trivy
+        trivy() { docker run --rm -u "$(id -u):$(id -g)" -e TRIVY_CACHE_DIR=/cache -v "$HOME/.cache/trivy:/cache" -v "$PWD:/src" -w /src "$TRIVY_IMAGE" "$@"; }
+        # docs/ holds archived reports (incl. an SBOM), not project dependencies.
+        trivy fs --scanners vuln --skip-dirs docs --ignorefile .trivyignore.yaml --format json --output reports/trivy-deps.json .
+        trivy fs --scanners vuln --skip-dirs docs --ignorefile .trivyignore.yaml --skip-db-update --format table --output reports/trivy-deps.txt .
+        trivy fs --skip-dirs docs --skip-db-update --format cyclonedx --output reports/sbom.cdx.json .
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: report-sca
+        path: reports/
+        retention-days: 7
+    - name: Gate (fixable HIGH/CRITICAL)
+      shell: bash
+      run: security/scripts/gate.sh "Trivy dependencies" "$(jq -f security/scripts/trivy-blocking.jq reports/trivy-deps.json)"

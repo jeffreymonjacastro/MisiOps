@@ -1,6 +1,6 @@
 from sqlalchemy import CheckConstraint, Column, ForeignKey, Index, Integer, Numeric, String, func
 
-from core.database import Base
+from core.orm import Base
 
 # Seeded per user at registration. Names are user-facing data in the users' language.
 DEFAULT_CATEGORIES: list[tuple[str, str]] = [

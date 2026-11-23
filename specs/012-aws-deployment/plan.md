@@ -42,7 +42,7 @@ Describe two MisiOps environments (`dev`, `prod`) as AWS CDK TypeScript code und
 | Deployment Environments | `dev` from `develop` after pipeline completion (report-only, EX-001); `prod` from `main` with approval; same scanned images (artifact download by run id); OIDC short-lived credentials; circuit-breaker rollback; `dev` labelled, no real data | PASS |
 | Development Workflow | Work on `feature/aws-deployment`, PR to `develop`; `infra-ci` becomes a required check; SDD enforcer extended to `infra/` | PASS |
 
-**Post-design re-check (after Phase 1)**: PASS. One accepted risk recorded in R9 (CDK bootstrap execution role keeps CDK's default administrator policy); no principle conflict. No Complexity Tracking entries needed.
+**Post-design re-check (after Phase 1)**: PASS. Post-implementation note (T048, 2026-11-12): the deploy role trusts both the plain and the immutable-subject form of the repository's OIDC `sub` (research R9). One accepted risk recorded in R9 (CDK bootstrap execution role keeps CDK's default administrator policy); no principle conflict. No Complexity Tracking entries needed.
 
 ## Project Structure
 

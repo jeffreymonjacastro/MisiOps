@@ -1,6 +1,7 @@
 import { request } from "./api.ts";
 import type {
   Category,
+  MonthEndForecast,
   Summary,
   Transaction,
   TransactionPage,
@@ -46,6 +47,9 @@ export const transactionBody = (payload: TransactionPayload) => ({
 });
 
 export const getMe = (token: string) => request<User>("/api/v1/user/", { token });
+
+export const getMonthEndForecast = (token: string) =>
+  request<MonthEndForecast>("/api/v1/predictions/month-end", { token });
 
 export const listCategories = (token: string) =>
   request<Category[]>("/api/v1/category/", { token });
