@@ -1,0 +1,61 @@
+name: ci-dast
+description: Shared ci-dast steps
+runs:
+  using: composite
+  steps:
+    - name: Start the stack from the scanned images
+      shell: bash
+      run: |
+        docker load -i backend.tar && docker load -i frontend.tar
+        # Throwaway credentials generated per run; never committed (FR-018).
+        pw=$(openssl rand -hex 24)
+        printf 'POSTGRES_PASSWORD=%s\nSECRET_KEY=%s\n' "$pw" "$(openssl rand -hex 32)" > docker/.env.dev
+        printf '%s' "$pw" > docker/pg_password.txt
+        docker compose -f docker/docker-compose.yaml up -d --no-build
+        curl -fsS --retry 30 --retry-all-errors --retry-delay 2 -o /dev/null http://localhost:8000/
+        curl -fsS --retry 30 --retry-all-errors --retry-delay 2 -o /dev/null http://localhost:3000/
+    - name: Verify real forecast parity in the built image
+      shell: bash
+      run: |
+        docker compose -f docker/docker-compose.yaml exec -T backend python - < mlops/scripts/check_legacy_schema.py
+        docker compose -f docker/docker-compose.yaml exec -T backend python - < mlops/simulation/demo.py
+    - name: Get a bearer token for the authenticated API scan
+      shell: bash
+      run: |
+        email="zap-${GITHUB_RUN_ID}@example.com" pass=$(openssl rand -hex 16)
+        body=$(jq -nc --arg e "$email" --arg p "$pass" '{name: "ZAP scanner", email: $e, password: $p}')
+        curl -fsS -X POST http://localhost:8000/api/v1/auth/register -H 'Content-Type: application/json' -d "$body" -o /dev/null
+        token=$(curl -fsS -X POST http://localhost:8000/api/v1/auth/login -H 'Content-Type: application/json' -d "$body" | jq -r .access_token)
+        echo "::add-mask::$token"
+        echo "ZAP_TOKEN=$token" >> "$GITHUB_ENV"
+    - name: ZAP baseline (frontend) and API scan (OpenAPI, authenticated)
+      shell: bash
+      run: |
+        mkdir -p reports && chmod 777 reports
+        cp security/zap/rules.conf reports/zap-rules.conf
+        zap() { docker run --rm --network host -v "$PWD/reports:/zap/wrk:rw" "$@"; }
+        zap "$ZAP_IMAGE" zap-baseline.py -t http://localhost:3000 -c zap-rules.conf -I \
+          -x zap-frontend.xml -r zap-frontend.html -J zap-frontend.json || true
+        zap -e ZAP_AUTH_HEADER_VALUE="Bearer $ZAP_TOKEN" -e ZAP_AUTH_HEADER_SITE=localhost:8000 "$ZAP_IMAGE" \
+          zap-api-scan.py -t http://localhost:8000/openapi.json -f openapi -c zap-rules.conf -I \
+          -x zap-api.xml -r zap-api.html -J zap-api.json -z "-config scanner.maxScanDurationInMins=10" || true
+        # A missing report means ZAP never reached the app: fail instead of reporting "no findings".
+        test -s reports/zap-frontend.json && test -s reports/zap-api.json
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: report-dast
+        path: reports/
+        retention-days: 7
+    - name: Gate (High-risk alerts)
+      shell: bash
+      run: |
+        rc=0
+        for scan in frontend api; do
+          security/scripts/gate.sh "ZAP $scan" "$(jq '[.site[]?.alerts[]? | select(.riskcode == "3")] | length' "reports/zap-$scan.json")" || rc=1
+        done
+        exit $rc
+    - name: Stop the stack
+      if: always()
+      shell: bash
+      run: docker compose -f docker/docker-compose.yaml down -v

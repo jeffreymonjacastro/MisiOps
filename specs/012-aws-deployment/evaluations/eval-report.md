@@ -155,3 +155,5 @@ Total: 9/10 → **9.00/10**.
 ## 9. Recommendation
 
 ACCEPTABLE at 8.93. The four textual corrections in section 8 were approved by the user and applied to `spec.md` on 2026-11-07 (FR-003 no-cache/header forwarding + `/redoc` + new edge case; FR-020 label in the web app + Out of Scope exception; NFR-009 and SC-009 runtime responsiveness; FR-018 notification address as a required parameter). No scope change; proceed to `/speckit-plan`.
+
+**Addendum 2026-11-12 (first prod run)**: the approval-gated `prod` deployment failed at the OIDC step because GitHub's immutable-subject setting changes the `sub` claim format. FR-011/FR-012 are unaffected; the trust policy now accepts both forms (T048). No score change.

@@ -1,0 +1,22 @@
+\begin{table}[H]
+    \centering
+    \small
+    \caption{Comparación de modelos en validación temporal (3 folds, 2\,880 observaciones, 1\,056 déficits). MAE y RMSE en PEN. Fuente: \texttt{backend/forecast\_release/evaluation.json}}
+    \label{tab:mlops-validacion}
+    \begin{tabular}{@{}lrrrrrr@{}}
+        \toprule
+        & \multicolumn{3}{c}{\textbf{MAE por fold}} & & & \\
+        \cmidrule(lr){2-4}
+        \textbf{Modelo} & \textbf{Fold 1} & \textbf{Fold 2} & \textbf{Fold 3} & \textbf{MAE} & \textbf{RMSE} & \textbf{Déf. omitidos} \\
+        \midrule
+        Regla histórica (baseline) & 570.0 & 893.4 & 698.0 & 720.46 & 1\,167.72 & 395 \\
+        Regresión lineal múltiple   & 449.7 & 777.4 & 490.6 & 572.52 & 866.04 & 336 \\
+        Ridge ($\alpha=10$)         & 449.4 & 777.7 & 489.8 & 572.30 & 865.49 & 336 \\
+        \textbf{Random Forest}      & 485.7 & 626.4 & 495.2 & \textbf{535.78} & \textbf{757.10} & 366 \\
+        Gradient Boosting           & 486.7 & 710.2 & 486.6 & 561.16 & 803.30 & 382 \\
+        \bottomrule
+    \end{tabular}
+
+    \vspace{0.3em}
+    \footnotesize Fold 1: entrena hasta 2025-01, valida 2025-03 a 2025-05. Fold 2: hasta 2025-04, valida 2025-06 a 2025-08. Fold 3: hasta 2025-07, valida 2025-09 a 2025-11. Entre entrenamiento y validación hay un mes de \textit{gap}.
+\end{table}

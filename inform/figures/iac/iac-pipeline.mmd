@@ -1,0 +1,17 @@
+flowchart TB
+  pr[PR o push a develop / main]
+  ds[devsecops.yml<br/>build + escaneos + gates]
+  ic[infra-ci.yml<br/>tests CDK + synth offline]
+  res[deploy: resolve<br/>develop a dev, main a prod]
+  appr{entorno}
+  dep[deploy: OIDC, push a ECR por SHA,<br/>cdk deploy MisiOps-env]
+  smoke[smoke.sh<br/>GET / y /openapi.json, p95 menor a 2 s]
+  rb[circuit breaker ECS<br/>rollback automatico]
+  pr --> ds
+  pr --> ic
+  ds -->|exito en push| res
+  res --> appr
+  appr -->|dev: automatico| dep
+  appr -->|prod: requiere aprobacion| dep
+  dep --> smoke
+  dep -.->|falla de salud| rb

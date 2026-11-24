@@ -1,0 +1,832 @@
+{
+  "uid": "misiops-forecast-monitoring",
+  "title": "MisiOps - Forecast monitoring",
+  "tags": [
+    "misiops",
+    "mlops",
+    "forecast"
+  ],
+  "timezone": "America/Lima",
+  "editable": false,
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "refresh": "",
+  "schemaVersion": 41,
+  "version": 1,
+  "templating": {
+    "list": [
+      {
+        "name": "env",
+        "label": "Environment",
+        "type": "custom",
+        "query": "dev,prod",
+        "hide": 0,
+        "current": {
+          "text": "dev",
+          "value": "dev"
+        },
+        "options": [
+          {
+            "text": "dev",
+            "value": "dev",
+            "selected": true
+          },
+          {
+            "text": "prod",
+            "value": "prod",
+            "selected": false
+          }
+        ]
+      },
+      {
+        "name": "cutoff",
+        "label": "Cutoff",
+        "type": "custom",
+        "query": "early,middle,late",
+        "hide": 0,
+        "current": {
+          "text": "early",
+          "value": "early"
+        },
+        "options": [
+          {
+            "text": "early",
+            "value": "early",
+            "selected": true
+          },
+          {
+            "text": "middle",
+            "value": "middle",
+            "selected": false
+          },
+          {
+            "text": "late",
+            "value": "late",
+            "selected": false
+          }
+        ]
+      }
+    ]
+  },
+  "annotations": {
+    "list": []
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "text",
+      "title": "How to read this dashboard",
+      "gridPos": {
+        "h": 4,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "Daily forecast monitor for **${env}** (EventBridge, 07:25 Lima). Drift is the PSI against the training reference (alert at 0.25). Retraining is recommended when the settled MAE exceeds 1.30 x the release MAE. Fewer than 30 observations per cutoff gives `insufficient_sample`. Empty panels mean the monitor has not reported in the selected range."
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Drift alarm (last hour)",
+      "description": "Mirrors the CloudWatch alarm: Maximum of the flag over the last hour; 1 or more is ALARM, missing data is OK.",
+      "datasource": {
+        "type": "cloudwatch",
+        "uid": "misiops-${env}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 0,
+        "y": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "misiops-${env}"
+          },
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "namespace": "MisiOps/Forecast/${env}",
+          "metricName": "DriftDetected",
+          "dimensions": {},
+          "statistic": "Maximum",
+          "period": "3600",
+          "region": "default",
+          "matchExact": true,
+          "id": "",
+          "expression": "",
+          "label": ""
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "OK (no data)",
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "OK",
+                  "color": "green",
+                  "index": 0
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 1,
+                "to": null,
+                "result": {
+                  "text": "ALARM",
+                  "color": "red",
+                  "index": 1
+                }
+              }
+            }
+          ],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "timeFrom": "1h"
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Retraining alarm (last hour)",
+      "description": "Mirrors the CloudWatch alarm: Maximum of the flag over the last hour; 1 or more is ALARM, missing data is OK.",
+      "datasource": {
+        "type": "cloudwatch",
+        "uid": "misiops-${env}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 6,
+        "y": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "misiops-${env}"
+          },
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "namespace": "MisiOps/Forecast/${env}",
+          "metricName": "RetrainingRecommended",
+          "dimensions": {},
+          "statistic": "Maximum",
+          "period": "3600",
+          "region": "default",
+          "matchExact": true,
+          "id": "",
+          "expression": "",
+          "label": ""
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "OK (no data)",
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "OK",
+                  "color": "green",
+                  "index": 0
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 1,
+                "to": null,
+                "result": {
+                  "text": "ALARM",
+                  "color": "red",
+                  "index": 1
+                }
+              }
+            }
+          ],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "timeFrom": "1h"
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Drift flag (latest run)",
+      "description": "Latest daily value in the selected range, across cutoffs.",
+      "datasource": {
+        "type": "cloudwatch",
+        "uid": "misiops-${env}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 12,
+        "y": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "misiops-${env}"
+          },
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "namespace": "MisiOps/Forecast/${env}",
+          "metricName": "DriftDetected",
+          "dimensions": {},
+          "statistic": "Maximum",
+          "period": "3600",
+          "region": "default",
+          "matchExact": true,
+          "id": "",
+          "expression": "",
+          "label": ""
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "No run in range",
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "stable",
+                  "color": "green",
+                  "index": 0
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 1,
+                "to": null,
+                "result": {
+                  "text": "investigate_drift",
+                  "color": "red",
+                  "index": 1
+                }
+              }
+            }
+          ],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Retraining flag (latest run)",
+      "description": "Latest daily value in the selected range, across cutoffs.",
+      "datasource": {
+        "type": "cloudwatch",
+        "uid": "misiops-${env}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 18,
+        "y": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "misiops-${env}"
+          },
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "namespace": "MisiOps/Forecast/${env}",
+          "metricName": "RetrainingRecommended",
+          "dimensions": {},
+          "statistic": "Maximum",
+          "period": "3600",
+          "region": "default",
+          "matchExact": true,
+          "id": "",
+          "expression": "",
+          "label": ""
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "No run in range",
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "no retraining",
+                  "color": "green",
+                  "index": 0
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 1,
+                "to": null,
+                "result": {
+                  "text": "retrain_candidate",
+                  "color": "red",
+                  "index": 1
+                }
+              }
+            }
+          ],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "MAE by cutoff (PEN)",
+      "datasource": {
+        "type": "cloudwatch",
+        "uid": "misiops-${env}"
+      },
+      "description": "Mean absolute error of settled forecasts, published once outcomes mature (7 days after month end).",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "misiops-${env}"
+          },
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "namespace": "MisiOps/Forecast/${env}",
+          "metricName": "MeanAbsoluteErrorPEN",
+          "dimensions": {
+            "Cutoff": [
+              "*"
+            ]
+          },
+          "statistic": "Maximum",
+          "period": "3600",
+          "region": "default",
+          "matchExact": true,
+          "id": "",
+          "expression": "",
+          "label": "${PROP('Dim.Cutoff')}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyPEN",
+          "noValue": "No settled outcomes in range",
+          "custom": {
+            "drawStyle": "line",
+            "showPoints": "always",
+            "spanNulls": true,
+            "pointSize": 6
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Drift and retraining flags",
+      "datasource": {
+        "type": "cloudwatch",
+        "uid": "misiops-${env}"
+      },
+      "description": "Hourly Maximum of each flag (0 or 1); the monitor reports once a day.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "misiops-${env}"
+          },
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "namespace": "MisiOps/Forecast/${env}",
+          "metricName": "DriftDetected",
+          "dimensions": {},
+          "statistic": "Maximum",
+          "period": "3600",
+          "region": "default",
+          "matchExact": true,
+          "id": "",
+          "expression": "",
+          "label": "drift"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "misiops-${env}"
+          },
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "namespace": "MisiOps/Forecast/${env}",
+          "metricName": "RetrainingRecommended",
+          "dimensions": {},
+          "statistic": "Maximum",
+          "period": "3600",
+          "region": "default",
+          "matchExact": true,
+          "id": "",
+          "expression": "",
+          "label": "retrain"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "max": 1,
+          "decimals": 0,
+          "noValue": "No run in range",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 60,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "type": "table",
+      "title": "Monitor reports (last 20)",
+      "description": "Aggregate forecast_monitor reports from CloudWatch Logs: decision and sample sizes per cutoff.",
+      "datasource": {
+        "type": "cloudwatch",
+        "uid": "misiops-${env}"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 17
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "misiops-${env}"
+          },
+          "queryMode": "Logs",
+          "logGroupNames": [
+            "/misiops/${env}/forecast-monitor"
+          ],
+          "expression": "fields @timestamp, model_version, labels_finalized, by_cutoff.early.decision, by_cutoff.early.observations, by_cutoff.early.settled_observations, by_cutoff.middle.decision, by_cutoff.middle.observations, by_cutoff.middle.settled_observations, by_cutoff.late.decision, by_cutoff.late.observations, by_cutoff.late.settled_observations\n| filter event = \"forecast_monitor\"\n| sort @timestamp desc\n| limit 20",
+          "region": "default",
+          "statsGroups": []
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 3,
+          "noValue": "No report in range"
+        },
+        "overrides": []
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "renameByName": {
+              "@timestamp": "time",
+              "model_version": "model",
+              "labels_finalized": "labels finalized",
+              "by_cutoff.early.decision": "early decision",
+              "by_cutoff.early.observations": "early obs",
+              "by_cutoff.early.settled_observations": "early settled",
+              "by_cutoff.middle.decision": "middle decision",
+              "by_cutoff.middle.observations": "middle obs",
+              "by_cutoff.middle.settled_observations": "middle settled",
+              "by_cutoff.late.decision": "late decision",
+              "by_cutoff.late.observations": "late obs",
+              "by_cutoff.late.settled_observations": "late settled"
+            },
+            "excludeByName": {
+              "__log__grafana_internal__": true,
+              "__logstream__grafana_internal__": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "table",
+      "title": "Feature drift (PSI) - ${cutoff}",
+      "description": "PSI per feature and for the prediction against the training reference; 0.25 or more triggers investigate_drift. Empty with insufficient_sample.",
+      "datasource": {
+        "type": "cloudwatch",
+        "uid": "misiops-${env}"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 26
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "misiops-${env}"
+          },
+          "queryMode": "Logs",
+          "logGroupNames": [
+            "/misiops/${env}/forecast-monitor"
+          ],
+          "expression": "fields @timestamp, model_version, by_cutoff.$cutoff.decision, by_cutoff.$cutoff.prediction_drift, by_cutoff.$cutoff.input_drift.income_mtd, by_cutoff.$cutoff.input_drift.expense_mtd, by_cutoff.$cutoff.input_drift.derived_net, by_cutoff.$cutoff.input_drift.expense_last_7d, by_cutoff.$cutoff.input_drift.days_remaining, by_cutoff.$cutoff.input_drift.prior_net_mean, by_cutoff.$cutoff.input_drift.prior_net_std, by_cutoff.$cutoff.input_drift.prior_income_mean, by_cutoff.$cutoff.input_drift.prior_expense_mean, by_cutoff.$cutoff.input_drift.historical_remaining, by_cutoff.$cutoff.input_drift.month_day_fraction, by_cutoff.$cutoff.input_drift.bonus_month\n| filter event = \"forecast_monitor\"\n| sort @timestamp desc\n| limit 20",
+          "region": "default",
+          "statsGroups": []
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 3,
+          "noValue": "No report in range"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byType",
+              "options": "number"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "basic"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "transparent",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 0.1
+                    },
+                    {
+                      "color": "red",
+                      "value": 0.25
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "renameByName": {
+              "@timestamp": "time",
+              "model_version": "model",
+              "by_cutoff.early.decision": "decision",
+              "by_cutoff.early.prediction_drift": "prediction",
+              "by_cutoff.early.input_drift.income_mtd": "income_mtd",
+              "by_cutoff.early.input_drift.expense_mtd": "expense_mtd",
+              "by_cutoff.early.input_drift.derived_net": "derived_net",
+              "by_cutoff.early.input_drift.expense_last_7d": "expense_last_7d",
+              "by_cutoff.early.input_drift.days_remaining": "days_remaining",
+              "by_cutoff.early.input_drift.prior_net_mean": "prior_net_mean",
+              "by_cutoff.early.input_drift.prior_net_std": "prior_net_std",
+              "by_cutoff.early.input_drift.prior_income_mean": "prior_income_mean",
+              "by_cutoff.early.input_drift.prior_expense_mean": "prior_expense_mean",
+              "by_cutoff.early.input_drift.historical_remaining": "historical_remaining",
+              "by_cutoff.early.input_drift.month_day_fraction": "month_day_fraction",
+              "by_cutoff.early.input_drift.bonus_month": "bonus_month",
+              "by_cutoff.middle.decision": "decision",
+              "by_cutoff.middle.prediction_drift": "prediction",
+              "by_cutoff.middle.input_drift.income_mtd": "income_mtd",
+              "by_cutoff.middle.input_drift.expense_mtd": "expense_mtd",
+              "by_cutoff.middle.input_drift.derived_net": "derived_net",
+              "by_cutoff.middle.input_drift.expense_last_7d": "expense_last_7d",
+              "by_cutoff.middle.input_drift.days_remaining": "days_remaining",
+              "by_cutoff.middle.input_drift.prior_net_mean": "prior_net_mean",
+              "by_cutoff.middle.input_drift.prior_net_std": "prior_net_std",
+              "by_cutoff.middle.input_drift.prior_income_mean": "prior_income_mean",
+              "by_cutoff.middle.input_drift.prior_expense_mean": "prior_expense_mean",
+              "by_cutoff.middle.input_drift.historical_remaining": "historical_remaining",
+              "by_cutoff.middle.input_drift.month_day_fraction": "month_day_fraction",
+              "by_cutoff.middle.input_drift.bonus_month": "bonus_month",
+              "by_cutoff.late.decision": "decision",
+              "by_cutoff.late.prediction_drift": "prediction",
+              "by_cutoff.late.input_drift.income_mtd": "income_mtd",
+              "by_cutoff.late.input_drift.expense_mtd": "expense_mtd",
+              "by_cutoff.late.input_drift.derived_net": "derived_net",
+              "by_cutoff.late.input_drift.expense_last_7d": "expense_last_7d",
+              "by_cutoff.late.input_drift.days_remaining": "days_remaining",
+              "by_cutoff.late.input_drift.prior_net_mean": "prior_net_mean",
+              "by_cutoff.late.input_drift.prior_net_std": "prior_net_std",
+              "by_cutoff.late.input_drift.prior_income_mean": "prior_income_mean",
+              "by_cutoff.late.input_drift.prior_expense_mean": "prior_expense_mean",
+              "by_cutoff.late.input_drift.historical_remaining": "historical_remaining",
+              "by_cutoff.late.input_drift.month_day_fraction": "month_day_fraction",
+              "by_cutoff.late.input_drift.bonus_month": "bonus_month"
+            },
+            "excludeByName": {
+              "__log__grafana_internal__": true,
+              "__logstream__grafana_internal__": true
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

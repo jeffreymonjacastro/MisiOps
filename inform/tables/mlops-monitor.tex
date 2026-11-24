@@ -1,0 +1,15 @@
+\begin{table}[H]
+    \centering
+    \small
+    \caption{Escenarios reproducibles del monitor (\texttt{python -m src.monitor --scenario <nombre>}, 200 observaciones por tramo)}
+    \label{tab:mlops-monitor}
+    \begin{tabularx}{\textwidth}{@{}L{2.5cm} L{4.3cm} Y L{2.6cm}@{}}
+        \toprule
+        \textbf{Escenario} & \textbf{Qué simula} & \textbf{Resultado medido} & \textbf{Decisión} \\
+        \midrule
+        \texttt{steady} & Entradas y predicciones con la distribución de referencia, sin etiquetas & PSI máximo $\approx 0$ en los tres tramos; MAE no calculado (0 asentadas) & \texttt{stable} \\
+        \texttt{input\_shift} & \texttt{expense\_mtd} desplazado en +100\,000 PEN, sin etiquetas & PSI de \texttt{expense\_mtd} 5.51 y de la predicción 5.51--5.53; sin MAE porque no hay etiquetas asentadas & \texttt{investigate\_drift} \\
+        \texttt{degraded\_close} & Entradas estables; el cierre real se aleja dos veces el MAE de referencia & MAE de 1\,115.65 (inicio), 1\,107.35 (medio) y 924.96 (final) frente a límites de 725.17, 719.78 y 601.22 & \texttt{retrain\_candidate} \\
+        \bottomrule
+    \end{tabularx}
+\end{table}

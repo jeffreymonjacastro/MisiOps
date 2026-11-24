@@ -10,7 +10,11 @@ const app = new App();
 const env = { account: process.env.CDK_DEFAULT_ACCOUNT, region: REGION };
 Tags.of(app).add('Project', 'MisiOps');
 
-new FoundationStack(app, 'MisiOps-Foundation', { env, githubRepo: app.node.tryGetContext('githubRepo') });
+new FoundationStack(app, 'MisiOps-Foundation', {
+  env,
+  githubRepo: app.node.tryGetContext('githubRepo'),
+  githubRepoImmutable: app.node.tryGetContext('githubRepoImmutable'),
+});
 
 if (app.node.tryGetContext('env') !== undefined) {
   const ctx = readContext(app);
