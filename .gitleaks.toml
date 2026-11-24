@@ -11,14 +11,18 @@ description = "localStorage key names flagged as generic API keys"
 regexTarget = "match"
 regexes = ['''misiops\.(ledger|token)\.v1''']
 
-# id: aws-access-token @ specs/011-devsecops/quickstart.md | justification: fake AWS key used by the
-# documented pre-commit test (quickstart scenario 5); never valid | review: 2027-05-01
+# id: aws-access-token @ specs/011-devsecops/quickstart.md, guides/**/guia_secret_scanning_sca_sast.md |
+# justification: fake AWS key used by the documented pre-commit test (quickstart scenario 5, lab guide
+# section 5.5, also at its earlier path guides/ in history); never valid | review: 2027-05-01
 [[allowlists]]
 description = "Fake AWS key of the pre-commit demo"
 # AND: the key stays blocked anywhere else, so the pre-commit demo still fails as intended.
 condition = "AND"
 regexes = ['''AKIAQ3ZX7YT2LMNOPQ4R''']
-paths = ['''^specs/011-devsecops/quickstart\.md$''']
+paths = [
+  '''^specs/011-devsecops/quickstart\.md$''',
+  '''^guides/(laboratorios_devsecops/)?guia_secret_scanning_sca_sast\.md$''',
+]
 
 # id: any rule @ docs/devsecops/reports/ | justification: archived scanner reports (baseline and re-scan
 # evidence) quote the redacted findings above; scanning them again would only re-report them | review: 2027-05-01

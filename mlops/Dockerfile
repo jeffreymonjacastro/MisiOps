@@ -4,3 +4,5 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 RUN uv sync --locked --no-dev --no-install-project
 ENV PATH="/app/.venv/bin:$PATH"
+RUN useradd --system --uid 10001 --no-create-home app && chown -R app /app
+USER app
